@@ -1,0 +1,15 @@
+[[case]]
+name = "default"
+packages = ["switches", "leaves", "invalid", "decl", "user"]
+
+[[case]]
+name = "default-not-exhaustive"
+packages = ["nodefault"]
+[case.config]
+default-signifies-exhaustive = false
+
+[[case]]
+name = "include-shared-interfaces"
+packages = ["shared"]
+[case.config]
+include-shared-interfaces = true

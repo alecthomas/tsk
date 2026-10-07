@@ -1,0 +1,19 @@
+versioning:
+  update-major: []
+  update-minor: [feat]
+  update-patch: [fix, perf, revert]
+  ignore-unknown: true
+
+tag:
+  pattern: "v%d.%d.%d"
+  filter: "v*"
+
+release-notes:
+  sections:
+    - name: Changes
+      section-type: commits
+      commit-types: ["", build, ci, chore, docs, feat, fix, perf, refactor, revert, style, test]
+
+branches:
+  disable-issue: true
+  skip: []

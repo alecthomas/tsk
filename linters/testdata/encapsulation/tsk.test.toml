@@ -1,0 +1,73 @@
+# Each case mirrors a test of the Go encapsulation-linter.
+
+[[case]]
+name = "default"
+packages = ["example/base", "example/consumer"]
+
+[[case]]
+name = "allow-reads-writes"
+packages = ["example/access"]
+[case.config]
+allow-reads = [
+  { writer = "all", target = "example/access.Access" },
+  { writer = "Worker", target = "ReadOnly" },
+  { writer = "permittedHelper", target = "ReadOnly" },
+  { writer = "Worker", target = "Combined" },
+]
+allow-writes = [
+  { writer = "all", target = "Access" },
+  { writer = "example/access.Worker", target = "example/access.WriteOnly" },
+  { writer = "Worker", target = "Combined" },
+]
+
+[[case]]
+name = "allow-all"
+packages = ["example/allaccess"]
+[case.config]
+allow-reads = [{ writer = "all", target = "all" }]
+allow-writes = [{ writer = "all", target = "all" }]
+
+[[case]]
+name = "interface-targets"
+packages = ["example/nodes"]
+[case.config]
+allow-reads = [{ writer = "visit", target = "node" }]
+allow-writes = [{ writer = "visit", target = "node" }]
+
+[[case]]
+name = "imported-interface-target"
+packages = ["example/iface", "example/impl"]
+[case.config]
+allow-reads = [{ writer = "inspect", target = "example/iface.Node" }]
+
+[[case]]
+name = "allow-factory"
+packages = ["example/factorynarrow", "example/factoryconsumer"]
+[case.config]
+allow-factory = [{ writer = "example/factorynarrow.Factory", target = "Target" }]
+
+[[case]]
+name = "allow-interface-factory"
+packages = ["example/iface", "example/factoryinterface"]
+[case.config]
+allow-factory = [
+  { writer = "Maker", target = "node" },
+  { writer = "Maker", target = "example/iface.Node" },
+]
+
+[[case]]
+name = "allow-all-factories"
+packages = ["example/factoryall"]
+[case.config]
+allow-factory = [{ writer = "all", target = "all" }]
+
+[[case]]
+name = "allow-generated-construction"
+packages = ["example/generated", "example/generatedconsumer"]
+[case.config]
+allow-generated-construction = true
+
+[[case]]
+name = "other-modules-exempt"
+dir = "modules/app"
+packages = ["example.com/app", "example.com/app/local"]

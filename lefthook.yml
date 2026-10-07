@@ -1,0 +1,18 @@
+pre-commit:
+  commands:
+    fmt:
+      priority: 1
+      run: bit fmt
+      stage_fixed: true
+
+commit-msg:
+  commands:
+    conventional-commit:
+      run: git-sv validate-commit-message --path / --file "$(realpath "{1}")" --source message
+
+pre-push:
+  commands:
+    lint:
+      run: bit lint
+    test:
+      run: bit test

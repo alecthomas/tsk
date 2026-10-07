@@ -1,0 +1,113 @@
+# Build file for github.com/alecthomas/tsktsk
+
+# The TypeScript shim is a separate module, so Go tools skip it from the root.
+let go-module = [".", "internal/typescript"]
+
+# Analyzers report a compile error once per dependent package, so compile first.
+build-go[go-module] = go.build {
+  package = "./..."
+  dir = go-module
+}
+
+test-go[go-module](package = "./...", run = ".") = go.test {
+  package = package
+  dir = go-module
+  flags = ["-timeout=30s", "-run=#{run}"]
+}
+
+fmt-go[go-module] = go.fmt {
+  package = "./..."
+  dir = go-module
+}
+fmt-check-go[go-module] = go.fmt-l {
+  package = "./..."
+  dir = go-module
+}
+
+lint-go[go-module] = go.lint {
+  concurrency = 1 # golangci-lint refuses to run while another instance holds its lock.
+  package = "./..."
+  dir = go-module
+  depends_on = [build-go]
+}
+# Lint this repository with its own compiled-in script linters.
+lint-tsk[go-module] = exec.test {
+  command = "tsk ./..."
+  dir = go-module
+  inputs = ["#{go-module}/**/*.go", "#{go-module}/go.mod", "#{go-module}/go.sum", "**/*.go", "linters/*.ts", "internal/hostapi/*", "internal/bindings/dts/*.d.ts", "scripts/tsk"]
+  depends_on = [build-go]
+}
+
+# Formatting also sorts imports, which Biome counts as an assist, not a lint.
+fmt-ts = exec {
+  command = "biome check --write --linter-enabled=false"
+  inputs = ["biome.json", "linters/*.ts", "internal/hostapi/*.ts", "internal/hostapi/*.js"]
+}
+lint-ts = exec.test {
+  command = "biome check"
+  inputs = ["biome.json", "linters/*.ts", "internal/hostapi/*.ts", "internal/hostapi/*.js"]
+}
+
+fmt-action-pins = exec {
+  command = "ratchet pin .github/workflows/*.yml"
+  inputs = [".github/workflows/*.yml", "bin/.ratchet-0.12.0.pkg"]
+}
+lint-actions = exec.test {
+  command = "actionlint"
+  inputs = [".github/workflows/*.yml", "bin/.actionlint-1.7.12.pkg"]
+}
+lint-action-pins = exec.test {
+  command = "ratchet lint .github/workflows/*.yml"
+  inputs = [".github/workflows/*.yml", "bin/.ratchet-0.12.0.pkg"]
+}
+lint-release = exec.test {
+  command = "goreleaser check"
+  inputs = [".goreleaser.yaml", "bin/.goreleaser-2.18.2.pkg"]
+}
+
+# Regenerate the script bindings for the exposed Go packages.
+gen = exec {
+  command = "tsk-gen --output internal/bindings"
+  inputs = ["internal/bindgen/*.go", "cmd/tsk-gen/*.go", "internal/naming/*.go", "go.mod", "go.sum"]
+  output = ["internal/bindings/registry_gen.go", "internal/bindings/dts/*.d.ts"]
+}
+
+# Tag HEAD with the next version and push the tag, which triggers a release.
+# Resolving to HEAD reruns it only once there are new commits.
+explicit bump = exec {
+  command = <<-EOL
+    set -eu
+    current="$(git-sv current-version)"
+    next="$(git-sv next-version)"
+    if [ -z "$next" ]; then
+      echo "Nothing to release since v$current" >&2
+      exit 1
+    fi
+    # git-sv bumps the major version for any breaking change, but while it is
+    # 0, breaking changes only bump the minor version.
+    if [ "${current%%.*}" = 0 ] && [ "${next%%.*}" != 0 ]; then
+      next="$(echo "$current" | awk -F. '{ print "0." ($2 + 1) ".0" }')"
+    fi
+    git tag --annotate "v$next" --message "Release v$next"
+    # A tag left behind by a failed push would block the retry.
+    git push origin "v$next" || { git tag --delete "v$next"; exit 1; }
+  EOL
+  resolve = "git rev-parse HEAD"
+}
+
+explicit tsk-bin = go.exe {
+  package = "./cmd/tsk"
+  output = "dist/devel/tsk"
+  flags = ["-ldflags", "-s -w -buildid="]
+}
+
+# Run all tests
+target test = [test-go]
+
+# Lint everything
+target lint = [lint-go, lint-tsk, fmt-check-go, lint-ts, lint-actions, lint-action-pins, lint-release]
+
+# Format everything
+target fmt = [fmt-go, fmt-ts, fmt-action-pins]
+
+target default = [test, lint]
