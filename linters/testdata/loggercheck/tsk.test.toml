@@ -1,0 +1,11 @@
+[[case]]
+name = "default"
+packages = ["basic"]
+
+[[case]]
+name = "options"
+packages = ["options"]
+[case.config]
+require-string-key = true
+no-printf-like = true
+rules = ["(*options.Logger).Infow"]
