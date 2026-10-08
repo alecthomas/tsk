@@ -1,0 +1,9 @@
+[[case]]
+name = "default"
+packages = ["trojan"]
+
+[[case]]
+name = "disabled-rune"
+packages = ["disabled"]
+[case.config]
+right-to-left-override = false
