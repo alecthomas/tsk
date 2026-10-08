@@ -48,8 +48,11 @@ func exposedPackages() []exposedPackage {
 		{path: "golang.org/x/mod/modfile"},
 		// Only the result type: the analyzer itself is "tsk/passes".buildssa.
 		{path: "golang.org/x/tools/go/analysis/passes/buildssa", members: []string{"SSA"}},
+		// Only the result type: the analyzer itself is "tsk/passes".ctrlflow.
+		{path: "golang.org/x/tools/go/analysis/passes/ctrlflow", members: []string{"CFGs"}},
 		{path: "golang.org/x/tools/go/ast/edge"},
 		{path: "golang.org/x/tools/go/ast/inspector"},
+		{path: "golang.org/x/tools/go/cfg"},
 		{path: "golang.org/x/tools/go/ssa"},
 		{path: "golang.org/x/tools/go/types/typeutil"},
 	}

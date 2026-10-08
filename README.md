@@ -264,9 +264,11 @@ Calling `defineAnalyzer` registers a linter. Its definition mirrors
 
 `tsk/passes` exports `inspect`, whose result is an
 [`inspector.Inspector`](https://pkg.go.dev/golang.org/x/tools/go/ast/inspector)
-for the package, and `buildssa`, whose result is the package in
+for the package; `buildssa`, whose result is the package in
 [SSA form](https://pkg.go.dev/golang.org/x/tools/go/ssa) with its functions
-declared in source, for linters that follow data flow.
+declared in source, for linters that follow data flow; and `ctrlflow`, whose
+result holds the [control-flow graph](https://pkg.go.dev/golang.org/x/tools/go/cfg)
+of each function.
 
 #### Options
 

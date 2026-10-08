@@ -127,7 +127,7 @@ needed. The definition mirrors `analysis.Analyzer`:
 - `name`, `doc`, `url`
 - `config`: default values; see [Config](#config).
 - `requires`: script analyzer handles, or host analyzers exported by
-  `tsk/passes`, currently `inspect` and `buildssa`.
+  `tsk/passes`, currently `inspect`, `buildssa`, and `ctrlflow`.
 - `facts`: fact handles created with `defineFact<T>(name)`. Handles carry the
   value type, so fact functions are typed without a second type parameter on
   `defineAnalyzer`, which TypeScript could not infer alongside an explicit

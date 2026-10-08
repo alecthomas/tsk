@@ -10,8 +10,10 @@ import (
 	"go/types"
 	"golang.org/x/mod/modfile"
 	"golang.org/x/tools/go/analysis/passes/buildssa"
+	"golang.org/x/tools/go/analysis/passes/ctrlflow"
 	"golang.org/x/tools/go/ast/edge"
 	"golang.org/x/tools/go/ast/inspector"
+	"golang.org/x/tools/go/cfg"
 	"golang.org/x/tools/go/ssa"
 	"golang.org/x/tools/go/types/typeutil"
 	"io/fs"
@@ -551,6 +553,12 @@ func Packages() []Package {
 			},
 		},
 		{
+			Path: "golang.org/x/tools/go/analysis/passes/ctrlflow",
+			Types: map[string]reflect.Type{
+				"CFGs": reflect.TypeFor[ctrlflow.CFGs](),
+			},
+		},
+		{
 			Path: "golang.org/x/tools/go/ast/edge",
 			Consts: map[string]any{
 				"ArrayType_Elt":         edge.ArrayType_Elt,
@@ -671,6 +679,39 @@ func Packages() []Package {
 			Types: map[string]reflect.Type{
 				"Cursor":    reflect.TypeFor[inspector.Cursor](),
 				"Inspector": reflect.TypeFor[inspector.Inspector](),
+			},
+		},
+		{
+			Path: "golang.org/x/tools/go/cfg",
+			Funcs: map[string]any{
+				"New": cfg.New,
+			},
+			Consts: map[string]any{
+				"KindBody":            cfg.KindBody,
+				"KindForBody":         cfg.KindForBody,
+				"KindForDone":         cfg.KindForDone,
+				"KindForLoop":         cfg.KindForLoop,
+				"KindForPost":         cfg.KindForPost,
+				"KindIfDone":          cfg.KindIfDone,
+				"KindIfElse":          cfg.KindIfElse,
+				"KindIfThen":          cfg.KindIfThen,
+				"KindInvalid":         cfg.KindInvalid,
+				"KindLabel":           cfg.KindLabel,
+				"KindRangeBody":       cfg.KindRangeBody,
+				"KindRangeDone":       cfg.KindRangeDone,
+				"KindRangeLoop":       cfg.KindRangeLoop,
+				"KindSelectAfterCase": cfg.KindSelectAfterCase,
+				"KindSelectCaseBody":  cfg.KindSelectCaseBody,
+				"KindSelectDone":      cfg.KindSelectDone,
+				"KindSwitchCaseBody":  cfg.KindSwitchCaseBody,
+				"KindSwitchDone":      cfg.KindSwitchDone,
+				"KindSwitchNextCase":  cfg.KindSwitchNextCase,
+				"KindUnreachable":     cfg.KindUnreachable,
+			},
+			Types: map[string]reflect.Type{
+				"Block":     reflect.TypeFor[cfg.Block](),
+				"BlockKind": reflect.TypeFor[cfg.BlockKind](),
+				"CFG":       reflect.TypeFor[cfg.CFG](),
 			},
 		},
 		{

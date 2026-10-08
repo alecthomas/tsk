@@ -251,6 +251,45 @@ func f(n int) int {
 	analysistest.Run(t, dir, analyzers[0], "example")
 }
 
+const ctrlflowScript = `import { defineAnalyzer } from "tsk";
+import { ctrlflow, inspect } from "tsk/passes";
+import * as ast from "go/ast";
+
+export default defineAnalyzer({
+  name: "returns",
+  doc: "report how many blocks of each function return",
+  requires: [ctrlflow, inspect],
+  run(pass) {
+    const cfgs = pass.resultOf(ctrlflow);
+    for (const cursor of pass.resultOf(inspect).root().preorder(ast.FuncDecl)) {
+      const fn = cursor.node() as ast.FuncDecl;
+      const returns = cfgs.funcDecl(fn)!.blocks.filter((block) => block!.return() !== null).length;
+      pass.report({ pos: fn.name!.pos(), message: "returns=" + returns });
+    }
+  },
+});
+`
+
+func TestCtrlflow(t *testing.T) {
+	e := load(t, map[string]string{"returns.ts": ctrlflowScript})
+	analyzers, err := e.Analyzers(config.File{}, nil)
+	assert.NoError(t, err)
+	dir, cleanup, err := analysistest.WriteFiles(map[string]string{
+		"example/example.go": `package example
+
+func abs(n int) int { // want "returns=2"
+	if n < 0 {
+		return -n
+	}
+	return n
+}
+`,
+	})
+	assert.NoError(t, err)
+	defer cleanup()
+	analysistest.Run(t, dir, analyzers[0], "example")
+}
+
 const formatScript = `import { defineAnalyzer, formatNode } from "tsk";
 import { inspect } from "tsk/passes";
 import * as ast from "go/ast";
