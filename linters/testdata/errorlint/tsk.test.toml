@@ -1,0 +1,10 @@
+[[case]]
+name = "default"
+packages = ["errs"]
+
+[[case]]
+name = "single-wrap"
+packages = ["single"]
+[case.config]
+errorf-multi = false
+comparison = false
