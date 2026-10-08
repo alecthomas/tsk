@@ -43,13 +43,96 @@ func load(t testing.TB, scripts map[string]string) *engine.Engine {
 
 func loadWithLogger(t testing.TB, logger *slog.Logger, scripts map[string]string) *engine.Engine {
 	t.Helper()
+	e, err := engine.Load(context.Background(), logger, []compile.Source{{Name: "project", FS: mapFS(scripts)}})
+	assert.NoError(t, err)
+	return e
+}
+
+func mapFS(scripts map[string]string) fstest.MapFS {
 	files := fstest.MapFS{}
 	for name, text := range scripts {
 		files[name] = &fstest.MapFile{Data: []byte(text)}
 	}
-	e, err := engine.Load(context.Background(), logger, []compile.Source{{Name: "project", FS: files}})
-	assert.NoError(t, err)
-	return e
+	return files
+}
+
+const oneScript = `import { defineAnalyzer } from "tsk";
+export default defineAnalyzer({ name: "one", doc: "", run() {} });
+`
+
+func TestLibraries(t *testing.T) {
+	const helper = `export const message = "from a library";`
+	tests := []struct {
+		name    string
+		sources []compile.Source
+		// expected maps each analyzer to its defining module.
+		expected map[string]string
+		error    string
+	}{
+		{
+			name: "ProjectImportsLibraryByPath",
+			sources: []compile.Source{
+				{Name: "github.com/acme/a", Library: true, FS: mapFS(map[string]string{"helper.ts": helper, "one.ts": oneScript})},
+				{Name: "project", FS: mapFS(map[string]string{"main.ts": `import { defineAnalyzer } from "tsk";
+import { message } from "github.com/acme/a/helper";
+export default defineAnalyzer({ name: message.length > 0 ? "main" : "", doc: "", run() {} });
+`})},
+			},
+			expected: map[string]string{"one": "github.com/acme/a/one.ts", "main": "project/main.ts"},
+		},
+		{
+			name: "ProjectOverridesLibrary",
+			sources: []compile.Source{
+				{Name: "github.com/acme/a", Library: true, FS: mapFS(map[string]string{"one.ts": oneScript})},
+				{Name: "project", FS: mapFS(map[string]string{"one.ts": oneScript})},
+			},
+			expected: map[string]string{"one": "project/one.ts"},
+		},
+		{
+			name: "LibrariesCollide",
+			sources: []compile.Source{
+				{Name: "github.com/acme/a", Library: true, FS: mapFS(map[string]string{"one.ts": oneScript})},
+				{Name: "github.com/acme/b", Library: true, FS: mapFS(map[string]string{"one.ts": oneScript})},
+			},
+			error: "analyzer one is defined by both libraries github.com/acme/a and github.com/acme/b",
+		},
+		{
+			name: "LibraryImportsLibrary",
+			sources: []compile.Source{
+				{Name: "github.com/acme/a", Library: true, FS: mapFS(map[string]string{"helper.ts": helper})},
+				{Name: "github.com/acme/b", Library: true, FS: mapFS(map[string]string{"main.ts": `import { message } from "github.com/acme/a/helper";
+export const copied = message;
+`})},
+			},
+			error: `github.com/acme/b/main.ts imports "github.com/acme/a/helper" by path; a library may import only its own scripts, by relative path`,
+		},
+		{
+			name: "NestedSources",
+			sources: []compile.Source{
+				{Name: "github.com/acme/a", Library: true, FS: mapFS(nil)},
+				{Name: "github.com/acme/a/x", Library: true, FS: mapFS(nil)},
+			},
+			error: "script sources github.com/acme/a and github.com/acme/a/x overlap",
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			e, err := engine.Load(t.Context(), slog.New(slog.DiscardHandler), test.sources)
+			if test.error != "" {
+				assert.Error(t, err)
+				assert.Contains(t, err.Error(), test.error)
+				return
+			}
+			assert.NoError(t, err)
+			described, err := e.Describe()
+			assert.NoError(t, err)
+			modules := map[string]string{}
+			for _, analyzer := range described {
+				modules[analyzer.Name] = analyzer.Source
+			}
+			assert.Equal(t, test.expected, modules)
+		})
+	}
 }
 
 func TestNilIdentifiers(t *testing.T) {

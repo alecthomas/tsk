@@ -118,9 +118,10 @@ func (m *Modules) load(name string) (*sobek.SourceTextModuleRecord, error) {
 	return record, nil
 }
 
-// resolve maps bare specifiers to host modules and relative specifiers to
-// scripts in the importing script's source. Sobek links the whole graph with
-// the entry module's resolver.
+// resolve maps bare specifiers to host modules or library scripts, and
+// relative specifiers to scripts in the importing script's source. Library
+// scripts may import only within their own library. Sobek links the whole
+// graph with the entry module's resolver.
 func (m *Modules) resolve(referencing any, specifier string) (sobek.ModuleRecord, error) {
 	record, _ := referencing.(sobek.ModuleRecord)
 	referrer, known := m.names[record]
@@ -130,17 +131,30 @@ func (m *Modules) resolve(referencing any, specifier string) (sobek.ModuleRecord
 	if referrer == entryModule {
 		return m.load(specifier)
 	}
+	source, _ := m.program.Source(referrer)
 	if !strings.HasPrefix(specifier, "./") && !strings.HasPrefix(specifier, "../") {
 		if _, ok := m.sources[specifier]; ok && !strings.HasSuffix(specifier, ".ts") {
 			return m.load(specifier)
 		}
-		return nil, errors.Errorf("%s imports unknown module %q", referrer, specifier)
+		name := path.Clean(specifier)
+		if _, ok := m.program.Library(name); !ok {
+			return nil, errors.Errorf("%s imports unknown module %q", referrer, specifier)
+		}
+		if m.program.IsLibrary(source) {
+			return nil, errors.Errorf("%s imports %q by path; a library may import only its own scripts, by relative path", referrer, specifier)
+		}
+		return m.loadScript(referrer, specifier, name)
 	}
 	name := path.Join(path.Dir(referrer), specifier)
-	source, _, _ := strings.Cut(referrer, "/")
 	if !strings.HasPrefix(name, source+"/") {
 		return nil, errors.Errorf("%s imports %q outside its source", referrer, specifier)
 	}
+	return m.loadScript(referrer, specifier, name)
+}
+
+// loadScript loads the script module name, with or without its extension,
+// that referrer imports as specifier.
+func (m *Modules) loadScript(referrer, specifier, name string) (sobek.ModuleRecord, error) {
 	for _, candidate := range []string{name, name + ".ts"} {
 		if _, ok := m.program.Modules[candidate]; ok {
 			return m.load(candidate)

@@ -1,5 +1,5 @@
-// Package docs renders analyzer documentation as a .tsk/config.toml: each
-// analyzer's description, and each config option's default and JSDoc comment.
+// Package docs renders analyzer documentation: as a .tsk/config.toml, with
+// each config option's default and JSDoc comment, or as a one-line summary.
 package docs
 
 import (

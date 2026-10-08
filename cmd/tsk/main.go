@@ -15,6 +15,7 @@ import (
 	"golang.org/x/tools/go/analysis/multichecker"
 
 	"github.com/alecthomas/tsk/internal/docs"
+	"github.com/alecthomas/tsk/internal/library"
 	"github.com/alecthomas/tsk/internal/lint"
 	"github.com/alecthomas/tsk/internal/logger"
 	"github.com/alecthomas/tsk/internal/project"
@@ -24,7 +25,8 @@ import (
 
 type cli struct {
 	project.Config `embed:""`
-	Log            logger.Config `embed:""`
+	Library        library.Config `embed:""`
+	Log            logger.Config  `embed:""`
 
 	Lint  lintCommand  `cmd:"" default:"withargs" help:"Lint packages with every enabled analyzer."`
 	Test  testCommand  `cmd:"" help:"Run each analyzer against the testdata beside its scripts."`
@@ -33,6 +35,9 @@ type cli struct {
 	// Named for the command because the embedded project.Config owns the
 	// Config field name.
 	ConfigCommand configCommand `cmd:"" name:"config" help:"Print a .tsk/config.toml documenting every analyzer and config option, set to their defaults."`
+	List          listCommand   `cmd:"" help:"List every analyzer, whether it is enabled, and where it is defined."`
+	Get           getCommand    `cmd:"" help:"Add or update linter libraries, and pin every import in the lock file."`
+	Sync          syncCommand   `cmd:"" help:"Download every locked linter library missing from the cache."`
 }
 
 type lintCommand struct {
@@ -41,8 +46,8 @@ type lintCommand struct {
 	Diff        bool `help:"With --fix, print a unified diff instead of updating files."`
 }
 
-func (l lintCommand) Run(ctx context.Context, log *slog.Logger, c *project.Config) error {
-	p, err := project.Load(ctx, log, linters.Scripts, *c)
+func (l lintCommand) Run(ctx context.Context, log *slog.Logger, c *project.Config, cache *library.Cache) error {
+	p, err := project.Load(ctx, log, linters.Scripts, *c, cache)
 	if err != nil {
 		return errors.WithStack(err)
 	}
@@ -83,8 +88,8 @@ func (l lintCommand) flagArgs() []string {
 
 type testCommand struct{}
 
-func (testCommand) Run(ctx context.Context, log *slog.Logger, c *project.Config) error {
-	p, err := project.Load(ctx, log, linters.Scripts, *c)
+func (testCommand) Run(ctx context.Context, log *slog.Logger, c *project.Config, cache *library.Cache) error {
+	p, err := project.Load(ctx, log, linters.Scripts, *c, cache)
 	if err != nil {
 		return errors.WithStack(err)
 	}
@@ -93,8 +98,8 @@ func (testCommand) Run(ctx context.Context, log *slog.Logger, c *project.Config)
 
 type checkCommand struct{}
 
-func (checkCommand) Run(ctx context.Context, log *slog.Logger, c *project.Config) error {
-	p, err := project.Load(ctx, log, linters.Scripts, *c)
+func (checkCommand) Run(ctx context.Context, log *slog.Logger, c *project.Config, cache *library.Cache) error {
+	p, err := project.Load(ctx, log, linters.Scripts, *c, cache)
 	if err != nil {
 		return errors.WithStack(err)
 	}
@@ -108,16 +113,16 @@ func (checkCommand) Run(ctx context.Context, log *slog.Logger, c *project.Config
 
 type initCommand struct{}
 
-func (initCommand) Run(c *project.Config) error {
-	return errors.WithStack(project.WriteEditorFiles(*c))
+func (initCommand) Run(ctx context.Context, c *project.Config, cache *library.Cache) error {
+	return errors.WithStack(project.WriteEditorFiles(ctx, *c, cache))
 }
 
 type configCommand struct {
 	Analyzers []string `arg:"" optional:"" help:"Analyzers to describe. Defaults to all."`
 }
 
-func (d configCommand) Run(ctx context.Context, log *slog.Logger, c *project.Config) error {
-	p, err := project.Load(ctx, log, linters.Scripts, *c)
+func (d configCommand) Run(ctx context.Context, log *slog.Logger, c *project.Config, cache *library.Cache) error {
+	p, err := project.Load(ctx, log, linters.Scripts, *c, cache)
 	if err != nil {
 		return errors.WithStack(err)
 	}
@@ -131,6 +136,34 @@ func (d configCommand) Run(ctx context.Context, log *slog.Logger, c *project.Con
 	return errors.WithStack(docs.TOML(os.Stdout, analyzers, colour))
 }
 
+type listCommand struct{}
+
+func (listCommand) Run(ctx context.Context, log *slog.Logger, c *project.Config, cache *library.Cache) error {
+	p, err := project.Load(ctx, log, linters.Scripts, *c, cache)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+	analyzers, err := p.Describe(nil)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+	return errors.WithStack(docs.List(os.Stdout, analyzers))
+}
+
+type getCommand struct {
+	Libraries []library.Import `arg:"" optional:"" help:"Libraries to add or update, as repository[@version][//dir]. Without a version, the highest semver tag or the default branch. Without libraries, only reconcile the lock file with the config's imports."`
+}
+
+func (g getCommand) Run(ctx context.Context, log *slog.Logger, c *project.Config, cache *library.Cache) error {
+	return errors.WithStack(project.Get(ctx, log, *c, cache, g.Libraries, os.Stdout))
+}
+
+type syncCommand struct{}
+
+func (syncCommand) Run(ctx context.Context, c *project.Config, cache *library.Cache) error {
+	return errors.WithStack(project.Sync(ctx, *c, cache))
+}
+
 func main() {
 	ctx := context.Background()
 	var config cli
@@ -142,5 +175,12 @@ func main() {
 	}
 	resolved, err := config.Config.Resolve(home)
 	kctx.FatalIfErrorf(err)
-	kctx.FatalIfErrorf(kctx.Run(&resolved, logger.New(config.Log, os.Stderr)))
+	userCache := None[string]()
+	if dir, err := os.UserCacheDir(); err == nil {
+		userCache = Some(dir)
+	}
+	cacheConfig, err := config.Library.Resolve(userCache)
+	kctx.FatalIfErrorf(err)
+	log := logger.New(config.Log, os.Stderr)
+	kctx.FatalIfErrorf(kctx.Run(&resolved, log, library.NewCache(cacheConfig, log)))
 }

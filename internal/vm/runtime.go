@@ -14,6 +14,7 @@ import (
 	"github.com/grafana/sobek"
 
 	"github.com/alecthomas/tsk/internal/bindings"
+	"github.com/alecthomas/tsk/internal/compile"
 	"github.com/alecthomas/tsk/internal/naming"
 )
 
@@ -21,6 +22,7 @@ import (
 // one goroutine at a time because sobek runtimes are not synchronised.
 type Runtime struct {
 	rt          *sobek.Runtime
+	program     *compile.Program
 	bridge      *bridge
 	definitions map[string]definition
 	order       []string
@@ -60,6 +62,7 @@ func New(modules *Modules, logger *slog.Logger) (*Runtime, error) {
 	rt.SetMaxCallStackSize(4096)
 	r := &Runtime{
 		rt:          rt,
+		program:     modules.Program(),
 		bridge:      newBridge(rt, bindings.TupleResults(), extensions()),
 		definitions: map[string]definition{},
 		hosts:       map[*sobek.Object]string{},
@@ -192,6 +195,7 @@ func (r *Runtime) combine(call sobek.FunctionCall) sobek.Value {
 
 // registerAnalyzer records a definition. A later definition with the same
 // name replaces an earlier one, so project scripts override compiled-in ones.
+// Two libraries defining one name is an error, as neither is meant to win.
 func (r *Runtime) registerAnalyzer(call sobek.FunctionCall) sobek.Value {
 	handle := call.Argument(0).ToObject(r.rt)
 	object := call.Argument(1).ToObject(r.rt)
@@ -200,12 +204,18 @@ func (r *Runtime) registerAnalyzer(call sobek.FunctionCall) sobek.Value {
 		panic(r.bridge.typeError("analyzer name must be a non-empty string"))
 	}
 	key := name.String()
-	if _, exists := r.definitions[key]; exists {
+	module := r.callerModule()
+	if previous, exists := r.definitions[key]; exists {
+		earlier, _ := r.program.Source(previous.module)
+		later, _ := r.program.Source(module)
+		if earlier != later && r.program.IsLibrary(earlier) && r.program.IsLibrary(later) {
+			panic(r.bridge.typeError("analyzer %s is defined by both libraries %s and %s", key, earlier, later))
+		}
 		r.overridden = append(r.overridden, key)
 	} else {
 		r.order = append(r.order, key)
 	}
-	r.definitions[key] = definition{handle: handle, object: object, schema: int(call.Argument(2).ToInteger()), module: r.callerModule()}
+	r.definitions[key] = definition{handle: handle, object: object, schema: int(call.Argument(2).ToInteger()), module: module}
 	return sobek.Undefined()
 }
 
