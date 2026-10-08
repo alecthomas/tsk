@@ -87,6 +87,11 @@ declare module "tsk" {
      * go/analysis does, for analyzers that need facts about dependencies.
      */
     readonly scope?: "module" | "all";
+    /**
+     * Whether the analyzer reports findings in _test.go files. Set false for
+     * linters whose rules do not apply to tests. Defaults to true.
+     */
+    readonly tests?: boolean;
     /** Returns the result other analyzers read with resultOf; it must be JSON. */
     run(pass: Pass<C>): unknown;
   }

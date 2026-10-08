@@ -133,6 +133,7 @@ needed. The definition mirrors `analysis.Analyzer`:
   `defineAnalyzer`, which TypeScript could not infer alongside an explicit
   config type.
 - `runDespiteErrors`
+- `tests`: `false` drops the analyzer's findings in `_test.go` files.
 - `scope`: `"module"`, the default, or `"all"`; see
   [Pass binding and runtime pool](#pass-binding-and-runtime-pool).
 - `run(pass)`, whose return value is the analyzer's JSON result.
@@ -173,6 +174,14 @@ run: `disable` lists analyzers not to run, or `disable-all = true` with
 `enable` lists the only ones that do. Combinations that would ignore a setting
 are errors. Disabled analyzers still run when another requires them. The file
 is parsed with go-toml, so decoding errors give a line and column.
+
+**Filtered findings.** As golangci-lint does by default, findings in generated
+files are dropped, recognised by Go's convention as `ast.IsGenerated` checks.
+`lint-generated = true` keeps them. Findings in `_test.go` files are dropped for analyzers defined with
+`tests: false`, those listed in `skip-tests`, or all with `no-tests = true`.
+Filtering happens when a script reports, so test packages are still analyzed
+for analyzers that need them. Every setting defaults to its zero value, so a
+`config.File` literal never filters by surprise.
 
 **Declaring a config.** The script passes the type explicitly, as in
 `defineAnalyzer<Config>({ config: defaults, run(pass) { ... } })`.

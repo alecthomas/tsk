@@ -126,7 +126,13 @@ func (e *Engine) Analyzers(file config.File, mainModules []string) ([]*analysis.
 		if err != nil {
 			return nil, err
 		}
-		environment := &vm.Environment{Config: resolved, Facts: factTypes[metadata.Name], Analyzers: map[string]*analysis.Analyzer{}}
+		environment := &vm.Environment{
+			Config:        resolved,
+			Facts:         factTypes[metadata.Name],
+			Analyzers:     map[string]*analysis.Analyzer{},
+			SkipGenerated: !file.LintGenerated,
+			SkipTests:     metadata.SkipTests || file.NoTests || slices.Contains(file.SkipTests, metadata.Name),
+		}
 		environments[metadata.Name] = environment
 		analyzers[metadata.Name] = e.analyzer(metadata, environment, mainModules, timer)
 	}
@@ -163,7 +169,7 @@ func (e *Engine) checkNames(file config.File) error {
 			return errors.Errorf("table %s names an unknown analyzer", name)
 		}
 	}
-	for key, names := range map[string][]string{"disable": file.Disable, "enable": file.Enable} {
+	for key, names := range map[string][]string{"disable": file.Disable, "enable": file.Enable, "skip-tests": file.SkipTests} {
 		for _, name := range names {
 			if !slices.Contains(known, name) {
 				return errors.Errorf("%s names unknown analyzer %s", key, name)

@@ -349,6 +349,9 @@ type Metadata struct {
 	Requires         []Requirement
 	Facts            []string
 	RunDespiteErrors bool
+	// SkipTests is set when the analyzer declares tests: false, so it reports
+	// nothing in _test.go files.
+	SkipTests bool
 	// AllPackages is set when the analyzer's scope is "all": it also runs on
 	// packages outside the module being linted.
 	AllPackages bool
@@ -380,6 +383,7 @@ func (r *Runtime) Metadata(name string) (Metadata, error) {
 		return Metadata{}, errors.Errorf("analyzer %s: run must be a function", name)
 	}
 	metadata.RunDespiteErrors = !isAbsent(object.Get("runDespiteErrors")) && object.Get("runDespiteErrors").ToBoolean()
+	metadata.SkipTests = !isAbsent(object.Get("tests")) && !object.Get("tests").ToBoolean()
 	scope, err := r.stringProperty(object, "scope", false)
 	if err != nil {
 		return Metadata{}, errors.Errorf("analyzer %s: %v", name, err)

@@ -31,6 +31,11 @@ type File struct {
 	Disable    []string          `toml:"disable" help:"Analyzers that do not run."`
 	DisableAll bool              `toml:"disable-all" help:"Turn every analyzer off except those listed in enable."`
 	Enable     []string          `toml:"enable" help:"Analyzers that run when disable-all is true."`
+	// LintGenerated keeps findings in generated files, which golangci-lint
+	// also drops by default.
+	LintGenerated bool     `toml:"lint-generated" help:"Report findings in generated files, which are skipped by default."`
+	NoTests       bool     `toml:"no-tests" help:"Report no findings in _test.go files, as --no-test does."`
+	SkipTests     []string `toml:"skip-tests" help:"Analyzers that report no findings in _test.go files."`
 	// Tables maps analyzer names to their raw tables.
 	Tables map[string]map[string]any `toml:"-"`
 }

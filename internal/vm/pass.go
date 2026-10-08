@@ -2,9 +2,11 @@ package vm
 
 import (
 	"encoding/json"
+	"go/ast"
 	"go/token"
 	"go/types"
 	"reflect"
+	"strings"
 
 	"github.com/alecthomas/errors"
 	"github.com/grafana/sobek"
@@ -23,6 +25,12 @@ type Environment struct {
 	// Analyzers maps required analyzers by name. Script analyzers' results are
 	// JSON; host analyzers' results are Go values.
 	Analyzers map[string]*analysis.Analyzer
+	// SkipGenerated drops diagnostics in generated files, whose code users do
+	// not edit by hand.
+	SkipGenerated bool
+	// SkipTests drops diagnostics in _test.go files. Test packages are still
+	// analyzed, since other analyzers may need them.
+	SkipTests bool
 }
 
 // passBinding implements the Pass methods for one run.
@@ -34,10 +42,12 @@ type passBinding struct {
 	pass    *analysis.Pass
 	// names maps pooled fact types back to fact names.
 	names map[reflect.Type]string
+	// generated caches whether each file is generated.
+	generated map[*ast.File]bool
 }
 
 func newPassBinding(rt *sobek.Runtime, b *bridge, helpers jsonHelpers, env Environment) *passBinding {
-	p := &passBinding{rt: rt, bridge: b, helpers: helpers, env: env, pass: env.Pass, names: map[reflect.Type]string{}}
+	p := &passBinding{rt: rt, bridge: b, helpers: helpers, env: env, pass: env.Pass, names: map[reflect.Type]string{}, generated: map[*ast.File]bool{}}
 	for name, t := range env.Facts {
 		p.names[t] = name
 	}
@@ -126,8 +136,34 @@ func (p *passBinding) report(call sobek.FunctionCall) sobek.Value {
 			Message: p.text(related, "message"),
 		})
 	}
-	p.pass.Report(diagnostic)
+	if !p.skipped(diagnostic.Pos) {
+		p.pass.Report(diagnostic)
+	}
 	return sobek.Undefined()
+}
+
+// skipped reports whether the environment drops diagnostics at pos.
+func (p *passBinding) skipped(pos token.Pos) bool {
+	if p.env.SkipTests && strings.HasSuffix(p.pass.Fset.Position(pos).Filename, "_test.go") {
+		return true
+	}
+	return p.env.SkipGenerated && p.inGeneratedFile(pos)
+}
+
+// inGeneratedFile reports whether pos lies in a generated file of the package.
+func (p *passBinding) inGeneratedFile(pos token.Pos) bool {
+	for _, file := range p.pass.Files {
+		if file.FileStart <= pos && pos <= file.FileEnd {
+			generated, ok := p.generated[file]
+			if !ok {
+				// Go's convention, as golangci-lint's default "strict" mode uses.
+				generated = ast.IsGenerated(file)
+				p.generated[file] = generated
+			}
+			return generated
+		}
+	}
+	return false
 }
 
 func (p *passBinding) pos(object *sobek.Object, name string) token.Pos {
