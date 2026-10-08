@@ -1,0 +1,9 @@
+[[case]]
+name = "default"
+packages = ["p"]
+
+[[case]]
+name = "skip-regexp"
+packages = ["q"]
+[case.config]
+skip-regexp = "^$"
