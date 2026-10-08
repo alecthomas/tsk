@@ -258,14 +258,16 @@ func (e *Engine) analyzer(metadata vm.Metadata, environment *vm.Environment, mai
 			return json.RawMessage("null"), nil
 		}
 		logger := e.logger.With("analyzer", metadata.Name, "package", pass.Pkg.Path())
-		logger.Debug("Analyzer started")
-		start := time.Now()
+		// The driver calls Run for every package at once, so a run only starts
+		// once the pool, which bounds concurrency, lends it a runtime.
+		queued := time.Now()
 		runtime, err := e.pool.get()
 		if err != nil {
 			return nil, err
 		}
-		logger.Debug("Acquired runtime", "wait", time.Since(start))
 		defer e.pool.put(runtime)
+		start := time.Now()
+		logger.Debug("Analyzer started", "wait", start.Sub(queued))
 		// A copy, so the driver's pass keeps its own Report.
 		filtered := *pass
 		filtered.Report = nolint.Reporter(pass, metadata.Name)

@@ -21,6 +21,12 @@ import (
 func remotes(t *testing.T) string {
 	t.Helper()
 	root := t.TempDir()
+	// Git hooks export variables such as GIT_DIR naming the repository being
+	// pushed; left set, test git commands would modify it.
+	for _, key := range strings.Fields(git(t, root, "rev-parse", "--local-env-vars")) {
+		t.Setenv(key, "")
+		assert.NoError(t, os.Unsetenv(key))
+	}
 	for key, value := range map[string]string{
 		"GIT_CONFIG_NOSYSTEM": "1",
 		"GIT_CONFIG_GLOBAL":   os.DevNull,
