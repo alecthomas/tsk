@@ -2,6 +2,7 @@
 
 # The TypeScript shim is a separate module, so Go tools skip it from the root.
 let go-module = [".", "internal/typescript"]
+let root = exec("git rev-parse --show-toplevel") | trim
 
 # Analyzers report a compile error once per dependent package, so compile first.
 build-go[go-module] = go.build {
@@ -32,10 +33,10 @@ lint-go[go-module] = go.lint {
 }
 # Lint this repository with its own compiled-in script linters.
 lint-tsk[go-module] = exec.test {
-  command = "tsk ./..."
+  command = "#{root}/#{tsk-bin.path} ./..."
   dir = go-module
-  inputs = ["#{go-module}/**/*.go", "#{go-module}/go.mod", "#{go-module}/go.sum", "**/*.go", "linters/*.ts", "internal/hostapi/*", "internal/bindings/dts/*.d.ts", "scripts/tsk"]
-  depends_on = [build-go]
+  inputs = ["#{go-module}/**/*.go", "#{go-module}/go.mod", "#{go-module}/go.sum", "**/*.go", "linters/*.ts", "internal/hostapi/*", "internal/bindings/dts/*.d.ts"]
+  depends_on = [build-go, tsk-bin]
 }
 
 # Formatting also sorts imports, which Biome counts as an assist, not a lint.
