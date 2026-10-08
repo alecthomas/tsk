@@ -13,12 +13,9 @@ import (
 )
 
 // WriteEditorFiles writes the host declarations to types/ in the scripts
-// directory, and a tsconfig.json matching the options scripts are checked with.
+// directory, and a tsconfig.json matching the options scripts are checked
+// with. c must be resolved.
 func WriteEditorFiles(c Config) error {
-	c, err := c.Resolve()
-	if err != nil {
-		return err
-	}
 	declarations, err := compile.Declarations()
 	if err != nil {
 		return errors.WithStack(err)

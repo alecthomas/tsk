@@ -13,6 +13,7 @@ import (
 	"strings"
 
 	"github.com/alecthomas/errors"
+	. "github.com/alecthomas/types/optional"
 	"golang.org/x/tools/go/analysis"
 
 	"github.com/alecthomas/tsktsk/internal/compile"
@@ -21,44 +22,55 @@ import (
 	"github.com/alecthomas/tsktsk/internal/engine"
 )
 
-// ScriptsDir is the scripts directory's name, found beside the nearest go.mod.
+// ScriptsDir is the scripts directory's name.
 const ScriptsDir = ".tsk"
 
 // Config locates the scripts directory and config file.
 type Config struct {
-	Dir    string `help:"Scripts directory. Defaults to .tsk beside the nearest go.mod." type:"path"`
-	Config string `help:"Config file. Defaults to .tsk.toml beside the scripts directory." type:"path"`
+	Dir    string `help:"Scripts directory. Defaults to the nearest .tsk above the working directory, up to the home directory." type:"path"`
+	Config string `help:"Config file. Defaults to config.toml in the scripts directory." type:"path"`
 }
 
-// Resolve fills in default locations from the nearest go.mod above the
-// working directory, or the working directory itself.
-func (c Config) Resolve() (Config, error) {
+// Resolve finds the nearest .tsk searching up from the working directory to home,
+// else defaults to beside the nearest go.mod or the working directory.
+func (c Config) Resolve(home Option[string]) (Config, error) {
+	cwd, err := os.Getwd()
+	if err != nil {
+		return Config{}, errors.Wrap(err, "find working directory")
+	}
 	if c.Dir == "" {
-		root, err := moduleRoot()
-		if err != nil {
-			return Config{}, err
+		dir, found := findUp(cwd, home, ScriptsDir, fs.FileInfo.IsDir)
+		if !found {
+			root := cwd
+			if modFile, hasModule := findUp(cwd, home, "go.mod", isRegular); hasModule {
+				root = filepath.Dir(modFile)
+			}
+			dir = filepath.Join(root, ScriptsDir)
 		}
-		c.Dir = filepath.Join(root, ScriptsDir)
+		c.Dir = dir
 	}
 	if c.Config == "" {
-		c.Config = filepath.Join(filepath.Dir(c.Dir), config.FileName)
+		c.Config = filepath.Join(c.Dir, config.FileName)
 	}
 	return c, nil
 }
 
-func moduleRoot() (string, error) {
-	cwd, err := os.Getwd()
-	if err != nil {
-		return "", errors.Wrap(err, "find working directory")
-	}
-	for dir := cwd; ; dir = filepath.Dir(dir) {
-		if _, err := os.Stat(filepath.Join(dir, "go.mod")); err == nil {
-			return dir, nil
+// findUp returns the path of the first entry called name that match accepts,
+// in start or its ancestors, stopping after stop or at the filesystem root.
+func findUp(start string, stop Option[string], name string, match func(info fs.FileInfo) bool) (path string, found bool) {
+	for dir := start; ; dir = filepath.Dir(dir) {
+		candidate := filepath.Join(dir, name)
+		if info, err := os.Stat(candidate); err == nil && match(info) {
+			return candidate, true
 		}
-		if filepath.Dir(dir) == dir {
-			return cwd, nil
+		if stopDir, ok := stop.Get(); (ok && dir == filepath.Clean(stopDir)) || filepath.Dir(dir) == dir {
+			return "", false
 		}
 	}
+}
+
+func isRegular(info fs.FileInfo) bool {
+	return info.Mode().IsRegular()
 }
 
 // Project is a loaded set of scripts with its config file.
@@ -71,14 +83,9 @@ type Project struct {
 	mainModules []string
 }
 
-// Load compiles the compiled-in scripts and, if present, the scripts
-// directory, which overrides them, and reads the config file. Script console
-// output goes to logger.
+// Load compiles the compiled-in scripts, overridden by the scripts directory if present,
+// and reads the config file. c must be resolved. Script console output goes to logger.
 func Load(ctx context.Context, logger *slog.Logger, builtin fs.FS, c Config) (*Project, error) {
-	c, err := c.Resolve()
-	if err != nil {
-		return nil, err
-	}
 	sources := []compile.Source{{Name: "builtin", FS: builtin}}
 	if info, err := os.Stat(c.Dir); err == nil && info.IsDir() {
 		sources = append(sources, compile.Source{Name: "project", FS: os.DirFS(c.Dir)})

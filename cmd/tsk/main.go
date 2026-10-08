@@ -10,6 +10,7 @@ import (
 
 	"github.com/alecthomas/errors"
 	"github.com/alecthomas/kong"
+	. "github.com/alecthomas/types/optional"
 	"golang.org/x/term"
 	"golang.org/x/tools/go/analysis/multichecker"
 
@@ -31,7 +32,7 @@ type cli struct {
 	Init  initCommand  `cmd:"" help:"Write declarations and tsconfig.json for editors into the scripts directory."`
 	// Named for the command because the embedded project.Config owns the
 	// Config field name.
-	ConfigCommand configCommand `cmd:"" name:"config" help:"Print a .tsk.toml documenting every analyzer and config option, set to their defaults."`
+	ConfigCommand configCommand `cmd:"" name:"config" help:"Print a .tsk/config.toml documenting every analyzer and config option, set to their defaults."`
 }
 
 type lintCommand struct {
@@ -125,7 +126,7 @@ func (d configCommand) Run(ctx context.Context, log *slog.Logger, c *project.Con
 		return errors.WithStack(err)
 	}
 	// Colour only a terminal, so redirected output, such as a generated
-	// .tsk.toml, stays plain. NO_COLOR follows the no-color.org convention.
+	// .tsk/config.toml, stays plain. NO_COLOR follows the no-color.org convention.
 	colour := term.IsTerminal(int(os.Stdout.Fd())) && os.Getenv("NO_COLOR") == ""
 	return errors.WithStack(docs.TOML(os.Stdout, analyzers, colour))
 }
@@ -135,5 +136,11 @@ func main() {
 	var config cli
 	kctx := kong.Parse(&config, kong.Description("A go/analysis harness for linters written in TypeScript."),
 		kong.BindTo(ctx, (*context.Context)(nil)))
-	kctx.FatalIfErrorf(kctx.Run(&config.Config, logger.New(config.Log, os.Stderr)))
+	home := None[string]()
+	if dir, err := os.UserHomeDir(); err == nil {
+		home = Some(dir)
+	}
+	resolved, err := config.Config.Resolve(home)
+	kctx.FatalIfErrorf(err)
+	kctx.FatalIfErrorf(kctx.Run(&resolved, logger.New(config.Log, os.Stderr)))
 }

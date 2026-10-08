@@ -1,4 +1,4 @@
-// Package docs renders analyzer documentation as a .tsk.toml: each
+// Package docs renders analyzer documentation as a .tsk/config.toml: each
 // analyzer's description, and each config option's default and JSDoc comment.
 package docs
 
@@ -36,7 +36,7 @@ type Config struct {
 	Defaults any
 }
 
-// TOML writes a .tsk.toml with every analyzer's table, its options set
+// TOML writes a .tsk/config.toml with every analyzer's table, its options set
 // to their defaults and documented in comments. Arrays of tables are written as
 // multi-line inline tables, a TOML 1.1 form, so each field can carry its
 // comment. An empty one gets a placeholder entry, so the output is a reference

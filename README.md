@@ -22,7 +22,7 @@ go build -o ~/go/bin/tsk ./cmd/tsk
 
 ## Quick start
 
-Put this in `.tsk/nopanic.ts` at the root of your Go module:
+Put this in `.tsk/nopanic.ts` at the root of your repository:
 
 ```ts
 import { defineAnalyzer } from "tsk";
@@ -52,7 +52,7 @@ export default defineAnalyzer<Config>({
 });
 ```
 
-Optionally, configure it in `.tsk.toml` beside the `.tsk/` directory:
+Optionally, configure it in `.tsk/config.toml`:
 
 ```toml
 [nopanic]
@@ -81,17 +81,19 @@ linters built into `tsk`; `tsk config` lists every linter and its options.
 |---|---|
 | `tsk [lint] [packages...]` | Lints packages with every enabled linter. `--fix` applies suggested fixes, `--diff` prints them instead, `--json` emits JSON, `-c N` shows N lines of context, and `--no-test` skips test files. |
 | `tsk test` | Runs each linter against its test data. See [Writing tests](#writing-tests). |
-| `tsk check` | Type-checks scripts and validates `.tsk.toml`. |
+| `tsk check` | Type-checks scripts and validates `.tsk/config.toml`. |
 | `tsk init` | Writes the script declarations to `.tsk/types/` and a `tsconfig.json` to `.tsk/`, for editor completion and type checking. |
-| `tsk config [linters...]` | Prints a `.tsk.toml` documenting each linter and option, set to its default. |
+| `tsk config [linters...]` | Prints a `.tsk/config.toml` documenting each linter and option, set to its default. |
 
-`.tsk/` and `.tsk.toml` are found beside the nearest `go.mod` above the
-working directory. `--dir` and `--config` override them. `--log-level` sets the
-level of script and `tsk` logging, which defaults to `error`.
+`tsk` uses the nearest `.tsk/` at or above the working directory, searching up
+to your home directory, so modules in one repository can share it. If there is
+none, `tsk init` creates it beside the nearest `go.mod`. The config file is
+`config.toml` inside it. `--dir` and `--config` override them. `--log-level`
+sets the level of script and `tsk` logging, which defaults to `error`.
 
 ### Configuration
 
-`.tsk.toml` holds one table per linter, named after it, plus settings that
+`.tsk/config.toml` holds one table per linter, named after it, plus settings that
 choose which linters run:
 
 ```toml
@@ -139,7 +141,7 @@ Calling `defineAnalyzer` registers a linter. Its definition mirrors
 
 | Field | Purpose |
 |---|---|
-| `name` | A Go identifier. It names the linter in `.tsk.toml`, `//nolint` comments, and output. |
+| `name` | A Go identifier. It names the linter in `.tsk/config.toml`, `//nolint` comments, and output. |
 | `doc` | The documentation. The first line is a summary. |
 | `url` | Optional link to more documentation. |
 | `config` | Default option values. See [Options](#options). |
@@ -162,7 +164,7 @@ Options may be strings, numbers, booleans, unions of string literals, arrays,
 objects with known properties, and `Record<string, T>`. A JSDoc comment on a
 property documents it in `tsk config`; a plain `//` comment does not.
 
-In `.tsk.toml`, property names become kebab-case, so `allowReads` is set as
+In `.tsk/config.toml`, property names become kebab-case, so `allowReads` is set as
 `allow-reads`. Values from the file are merged over the defaults: objects key
 by key, while arrays replace. `pass.config` holds the result and is read-only.
 
@@ -364,5 +366,5 @@ message = "return an error instead"
 ```
 
 Each case needs a `name` and package patterns. `config` sets options as in
-`.tsk.toml`, and `dir` points the case at a subdirectory of the test data,
+`.tsk/config.toml`, and `dir` points the case at a subdirectory of the test data,
 such as a separate module.

@@ -11,7 +11,7 @@ and results all working.
 
 Scripts load from a `.tsk` directory found by walking up from the
 working directory, and from TypeScript sources compiled into the binary. Each
-analyzer may declare a typed config, populated from `.tsk.toml`.
+analyzer may declare a typed config, populated from `.tsk/config.toml`.
 
 The ported `optionalnil` and `encapsulation` linters in `linters/` are the
 acceptance tests. They pass their original fixtures and report exactly what the
@@ -163,9 +163,9 @@ export default defineAnalyzer({
 ### Config
 
 Config replaces per-analyzer flags. Each analyzer declares a TypeScript config
-type, and the host populates it from `.tsk.toml`.
+type, and the host populates it from `.tsk/config.toml`.
 
-**File.** `.tsk.toml` sits next to `.tsk/`. The global
+**File.** `config.toml` sits inside `.tsk/`. The global
 `-config <path>` flag overrides discovery. The file holds one table per
 analyzer, named after it, plus top-level settings choosing which analyzers
 run: `disable` lists analyzers not to run, or `disable-all = true` with
@@ -387,7 +387,7 @@ Kong:
 - `check`: type-checks scripts and validates the config.
 - `init`: writes the declarations to `<scripts>/types/` and a matching
   `tsconfig.json`.
-- `config`: prints a `.tsk.toml` documenting analyzers: where each is
+- `config`: prints a `.tsk/config.toml` documenting analyzers: where each is
   defined, whether the config enables it, and each option at its default with
   its JSDoc comment. Arrays of tables are multi-line inline tables, a TOML 1.1
   form, so each field carries its comment; an empty one shows a placeholder
@@ -395,8 +395,11 @@ Kong:
   edit, not a config that loads unchanged. The defining script comes from the
   JavaScript call stack when `defineAnalyzer` runs.
 
-**Discovery.** `.tsk/` and `.tsk.toml` are found beside the
-nearest `go.mod` above the working directory. `--dir` and `--config` override
+**Discovery.** `.tsk/` is the nearest found by walking up from the working
+directory, stopping at the home directory, so a repository with several
+modules can share one. Keeping the config inside it means scripts and config
+are always found together. Without a `.tsk/`, it defaults to beside the
+nearest `go.mod`, or the working directory. `--dir` and `--config` override
 them.
 
 golangci-lint and `go vet -vettool` integration are out of scope.

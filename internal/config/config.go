@@ -1,4 +1,4 @@
-// Package config loads .tsk.toml and decodes each analyzer's table
+// Package config loads .tsk/config.toml and decodes each analyzer's table
 // against the config type its script declares.
 package config
 
@@ -16,8 +16,8 @@ import (
 	"github.com/alecthomas/tsktsk/internal/naming"
 )
 
-// FileName is the config file's name, found next to the scripts directory.
-const FileName = ".tsk.toml"
+// FileName is the config file's name within the scripts directory.
+const FileName = "config.toml"
 
 // File is a parsed config file. Each top-level setting's help tag documents it
 // in tsk config.

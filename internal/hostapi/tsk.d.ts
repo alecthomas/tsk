@@ -73,7 +73,7 @@ declare module "tsk" {
   type ConfigProperty<C> = {} extends C ? { readonly config?: NoInfer<C> } : { readonly config: NoInfer<C> };
 
   export interface AnalyzerDefinition<C> {
-    /** A Go identifier, also the name of the analyzer's table in .tsk.toml. */
+    /** A Go identifier, also the name of the analyzer's table in .tsk/config.toml. */
     readonly name: string;
     readonly doc: string;
     readonly url?: string;
