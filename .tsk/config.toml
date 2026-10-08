@@ -4,3 +4,5 @@ imports = [
 
 # Lint with the linters in this commit rather than a published version.
 replace = { "github.com/alecthomas/tsk//linters" = "../linters" }
+
+# Settings below mirror .golangci.yml.
