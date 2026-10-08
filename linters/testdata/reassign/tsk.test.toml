@@ -1,0 +1,9 @@
+[[case]]
+name = "default"
+packages = ["p"]
+
+[[case]]
+name = "patterns"
+packages = ["patterns"]
+[case.config]
+patterns = ["Default.*", 'net/http\.DefaultTransport']

@@ -43,3 +43,6 @@ forbid = [
 
 [perfsprint]
 strconcat = false
+
+[reassign]
+patterns = [".*"]
