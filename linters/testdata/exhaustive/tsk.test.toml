@@ -1,0 +1,10 @@
+[[case]]
+name = "default"
+packages = ["enums", "use"]
+
+[[case]]
+name = "maps-and-default"
+packages = ["maps"]
+[case.config]
+check = ["switch", "map"]
+default-signifies-exhaustive = true

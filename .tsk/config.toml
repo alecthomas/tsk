@@ -11,3 +11,6 @@ skip-tests = ["bodyclose", "dupl", "errcheck"]
 
 [errcheck]
 check-blank = true
+
+[exhaustive]
+check = ["switch", "map"]
