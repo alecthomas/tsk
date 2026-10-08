@@ -1,0 +1,37 @@
+// Adapted from github.com/golangci/go-printf-func-name's tests, MIT License.
+package p
+
+func notPrintfFuncAtAll() {}
+
+func funcWithEllipsis(args ...interface{}) {}
+
+func printfLikeButWithStrings(format string, args ...string) {}
+
+func printfLikeButWithBadFormat(format int, args ...interface{}) {}
+
+func secondArgIsNotEllipsis(format string, arg int) {}
+
+func printfLikeButWithExtraInterfaceMethods(format string, args ...interface {
+	String() string
+}) {
+}
+
+func prinfLikeFuncf(format string, args ...interface{}) {}
+
+func prinfLikeFuncWithReturnValue(format string, args ...interface{}) string {
+	return ""
+}
+
+func prinfLikeFuncWithAnotherFormatArgName(msg string, args ...interface{}) {}
+
+func prinfLikeFunc(format string, args ...interface{}) {} // want "^printf-like formatting function 'prinfLikeFunc' should be named 'prinfLikeFuncf'$"
+
+func prinfLikeFuncWithExtraArgs1(extraArg, format string, args ...interface{}) {} // want "printf-like formatting function"
+
+func prinfLikeFuncWithExtraArgs2(extraArg int, format string, args ...interface{}) {} // want "printf-like formatting function"
+
+func prinfLikeFuncAny(format string, args ...any) {} // want "^printf-like formatting function 'prinfLikeFuncAny' should be named 'prinfLikeFuncAnyf'$"
+
+func prinfLikeFuncWithExtraArgs1Any(extraArg, format string, args ...any) {} // want "printf-like formatting function"
+
+func prinfLikeFuncWithExtraArgs2Any(extraArg int, format string, args ...any) {} // want "printf-like formatting function"
