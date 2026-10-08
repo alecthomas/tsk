@@ -1,0 +1,12 @@
+[[case]]
+name = "default"
+packages = ["p"]
+
+[[case]]
+name = "options"
+packages = ["options"]
+[case.config]
+strconcat = false
+err-error = true
+int-conversion = false
+loop-other-ops = true
