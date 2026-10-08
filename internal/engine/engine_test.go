@@ -71,6 +71,46 @@ func f() *int {
 	analysistest.Run(t, dir, analyzers[0], "example")
 }
 
+const iterableScript = `import { defineAnalyzer, not } from "tsk";
+import { inspect } from "tsk/passes";
+import * as ast from "go/ast";
+
+export default defineAnalyzer({
+  name: "iterable",
+  doc: "report how GoIterable behaves",
+  requires: [inspect],
+  run(pass) {
+    const root = pass.resultOf(inspect).root();
+    const idents = () => root.preorder(ast.Ident);
+    const started = idents();
+    started.next();
+    const drained = idents();
+    drained.toArray();
+    const checks = [
+      idents().map((cursor) => (cursor.node() as ast.Ident).name).toArray().join(" ") === "example v int nil",
+      idents().some((cursor) => (cursor.node() as ast.Ident).name === "nil"),
+      idents().take(2).toArray().length === 2,
+      idents().filter(pass.typesInfo.isNil).toArray().length === 1,
+      started.filter(not(pass.typesInfo.isNil)).toArray().length === 2,
+      drained.toArray().length === 0,
+    ];
+    pass.report({ pos: pass.files[0].package, message: "checks: " + checks.join(",") });
+  },
+});
+`
+
+func TestGoIterable(t *testing.T) {
+	e := load(t, map[string]string{"iterable.ts": iterableScript})
+	analyzers, err := e.Analyzers(config.File{}, nil)
+	assert.NoError(t, err)
+	dir, cleanup, err := analysistest.WriteFiles(map[string]string{
+		"example/example.go": "package example // want \"checks: true,true,true,true,true,true\"\n\nvar v *int = nil\n",
+	})
+	assert.NoError(t, err)
+	defer cleanup()
+	analysistest.Run(t, dir, analyzers[0], "example")
+}
+
 func TestDisableAllEnable(t *testing.T) {
 	e := load(t, map[string]string{"nilident.ts": nilScript, "chatty.ts": consoleScript})
 	analyzers, err := e.Analyzers(config.File{DisableAll: true, Enable: []string{"chatty"}}, nil)

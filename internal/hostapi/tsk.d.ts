@@ -15,11 +15,12 @@ declare module "tsk" {
   import type * as token from "go/token";
   import type * as types from "go/types";
 
-  /** A lazy Go sequence, fetched from Go in batches. */
-  export interface GoIterable<T> extends Iterable<T> {
-    /** Keeps matching elements. A native predicate is evaluated in Go. */
-    filter(predicate: Predicate<T>): GoIterable<T>;
-    toArray(): T[];
+  /** A single-use iterator over a Go sequence, fetched from Go in batches. */
+  export interface GoIterable<T> extends IteratorObject<T, undefined, unknown> {
+    /** Keeps matching elements in Go, if iteration has not started. */
+    filter(predicate: NativePredicate<T>): GoIterable<T>;
+    filter<S extends T>(predicate: (value: T, index: number) => value is S): IteratorObject<S, undefined, unknown>;
+    filter(predicate: (value: T, index: number) => unknown): IteratorObject<T, undefined, unknown>;
   }
 
   /** A function implemented in Go; filtering with it never calls JavaScript per element. */

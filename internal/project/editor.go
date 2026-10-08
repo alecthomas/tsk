@@ -37,7 +37,7 @@ func WriteEditorFiles(c Config) error {
 			"strict":                     true,
 			"noEmit":                     true,
 			"target":                     "ES2020",
-			"lib":                        []string{"ES2020"},
+			"lib":                        []string{"ES2020", "ES2025.Iterator"},
 			"types":                      []string{},
 			"module":                     "ESNext",
 			"moduleResolution":           "bundler",

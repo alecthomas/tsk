@@ -28,8 +28,8 @@ type Program struct {
 	checker *checker.Checker
 }
 
-// NewProgram type-checks files as one strict ES2020 project with no DOM. Names are
-// absolute and slash-separated, and every file is a root. Any diagnostic is an error.
+// NewProgram type-checks files as one strict ES2020 project with ES2025 iterator helpers and no DOM.
+// Names are absolute and slash-separated, and every file is a root. Any diagnostic is an error.
 func NewProgram(ctx context.Context, files map[string]string) (*Program, error) {
 	tree := fstest.MapFS{}
 	for name, text := range files {
@@ -46,7 +46,7 @@ func NewProgram(ctx context.Context, files map[string]string) (*Program, error) 
 				Target:                     core.ScriptTargetES2020,
 				Module:                     core.ModuleKindESNext,
 				ModuleResolution:           core.ModuleResolutionKindBundler,
-				Lib:                        []string{"lib.es2020.d.ts"},
+				Lib:                        []string{"lib.es2020.d.ts", "lib.es2025.iterator.d.ts"},
 				Types:                      []string{},
 				Strict:                     core.TSTrue,
 				IsolatedModules:            core.TSTrue,

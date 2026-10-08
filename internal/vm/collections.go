@@ -181,12 +181,22 @@ func extensions() map[reflect.Type]map[string]reflect.Value {
 	}
 }
 
-func infoIsNil(info *types.Info, node ast.Node) bool {
-	expr, ok := node.(ast.Expr)
+// infoIsNil and infoIsType take any so that scripts calling them directly can
+// pass a cursor, as sequence filters can.
+func infoIsNil(info *types.Info, value any) bool {
+	expr, ok := asExpr(value)
 	return ok && info.Types[expr].IsNil()
 }
 
-func infoIsType(info *types.Info, node ast.Node) bool {
-	expr, ok := node.(ast.Expr)
+func infoIsType(info *types.Info, value any) bool {
+	expr, ok := asExpr(value)
 	return ok && info.Types[expr].IsType()
+}
+
+func asExpr(value any) (ast.Expr, bool) {
+	if cursor, ok := value.(inspector.Cursor); ok {
+		value = cursor.Node()
+	}
+	expr, ok := value.(ast.Expr)
+	return expr, ok
 }

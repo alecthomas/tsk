@@ -1,61 +1,59 @@
 // The "tsk" module. __tsk is the runtime's native bridge.
 const native = __tsk;
 
-// GoIterable pulls a Go sequence in batches, so iteration crosses into Go
-// once per batch rather than once per element.
-class GoIterable {
+// GoIterable is a single-use iterator, so the standard helpers apply. It pulls
+// in batches to cross into Go once per batch rather than once per element.
+class GoIterable extends Iterator {
   constructor(handle) {
+    super();
     this.handle = handle;
+    this.cursor = null;
+    this.batch = [];
+    this.index = 0;
+    this.done = false;
   }
 
-  // Each batch is a native array, so yield* steps through it with the
-  // array's own iterator. finally stops the Go sequence however iteration ends.
-  *[Symbol.iterator]() {
-    const cursor = this.handle.open();
-    try {
-      for (;;) {
-        const batch = cursor.pull(256);
-        if (batch.length === 0) {
-          return;
-        }
-        yield* batch;
+  next() {
+    while (this.index === this.batch.length) {
+      if (this.done) {
+        return { value: undefined, done: true };
       }
-    } finally {
-      cursor.stop();
-    }
-  }
-
-  filter(predicate) {
-    const filtered = this.handle.filter(predicate);
-    return filtered === null ? new FilteredIterable(this, predicate) : new GoIterable(filtered);
-  }
-
-  toArray() {
-    return Array.from(this);
-  }
-}
-
-// FilteredIterable applies a JavaScript predicate to each element.
-class FilteredIterable {
-  constructor(source, predicate) {
-    this.source = source;
-    this.predicate = predicate;
-  }
-
-  *[Symbol.iterator]() {
-    for (const value of this.source) {
-      if (this.predicate(value)) {
-        yield value;
+      this.cursor ??= this.handle.open();
+      try {
+        this.batch = this.cursor.pull(256);
+      } catch (error) {
+        this.return();
+        throw error;
+      }
+      this.index = 0;
+      if (this.batch.length === 0) {
+        this.return();
       }
     }
+    return { value: this.batch[this.index++], done: false };
   }
 
+  // return stops the Go sequence; for-of calls it however a loop ends early.
+  return() {
+    this.done = true;
+    this.batch = [];
+    this.index = 0;
+    this.cursor?.stop();
+    this.cursor = null;
+    return { value: undefined, done: true };
+  }
+
+  // A native predicate runs in Go, but only before iteration starts, since a
+  // fresh Go sequence would restart from the beginning.
   filter(predicate) {
-    return new FilteredIterable(this, predicate);
-  }
-
-  toArray() {
-    return Array.from(this);
+    if (this.cursor === null && !this.done) {
+      const filtered = this.handle.filter(predicate);
+      if (filtered !== null) {
+        this.done = true;
+        return new GoIterable(filtered);
+      }
+    }
+    return super.filter(predicate);
   }
 }
 
