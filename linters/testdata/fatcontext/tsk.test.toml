@@ -1,0 +1,9 @@
+[[case]]
+name = "default"
+packages = ["nested"]
+
+[[case]]
+name = "check-struct-pointers"
+packages = ["pointers"]
+[case.config]
+check-struct-pointers = true
