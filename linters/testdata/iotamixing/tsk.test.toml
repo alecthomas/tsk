@@ -1,0 +1,9 @@
+[[case]]
+name = "default"
+packages = ["block"]
+
+[[case]]
+name = "report-individual"
+packages = ["individual"]
+[case.config]
+report-individual = true
