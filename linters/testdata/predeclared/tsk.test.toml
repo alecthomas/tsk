@@ -1,0 +1,10 @@
+[[case]]
+name = "default"
+packages = ["p"]
+
+[[case]]
+name = "qualified-name"
+packages = ["qualified"]
+[case.config]
+qualified-name = true
+ignore = ["len"]
