@@ -1,4 +1,4 @@
-# Build file for github.com/alecthomas/tsktsk
+# Build file for github.com/alecthomas/tsk
 
 # The TypeScript shim is a separate module, so Go tools skip it from the root.
 let go-module = [".", "internal/typescript"]

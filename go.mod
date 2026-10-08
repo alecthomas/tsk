@@ -1,4 +1,4 @@
-module github.com/alecthomas/tsktsk
+module github.com/alecthomas/tsk
 
 go 1.27.1
 

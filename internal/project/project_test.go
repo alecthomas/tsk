@@ -9,7 +9,7 @@ import (
 	"github.com/alecthomas/assert/v2"
 	. "github.com/alecthomas/types/optional"
 
-	"github.com/alecthomas/tsktsk/internal/project"
+	"github.com/alecthomas/tsk/internal/project"
 )
 
 func TestResolve(t *testing.T) {

@@ -14,12 +14,12 @@ import (
 	"golang.org/x/term"
 	"golang.org/x/tools/go/analysis/multichecker"
 
-	"github.com/alecthomas/tsktsk/internal/docs"
-	"github.com/alecthomas/tsktsk/internal/lint"
-	"github.com/alecthomas/tsktsk/internal/logger"
-	"github.com/alecthomas/tsktsk/internal/project"
-	"github.com/alecthomas/tsktsk/internal/scripttest"
-	"github.com/alecthomas/tsktsk/linters"
+	"github.com/alecthomas/tsk/internal/docs"
+	"github.com/alecthomas/tsk/internal/lint"
+	"github.com/alecthomas/tsk/internal/logger"
+	"github.com/alecthomas/tsk/internal/project"
+	"github.com/alecthomas/tsk/internal/scripttest"
+	"github.com/alecthomas/tsk/linters"
 )
 
 type cli struct {

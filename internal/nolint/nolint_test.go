@@ -9,7 +9,7 @@ import (
 	"github.com/alecthomas/assert/v2"
 	"golang.org/x/tools/go/analysis"
 
-	"github.com/alecthomas/tsktsk/internal/nolint"
+	"github.com/alecthomas/tsk/internal/nolint"
 )
 
 const source = `package p

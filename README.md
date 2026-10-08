@@ -1,6 +1,6 @@
-# Tsk Tsk
+# Tsk
 
-Tsk Tsk (`tsk`) runs Go linters written in TypeScript. Each script is a real
+Tsk (`tsk`) runs Go linters written in TypeScript. Each script is a real
 [`go/analysis`](https://pkg.go.dev/golang.org/x/tools/go/analysis) analyzer,
 with access to the Go AST, type information, and facts, through APIs that
 mirror Go's own. Your project's linters live alongside its code in
@@ -9,14 +9,14 @@ mirror Go's own. Your project's linters live alongside its code in
 ## Install
 
 Download a prebuilt binary for your platform from the
-[releases page](https://github.com/alecthomas/tsktsk/releases) and put it
+[releases page](https://github.com/alecthomas/tsk/releases) and put it
 on your `PATH`.
 
 To build from source instead:
 
 ```sh
-git clone https://github.com/alecthomas/tsktsk
-cd tsktsk
+git clone https://github.com/alecthomas/tsk
+cd tsk
 go build -o ~/go/bin/tsk ./cmd/tsk
 ```
 

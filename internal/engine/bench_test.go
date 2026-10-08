@@ -15,14 +15,14 @@ import (
 	"golang.org/x/tools/go/ast/inspector"
 	"golang.org/x/tools/go/packages"
 
-	"github.com/alecthomas/tsktsk/internal/compile"
-	"github.com/alecthomas/tsktsk/internal/config"
-	"github.com/alecthomas/tsktsk/internal/engine"
-	"github.com/alecthomas/tsktsk/linters"
+	"github.com/alecthomas/tsk/internal/compile"
+	"github.com/alecthomas/tsk/internal/config"
+	"github.com/alecthomas/tsk/internal/engine"
+	"github.com/alecthomas/tsk/linters"
 )
 
 // module is this repository's module, the main module the benchmarks lint.
-const module = "github.com/alecthomas/tsktsk"
+const module = "github.com/alecthomas/tsk"
 
 const noopScript = `import { defineAnalyzer } from "tsk";
 

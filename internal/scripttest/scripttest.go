@@ -15,8 +15,8 @@ import (
 	"golang.org/x/tools/go/analysis"
 	"golang.org/x/tools/go/analysis/analysistest"
 
-	"github.com/alecthomas/tsktsk/internal/config"
-	"github.com/alecthomas/tsktsk/internal/engine"
+	"github.com/alecthomas/tsk/internal/config"
+	"github.com/alecthomas/tsk/internal/engine"
 )
 
 // CasesFile lists an analyzer's test cases; it sits in the analyzer's testdata.

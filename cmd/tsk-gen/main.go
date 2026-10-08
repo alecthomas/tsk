@@ -5,7 +5,7 @@ package main
 import (
 	"github.com/alecthomas/kong"
 
-	"github.com/alecthomas/tsktsk/internal/bindgen"
+	"github.com/alecthomas/tsk/internal/bindgen"
 )
 
 type cli struct {

@@ -6,7 +6,7 @@ import (
 	"github.com/alecthomas/assert/v2"
 	"golang.org/x/tools/go/analysis"
 
-	"github.com/alecthomas/tsktsk/internal/facts"
+	"github.com/alecthomas/tsk/internal/facts"
 )
 
 func TestTypesAreValidDistinctFacts(t *testing.T) {

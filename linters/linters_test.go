@@ -7,10 +7,10 @@ import (
 
 	"github.com/alecthomas/assert/v2"
 
-	"github.com/alecthomas/tsktsk/internal/compile"
-	"github.com/alecthomas/tsktsk/internal/engine"
-	"github.com/alecthomas/tsktsk/internal/scripttest"
-	"github.com/alecthomas/tsktsk/linters"
+	"github.com/alecthomas/tsk/internal/compile"
+	"github.com/alecthomas/tsk/internal/engine"
+	"github.com/alecthomas/tsk/internal/scripttest"
+	"github.com/alecthomas/tsk/linters"
 )
 
 func TestLinters(t *testing.T) {

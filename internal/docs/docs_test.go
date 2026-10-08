@@ -10,8 +10,8 @@ import (
 	. "github.com/alecthomas/types/optional"
 	ts "github.com/microsoft/TypeScript/tsc/shim/typescript"
 
-	"github.com/alecthomas/tsktsk/internal/config"
-	"github.com/alecthomas/tsktsk/internal/docs"
+	"github.com/alecthomas/tsk/internal/config"
+	"github.com/alecthomas/tsk/internal/docs"
 )
 
 func shape() ts.ObjectShape {

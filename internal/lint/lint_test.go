@@ -10,7 +10,7 @@ import (
 	"github.com/alecthomas/assert/v2"
 	"golang.org/x/tools/go/analysis"
 
-	"github.com/alecthomas/tsktsk/internal/lint"
+	"github.com/alecthomas/tsk/internal/lint"
 )
 
 func funcsAnalyzer() *analysis.Analyzer {

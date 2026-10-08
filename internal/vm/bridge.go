@@ -12,7 +12,7 @@ import (
 	. "github.com/alecthomas/types/optional"
 	"github.com/grafana/sobek"
 
-	"github.com/alecthomas/tsktsk/internal/naming"
+	"github.com/alecthomas/tsk/internal/naming"
 )
 
 // bridge converts values for one runtime. It is confined to the runtime's

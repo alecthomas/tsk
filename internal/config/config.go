@@ -13,7 +13,7 @@ import (
 	ts "github.com/microsoft/TypeScript/tsc/shim/typescript"
 	"github.com/pelletier/go-toml/v2"
 
-	"github.com/alecthomas/tsktsk/internal/naming"
+	"github.com/alecthomas/tsk/internal/naming"
 )
 
 // FileName is the config file's name within the scripts directory.

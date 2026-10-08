@@ -9,7 +9,7 @@ import (
 	"github.com/alecthomas/errors"
 	. "github.com/alecthomas/types/optional"
 
-	"github.com/alecthomas/tsktsk/internal/naming"
+	"github.com/alecthomas/tsk/internal/naming"
 )
 
 type declarer struct {

@@ -14,9 +14,9 @@ import (
 	ts "github.com/microsoft/TypeScript/tsc/shim/typescript"
 	"golang.org/x/tools/go/analysis/analysistest"
 
-	"github.com/alecthomas/tsktsk/internal/compile"
-	"github.com/alecthomas/tsktsk/internal/config"
-	"github.com/alecthomas/tsktsk/internal/engine"
+	"github.com/alecthomas/tsk/internal/compile"
+	"github.com/alecthomas/tsk/internal/config"
+	"github.com/alecthomas/tsk/internal/engine"
 )
 
 const nilScript = `import { defineAnalyzer } from "tsk";

@@ -17,12 +17,12 @@ import (
 	"golang.org/x/tools/go/analysis"
 	"golang.org/x/tools/go/analysis/passes/inspect"
 
-	"github.com/alecthomas/tsktsk/internal/compile"
-	"github.com/alecthomas/tsktsk/internal/config"
-	"github.com/alecthomas/tsktsk/internal/docs"
-	"github.com/alecthomas/tsktsk/internal/facts"
-	"github.com/alecthomas/tsktsk/internal/nolint"
-	"github.com/alecthomas/tsktsk/internal/vm"
+	"github.com/alecthomas/tsk/internal/compile"
+	"github.com/alecthomas/tsk/internal/config"
+	"github.com/alecthomas/tsk/internal/docs"
+	"github.com/alecthomas/tsk/internal/facts"
+	"github.com/alecthomas/tsk/internal/nolint"
+	"github.com/alecthomas/tsk/internal/vm"
 )
 
 // Engine holds loaded scripts and the runtimes that run them.

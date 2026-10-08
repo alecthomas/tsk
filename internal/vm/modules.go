@@ -12,10 +12,10 @@ import (
 	"github.com/alecthomas/errors"
 	"github.com/grafana/sobek"
 
-	"github.com/alecthomas/tsktsk/internal/bindings"
-	"github.com/alecthomas/tsktsk/internal/compile"
-	"github.com/alecthomas/tsktsk/internal/hostapi"
-	"github.com/alecthomas/tsktsk/internal/naming"
+	"github.com/alecthomas/tsk/internal/bindings"
+	"github.com/alecthomas/tsk/internal/compile"
+	"github.com/alecthomas/tsk/internal/hostapi"
+	"github.com/alecthomas/tsk/internal/naming"
 )
 
 // entryModule names the synthetic module importing every script. It cannot

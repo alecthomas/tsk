@@ -8,7 +8,7 @@ import (
 	"github.com/alecthomas/assert/v2"
 	"github.com/alecthomas/kong"
 
-	"github.com/alecthomas/tsktsk/internal/logger"
+	"github.com/alecthomas/tsk/internal/logger"
 )
 
 func TestKongConfig(t *testing.T) {

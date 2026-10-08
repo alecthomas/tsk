@@ -5,7 +5,7 @@ import (
 
 	"github.com/alecthomas/assert/v2"
 
-	"github.com/alecthomas/tsktsk/internal/naming"
+	"github.com/alecthomas/tsk/internal/naming"
 )
 
 func TestMember(t *testing.T) {

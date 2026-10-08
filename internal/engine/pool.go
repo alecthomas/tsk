@@ -8,7 +8,7 @@ import (
 
 	"github.com/alecthomas/errors"
 
-	"github.com/alecthomas/tsktsk/internal/vm"
+	"github.com/alecthomas/tsk/internal/vm"
 )
 
 // buffer is how many runtimes the pool keeps idle or being created, so a run

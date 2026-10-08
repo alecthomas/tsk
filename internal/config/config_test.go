@@ -6,7 +6,7 @@ import (
 	"github.com/alecthomas/assert/v2"
 	ts "github.com/microsoft/TypeScript/tsc/shim/typescript"
 
-	"github.com/alecthomas/tsktsk/internal/config"
+	"github.com/alecthomas/tsk/internal/config"
 )
 
 func encapsulationShape() ts.Shape {

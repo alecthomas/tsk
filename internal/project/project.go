@@ -16,10 +16,10 @@ import (
 	. "github.com/alecthomas/types/optional"
 	"golang.org/x/tools/go/analysis"
 
-	"github.com/alecthomas/tsktsk/internal/compile"
-	"github.com/alecthomas/tsktsk/internal/config"
-	"github.com/alecthomas/tsktsk/internal/docs"
-	"github.com/alecthomas/tsktsk/internal/engine"
+	"github.com/alecthomas/tsk/internal/compile"
+	"github.com/alecthomas/tsk/internal/config"
+	"github.com/alecthomas/tsk/internal/docs"
+	"github.com/alecthomas/tsk/internal/engine"
 )
 
 // ScriptsDir is the scripts directory's name.

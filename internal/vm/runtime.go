@@ -13,8 +13,8 @@ import (
 	"github.com/alecthomas/errors"
 	"github.com/grafana/sobek"
 
-	"github.com/alecthomas/tsktsk/internal/bindings"
-	"github.com/alecthomas/tsktsk/internal/naming"
+	"github.com/alecthomas/tsk/internal/bindings"
+	"github.com/alecthomas/tsk/internal/naming"
 )
 
 // Runtime is one sobek runtime with every module evaluated. It is confined to

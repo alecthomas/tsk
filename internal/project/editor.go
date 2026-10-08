@@ -9,7 +9,7 @@ import (
 
 	"github.com/alecthomas/errors"
 
-	"github.com/alecthomas/tsktsk/internal/compile"
+	"github.com/alecthomas/tsk/internal/compile"
 )
 
 // WriteEditorFiles writes the host declarations to types/ in the scripts

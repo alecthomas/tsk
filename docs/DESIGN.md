@@ -1,4 +1,4 @@
-# Tsk Tsk design
+# Tsk design
 
 ## Summary
 

@@ -6,7 +6,7 @@ import (
 	"github.com/alecthomas/errors"
 	"github.com/grafana/sobek"
 
-	"github.com/alecthomas/tsktsk/internal/bindings"
+	"github.com/alecthomas/tsk/internal/bindings"
 )
 
 // errorClasses builds the JavaScript classes and exceptions for Go errors,

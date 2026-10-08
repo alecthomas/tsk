@@ -13,9 +13,9 @@ import (
 	"github.com/alecthomas/errors"
 	ts "github.com/microsoft/TypeScript/tsc/shim/typescript"
 
-	"github.com/alecthomas/tsktsk/internal/bindings"
-	"github.com/alecthomas/tsktsk/internal/config"
-	"github.com/alecthomas/tsktsk/internal/hostapi"
+	"github.com/alecthomas/tsk/internal/bindings"
+	"github.com/alecthomas/tsk/internal/config"
+	"github.com/alecthomas/tsk/internal/hostapi"
 )
 
 const (

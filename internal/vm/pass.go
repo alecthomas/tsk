@@ -10,7 +10,7 @@ import (
 	"github.com/grafana/sobek"
 	"golang.org/x/tools/go/analysis"
 
-	"github.com/alecthomas/tsktsk/internal/facts"
+	"github.com/alecthomas/tsk/internal/facts"
 )
 
 // Environment is what one analyzer run needs beyond the analysis.Pass.
