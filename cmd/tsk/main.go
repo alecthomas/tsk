@@ -4,9 +4,12 @@ package main
 import (
 	"context"
 	"fmt"
+	"go/build"
 	"log/slog"
 	"os"
+	"os/exec"
 	"strconv"
+	"strings"
 
 	"github.com/alecthomas/errors"
 	"github.com/alecthomas/kong"
@@ -186,5 +189,13 @@ func main() {
 	cacheConfig, err := config.Library.Resolve(userCache)
 	kctx.FatalIfErrorf(err)
 	log := logger.New(config.Log, os.Stderr)
+	// Scripts find the standard library through go/build, whose GOROOT is the
+	// one tsk was built with, or empty with -trimpath. Use the user's toolchain,
+	// which also follows GOTOOLCHAIN.
+	if out, err := exec.CommandContext(ctx, "go", "env", "GOROOT").Output(); err == nil {
+		build.Default.GOROOT = strings.TrimSpace(string(out))
+	} else {
+		log.Debug("Could not find GOROOT", "error", err)
+	}
 	kctx.FatalIfErrorf(kctx.Run(&resolved, log, library.NewCache(cacheConfig, log)))
 }
