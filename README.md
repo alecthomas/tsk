@@ -89,7 +89,7 @@ These libraries are known to work with `tsk`. Add one with `tsk get
 
 | Library | Linters |
 |---|---|
-| `github.com/alecthomas/tsk//linters` | `encapsulation` reports private-field access and construction outside a struct's API. `optionalnil` reports nil used to mean "no value" where an option type could be used. `sumtype` checks that type switches on sealed interfaces cover every variant. Ports of golangci-lint linters, with upstream's options and defaults: `asasalint`, `asciicheck`, `bidichk`, `bodyclose`, `canonicalheader`, `copyloopvar`, `dupl`, `durationcheck`, `errcheck`, `errname`, `errorlint`, `exhaustive`, `exptostd`, `fatcontext`, `forbidigo`, `funcorder`, `funlen`, `gocheckcompilerdirectives`, `gochecknoglobals`, `goconst`, `godoclint`, `godot`, `gomoddirectives`, `goprintffuncname`. |
+| `github.com/alecthomas/tsk//linters` | `encapsulation` reports private-field access and construction outside a struct's API. `optionalnil` reports nil used to mean "no value" where an option type could be used. `sumtype` checks that type switches on sealed interfaces cover every variant. Ports of golangci-lint linters, with upstream's options and defaults: `asasalint`, `asciicheck`, `bidichk`, `bodyclose`, `canonicalheader`, `copyloopvar`, `dupl`, `durationcheck`, `errcheck`, `errname`, `errorlint`, `exhaustive`, `exptostd`, `fatcontext`, `forbidigo`, `funcorder`, `funlen`, `gocheckcompilerdirectives`, `gochecknoglobals`, `goconst`, `godoclint`, `godot`, `gomoddirectives`, `goprintffuncname`, `iface`. |
 
 ## Reference
 
