@@ -89,7 +89,7 @@ These libraries are known to work with `tsk`. Add one with `tsk get
 
 | Library | Linters |
 |---|---|
-| `github.com/alecthomas/tsk//linters` | `encapsulation` reports private-field access and construction outside a struct's API. `optionalnil` reports nil used to mean "no value" where an option type could be used. `sumtype` checks that type switches on sealed interfaces cover every variant. |
+| `github.com/alecthomas/tsk//linters` | `encapsulation` reports private-field access and construction outside a struct's API. `optionalnil` reports nil used to mean "no value" where an option type could be used. `sumtype` checks that type switches on sealed interfaces cover every variant. Ports of golangci-lint linters, with upstream's options and defaults: `asasalint`, `asciicheck`, `bidichk`, `bodyclose`, `canonicalheader`, `copyloopvar`, `dupl`. |
 
 ## Reference
 
@@ -132,6 +132,22 @@ message = "return an error instead of panicking"
 
 A disabled linter still runs when an enabled one requires it. Unknown linters,
 unknown options, and values of the wrong type are errors.
+
+Findings in generated files are dropped, as golangci-lint drops them: a file is
+generated when, before its package clause, it has a line matching
+`^// Code generated .* DO NOT EDIT\.$`. Findings in `_test.go` files can be
+dropped too:
+
+```toml
+# Keep findings in generated files.
+lint-generated = true
+
+# Drop findings in test files for these linters.
+skip-tests = ["dupl", "funlen"]
+
+# Or for every linter, as --no-test does.
+# no-tests = true
+```
 
 `tsk config` output is a starting point for this file. Empty lists show one
 placeholder entry to fill in or delete.
@@ -243,11 +259,14 @@ Calling `defineAnalyzer` registers a linter. Its definition mirrors
 | `facts` | Every fact the linter imports or exports. See [Facts](#facts). |
 | `scope` | `"module"`, the default, runs only on packages of the modules being linted. `"all"` also runs on every dependency. |
 | `runDespiteErrors` | Run on packages that fail to type-check. |
+| `tests` | `false` drops the linter's findings in `_test.go` files, for rules that do not suit tests. |
 | `run(pass)` | Analyzes one package. Its return value, which must be JSON, is the result other linters read with `pass.resultOf`. |
 
 `tsk/passes` exports `inspect`, whose result is an
 [`inspector.Inspector`](https://pkg.go.dev/golang.org/x/tools/go/ast/inspector)
-for the package.
+for the package, and `buildssa`, whose result is the package in
+[SSA form](https://pkg.go.dev/golang.org/x/tools/go/ssa) with its functions
+declared in source, for linters that follow data flow.
 
 #### Options
 
@@ -285,8 +304,8 @@ by key, while arrays replace. `pass.config` holds the result and is read-only.
 Scripts import Go packages by their import paths:
 
 - `go/ast`, `go/constant`, `go/token`, and `go/types`
-- `golang.org/x/tools/go/ast/edge`, `golang.org/x/tools/go/ast/inspector`, and
-  `golang.org/x/tools/go/types/typeutil`
+- `golang.org/x/tools/go/ast/edge`, `golang.org/x/tools/go/ast/inspector`,
+  `golang.org/x/tools/go/ssa`, and `golang.org/x/tools/go/types/typeutil`
 - `go/build` and `golang.org/x/mod/modfile`
 - `io/fs`, `path/filepath`, and a read-only subset of `os`
 
@@ -300,6 +319,8 @@ Their APIs follow Go's, with these conversions:
   `cursor.preorder(ast.CallExpr)`.
 - **Nil.** A nil pointer, interface, or function is `null`. A nil slice is an
   empty array.
+- **Pointers to slices and interfaces** read as their target, so
+  `value.referrers()` is an array.
 - **Results.** A `(value, ok)` result is the value or `undefined`. Other
   multiple results are arrays.
 - **Errors.** A non-nil trailing `error` result is thrown. Go errors extend
