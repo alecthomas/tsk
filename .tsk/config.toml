@@ -6,3 +6,5 @@ imports = [
 replace = { "github.com/alecthomas/tsk//linters" = "../linters" }
 
 # Settings below mirror .golangci.yml.
+
+skip-tests = ["bodyclose", "dupl"]
