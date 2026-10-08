@@ -1,0 +1,9 @@
+[[case]]
+name = "default"
+packages = ["p"]
+
+[[case]]
+name = "fast-math"
+packages = ["fast"]
+[case.config]
+fast-math = true
