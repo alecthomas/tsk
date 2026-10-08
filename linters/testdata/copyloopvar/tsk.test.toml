@@ -1,0 +1,9 @@
+[[case]]
+name = "default"
+packages = ["basic"]
+
+[[case]]
+name = "check-alias"
+packages = ["checkalias"]
+[case.config]
+check-alias = true
