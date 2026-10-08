@@ -1,0 +1,6 @@
+[[case]]
+name = "all-checks"
+packages = ["p"]
+[case.config]
+checks = ["end", "set-status", "record-error"]
+extra-start-span-signatures = ['\(trace.Tracer\).Start:opentelemetry']
