@@ -1,0 +1,10 @@
+[[case]]
+name = "default"
+packages = ["p"]
+
+[[case]]
+name = "strict"
+packages = ["strict"]
+[case.config]
+strict = true
+disabled-linters = ["Help"]
