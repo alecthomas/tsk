@@ -1,0 +1,14 @@
+[[case]]
+name = "default"
+packages = ["repeats"]
+
+[[case]]
+name = "options"
+packages = ["options"]
+[case.config]
+find-duplicates = true
+eval-const-expressions = true
+ignore-calls = false
+ignore-functions = ["skip"]
+ignore-map-keys = true
+min-occurrences = 2
