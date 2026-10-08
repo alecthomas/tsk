@@ -1,0 +1,16 @@
+[[case]]
+name = "default"
+packages = ["basic"]
+
+[[case]]
+name = "no-builtin-exclusions"
+packages = ["nobuiltin"]
+[case.config]
+use-builtin-exclusions = false
+exclude = ["^variadic$"]
+
+[[case]]
+name = "ignore-test"
+packages = ["ignoretest"]
+[case.config]
+ignore-test = true
