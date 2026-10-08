@@ -14,6 +14,7 @@ import (
 	"golang.org/x/tools/go/analysis/multichecker"
 
 	"github.com/alecthomas/tsktsk/internal/docs"
+	"github.com/alecthomas/tsktsk/internal/lint"
 	"github.com/alecthomas/tsktsk/internal/logger"
 	"github.com/alecthomas/tsktsk/internal/project"
 	"github.com/alecthomas/tsktsk/internal/scripttest"
@@ -34,12 +35,9 @@ type cli struct {
 }
 
 type lintCommand struct {
-	Packages []string `arg:"" optional:"" default:"./..." help:"Package patterns to lint."`
-	Fix      bool     `help:"Apply all suggested fixes."`
-	Diff     bool     `help:"With --fix, print a unified diff instead of updating files."`
-	JSON     bool     `help:"Emit JSON output."`
-	Context  int      `short:"c" default:"-1" help:"Lines of context to show around each finding; -1 shows none."`
-	Test     bool     `default:"true" negatable:"" help:"Analyze test files too."`
+	lint.Config `embed:""`
+	Fix         bool `help:"Apply all suggested fixes."`
+	Diff        bool `help:"With --fix, print a unified diff instead of updating files."`
 }
 
 func (l lintCommand) Run(ctx context.Context, log *slog.Logger, c *project.Config) error {
@@ -51,11 +49,22 @@ func (l lintCommand) Run(ctx context.Context, log *slog.Logger, c *project.Confi
 	if err != nil {
 		return errors.WithStack(err)
 	}
-	// multichecker parses its options with the flag package and exits, so the
-	// options Kong parsed are passed through in that form.
-	os.Args = append([]string{os.Args[0]}, l.flagArgs()...) //nolint:reassign // multichecker only reads os.Args.
 	log.InfoContext(ctx, "Loading packages", "patterns", l.Packages)
-	multichecker.Main(analyzers...)
+	if l.Fix {
+		// Applying fixes is internal to multichecker. It parses its options with
+		// the flag package and exits, so the parsed options pass through as flags.
+		os.Args = append([]string{os.Args[0]}, l.flagArgs()...) //nolint:reassign // multichecker only reads os.Args.
+		multichecker.Main(analyzers...)
+	}
+	dir, err := os.Getwd()
+	if err != nil {
+		return errors.Wrap(err, "find working directory")
+	}
+	code, err := lint.Run(analyzers, l.Config, dir, os.Stdout, os.Stderr)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+	os.Exit(code)
 	return nil
 }
 

@@ -307,8 +307,8 @@ analyzer runs only on packages of the main modules, which `go list -m` reports
 once per run, including every module of a workspace. Other packages return an
 empty result before any script work. An analyzer that needs facts about
 dependencies declares `scope: "all"`. Without main modules, as for GOPATH-style
-test data, no package is skipped. Dependencies are still loaded from source,
-because multichecker decides how packages load.
+test data, no package is skipped. Dependencies are still loaded from source
+whenever an analyzer declares facts, as multichecker does.
 
 `Analyzer.Run` borrows a runtime from a pool that grows lazily to
 `GOMAXPROCS`. It builds the script's `Pass`, calls `run`, and returns the
@@ -375,9 +375,11 @@ scans a package's comments only once it reports a finding.
 Kong:
 
 - `lint` (the default): lints package patterns, `./...` by default, with
-  `--fix`, `--diff`, `--json`, `--context`, and `--[no-]test`. Kong's parsed
-  options are passed to `multichecker` as `flag` arguments, because it parses
-  its own options and exits.
+  `--fix`, `--diff`, `--json`, `--context`, and `--[no-]test`.
+  `internal/lint` runs `checker.Analyze` itself, so text findings show paths
+  relative to the working directory and end with the analyzer name in
+  parentheses. Applying fixes is internal to x/tools, so `--fix` instead
+  passes Kong's parsed options to `multichecker` as `flag` arguments.
 - `test`: runs `analysistest` for each analyzer with
   `<scripts>/testdata/<analyzer>/`. An optional `tsk.test.toml` there
   lists `[[case]]` entries with a name, optional `dir`, package patterns, and
