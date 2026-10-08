@@ -62,6 +62,10 @@ interface Config {
   allowReads: Rule[];
   // Plain comments are not documentation.
   mode?: "strict" | "loose";
+  only?: "one";
+  note?: string;
+  tags?: string[];
+  quiet?: boolean;
   generated: boolean;
   limit: number;
   labels: Record<string, string>;
@@ -74,7 +78,7 @@ define<{ f: () => void }>({ name: "b", config: { f() {} } });
 	calls, err := program.Calls("/script.ts", "/lib.d.ts", "define")
 	assert.NoError(t, err)
 	assert.Equal(t, 2, len(calls))
-	assert.Equal(t, "script.ts:19:1", calls[0].Location)
+	assert.Equal(t, "script.ts:23:1", calls[0].Location)
 	shape, err := program.Describe(calls[0].TypeArguments[0])
 	assert.NoError(t, err)
 	assert.Equal(t, ts.Shape(ts.ObjectShape{Properties: []ts.Property{
@@ -83,6 +87,10 @@ define<{ f: () => void }>({ name: "b", config: { f() {} } });
 			{Name: "target", Shape: ts.StringShape{}},
 		}}}},
 		{Name: "mode", Optional: true, Shape: ts.EnumShape{Values: []string{"loose", "strict"}}},
+		{Name: "only", Optional: true, Shape: ts.EnumShape{Values: []string{"one"}}},
+		{Name: "note", Optional: true, Shape: ts.StringShape{}},
+		{Name: "tags", Optional: true, Shape: ts.ArrayShape{Element: ts.StringShape{}}},
+		{Name: "quiet", Optional: true, Shape: ts.BooleanShape{}},
 		{Name: "generated", Shape: ts.BooleanShape{}},
 		{Name: "limit", Shape: ts.NumberShape{}},
 		{Name: "labels", Shape: ts.RecordShape{Element: ts.StringShape{}}},

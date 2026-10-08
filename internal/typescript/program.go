@@ -166,22 +166,28 @@ func (p *Program) describe(t *Type, ancestors []*Type) (Shape, error) {
 	case flags&checker.TypeFlagsStringLiteral != 0:
 		return p.describeUnion([]*Type{t})
 	case flags&checker.TypeFlagsUnion != 0:
-		return p.describeUnion(t.Types())
+		// Optional properties add undefined, which Property.Optional records,
+		// so string | undefined describes as string.
+		members := slices.DeleteFunc(slices.Clone(t.Types()), func(member *Type) bool {
+			return member.Flags()&checker.TypeFlagsUndefined != 0
+		})
+		if len(members) == 1 {
+			return p.describe(members[0], ancestors)
+		}
+		return p.describeUnion(members)
 	case flags&checker.TypeFlagsObject != 0:
 		return p.describeObject(t, ancestors)
 	}
 	return nil, errors.Errorf("type %s is not supported", p.checker.TypeToString(t))
 }
 
-// describeUnion accepts string literal unions. Undefined members come from
-// optional properties, which Property.Optional already records.
+// describeUnion accepts string literal unions.
 func (p *Program) describeUnion(members []*Type) (Shape, error) {
 	var values []string
 	booleans := 0
 	for _, member := range members {
 		flags := member.Flags()
 		switch {
-		case flags&checker.TypeFlagsUndefined != 0:
 		case flags&checker.TypeFlagsBooleanLiteral != 0:
 			booleans++
 		case flags&checker.TypeFlagsStringLiteral != 0:
