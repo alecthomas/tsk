@@ -34,7 +34,7 @@ func TestConfigPropertyTyping(t *testing.T) {
 				"/lib.d.ts": declaration,
 				"/script.ts": `import { define } from "lib";
 ` + test.Script,
-			})
+			}, nil)
 			if test.Error == "" {
 				assert.NoError(t, err)
 				return
@@ -69,7 +69,7 @@ interface Config {
 define<Config>({ name: "a", config: { allowReads: [], generated: false, limit: 1, labels: {} } });
 define<{ f: () => void }>({ name: "b", config: { f() {} } });
 `,
-	})
+	}, nil)
 	assert.NoError(t, err)
 	calls, err := program.Calls("/script.ts", "/lib.d.ts", "define")
 	assert.NoError(t, err)

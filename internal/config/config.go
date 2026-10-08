@@ -13,6 +13,7 @@ import (
 	ts "github.com/microsoft/TypeScript/tsc/shim/typescript"
 	"github.com/pelletier/go-toml/v2"
 
+	"github.com/alecthomas/tsk/internal/library"
 	"github.com/alecthomas/tsk/internal/naming"
 )
 
@@ -22,9 +23,10 @@ const FileName = "config.toml"
 // File is a parsed config file. Each top-level setting's help tag documents it
 // in tsk config.
 type File struct {
-	Disable    []string `toml:"disable" help:"Analyzers that do not run."`
-	DisableAll bool     `toml:"disable-all" help:"Turn every analyzer off except those listed in enable."`
-	Enable     []string `toml:"enable" help:"Analyzers that run when disable-all is true."`
+	Imports    []library.Import `toml:"imports" help:"Linter libraries whose analyzers run, as repository@version[//dir]. tsk get adds and updates them."`
+	Disable    []string         `toml:"disable" help:"Analyzers that do not run."`
+	DisableAll bool             `toml:"disable-all" help:"Turn every analyzer off except those listed in enable."`
+	Enable     []string         `toml:"enable" help:"Analyzers that run when disable-all is true."`
 	// Tables maps analyzer names to their raw tables.
 	Tables map[string]map[string]any `toml:"-"`
 }
@@ -102,6 +104,14 @@ func Parse(name, text string) (File, error) {
 			return File{}, errors.Errorf("%s: %s must be a table named after an analyzer", name, key)
 		}
 		file.Tables[key] = table
+	}
+	for _, imported := range file.Imports {
+		if _, ok := imported.Version.Get(); !ok {
+			return File{}, errors.Errorf("%s: import %s needs a version; tsk get adds the latest", name, imported)
+		}
+	}
+	if err := library.CheckImports(file.Imports); err != nil {
+		return File{}, errors.Wrapf(err, "%s", name)
 	}
 	// Each combination below would silently ignore a setting.
 	switch {

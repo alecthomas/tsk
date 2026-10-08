@@ -20,6 +20,7 @@ import (
 	"github.com/alecthomas/tsk/internal/config"
 	"github.com/alecthomas/tsk/internal/docs"
 	"github.com/alecthomas/tsk/internal/engine"
+	"github.com/alecthomas/tsk/internal/library"
 )
 
 // ScriptsDir is the scripts directory's name.
@@ -73,20 +74,40 @@ func isRegular(info fs.FileInfo) bool {
 	return info.Mode().IsRegular()
 }
 
+// LockFile returns the lock file's path, beside the config file.
+func (c Config) LockFile() string {
+	return filepath.Join(filepath.Dir(c.Config), library.LockFileName)
+}
+
 // Project is a loaded set of scripts with its config file.
 type Project struct {
-	config Config
-	engine *engine.Engine
-	file   config.File
+	config    Config
+	engine    *engine.Engine
+	file      config.File
+	libraries []library.Locked
 	// mainModules are the modules being linted, as go list -m reports them,
 	// so a workspace has several.
 	mainModules []string
 }
 
-// Load compiles the compiled-in scripts, overridden by the scripts directory if present,
-// and reads the config file. c must be resolved. Script console output goes to logger.
-func Load(ctx context.Context, logger *slog.Logger, builtin fs.FS, c Config) (*Project, error) {
+// Load compiles the compiled-in scripts, then the config's libraries, then the
+// scripts directory if present, each overriding analyzers of the same name in
+// the ones before. c must be resolved. Script console output goes to logger.
+func Load(ctx context.Context, logger *slog.Logger, builtin fs.FS, c Config, cache *library.Cache) (*Project, error) {
+	file, err := config.Load(c.Config)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+	libraries, err := snapshots(ctx, c, file, cache)
+	if err != nil {
+		return nil, err
+	}
 	sources := []compile.Source{{Name: "builtin", FS: builtin}}
+	locked := make([]library.Locked, 0, len(libraries))
+	for _, snapshot := range libraries {
+		sources = append(sources, compile.Source{Name: snapshot.locked.Path(), FS: os.DirFS(snapshot.dir), Library: true})
+		locked = append(locked, snapshot.locked)
+	}
 	if info, err := os.Stat(c.Dir); err == nil && info.IsDir() {
 		sources = append(sources, compile.Source{Name: "project", FS: os.DirFS(c.Dir)})
 	}
@@ -94,15 +115,50 @@ func Load(ctx context.Context, logger *slog.Logger, builtin fs.FS, c Config) (*P
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
-	file, err := config.Load(c.Config)
-	if err != nil {
-		return nil, errors.WithStack(err)
-	}
 	mainModules, err := listMainModules(ctx)
 	if err != nil {
 		return nil, err
 	}
-	return &Project{config: c, engine: e, file: file, mainModules: mainModules}, nil
+	return &Project{config: c, engine: e, file: file, libraries: locked, mainModules: mainModules}, nil
+}
+
+// Sync downloads every library the lock file pins that is missing from the
+// cache. c must be resolved.
+func Sync(ctx context.Context, c Config, cache *library.Cache) error {
+	file, err := config.Load(c.Config)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+	_, err = snapshots(ctx, c, file, cache)
+	return err
+}
+
+// snapshot is a locked library and the cache directory holding it.
+type snapshot struct {
+	locked library.Locked
+	dir    string
+}
+
+// snapshots checks that the lock file pins exactly the config's imports, and
+// returns each in import order, downloading any missing from the cache.
+func snapshots(ctx context.Context, c Config, file config.File, cache *library.Cache) ([]snapshot, error) {
+	lock, err := library.LoadLock(c.LockFile())
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+	if err := lock.Check(file.Imports); err != nil {
+		return nil, errors.Wrapf(err, "%s does not match the imports in %s; run tsk get", c.LockFile(), c.Config)
+	}
+	found := make([]snapshot, 0, len(file.Imports))
+	for _, imported := range file.Imports {
+		locked, _ := lock.Find(imported.Path())
+		dir, err := cache.Snapshot(ctx, locked)
+		if err != nil {
+			return nil, errors.WithStack(err)
+		}
+		found = append(found, snapshot{locked: locked, dir: dir})
+	}
+	return found, nil
 }
 
 // listMainModules asks the go command for the main modules of the working
@@ -168,8 +224,14 @@ func (p *Project) Describe(names []string) ([]docs.Analyzer, error) {
 }
 
 // source names where a module is defined: "builtin" for compiled-in scripts,
-// or the script's path, relative to the working directory if it is within it.
+// a library's path and commit, or the script's path, relative to the working
+// directory if it is within it.
 func (p *Project) source(module string) string {
+	for _, locked := range p.libraries {
+		if strings.HasPrefix(module, locked.Path()+"/") {
+			return locked.Path() + "@" + locked.Short()
+		}
+	}
 	script, isProject := strings.CutPrefix(module, "project/")
 	if !isProject {
 		return "builtin"

@@ -11,6 +11,7 @@ import (
 	"github.com/microsoft/TypeScript/tsc/internal/ast"
 	"github.com/microsoft/TypeScript/tsc/internal/bundled"
 	"github.com/microsoft/TypeScript/tsc/internal/checker"
+	"github.com/microsoft/TypeScript/tsc/internal/collections"
 	"github.com/microsoft/TypeScript/tsc/internal/compiler"
 	"github.com/microsoft/TypeScript/tsc/internal/core"
 	"github.com/microsoft/TypeScript/tsc/internal/diagnosticwriter"
@@ -30,7 +31,8 @@ type Program struct {
 
 // NewProgram type-checks files as one strict ES2020 project with ES2025 iterator helpers and no DOM.
 // Names are absolute and slash-separated, and every file is a root. Any diagnostic is an error.
-func NewProgram(ctx context.Context, files map[string]string) (*Program, error) {
+// An import of "<root>/<file>" for each of roots resolves to "/<root>/<file>".
+func NewProgram(ctx context.Context, files map[string]string, roots []string) (*Program, error) {
 	tree := fstest.MapFS{}
 	for name, text := range files {
 		if !strings.HasPrefix(name, "/") {
@@ -40,9 +42,17 @@ func NewProgram(ctx context.Context, files map[string]string) (*Program, error) 
 	}
 	fileSystem := bundled.WrapFS(iovfs.From(tree, true))
 	host := compiler.NewCompilerHost("/", fileSystem, bundled.LibPath(), nil, nil, nil)
+	var paths *collections.OrderedMap[string, []string] //nolint:optionalnil // The compiler reads nil as no mappings.
+	if len(roots) > 0 {
+		paths = collections.NewOrderedMapWithSizeHint[string, []string](len(roots))
+	}
+	for _, root := range roots {
+		paths.Set(root+"/*", []string{"/" + root + "/*"})
+	}
 	program := compiler.NewProgram(compiler.ProgramOptions{
 		Config: tsoptions.NewParsedCommandLine(
 			&core.CompilerOptions{
+				Paths:                      paths,
 				Target:                     core.ScriptTargetES2020,
 				Module:                     core.ModuleKindESNext,
 				ModuleResolution:           core.ModuleResolutionKindBundler,

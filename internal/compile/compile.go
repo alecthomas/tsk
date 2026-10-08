@@ -26,11 +26,14 @@ const (
 	scriptExtension = ".ts"
 )
 
-// Source is one set of scripts. Its Name prefixes its module names, so it must
-// be unique and contain no "/".
+// Source is one set of scripts. Its Name prefixes its module names, so no
+// source's name may equal or be a "/"-separated prefix of another's.
 type Source struct {
 	Name string
 	FS   fs.FS
+	// Library sources are named by import path, and other sources' scripts
+	// import their scripts by it.
+	Library bool
 }
 
 // Program is a checked and transpiled set of scripts.
@@ -43,28 +46,40 @@ type Program struct {
 	// Schemas holds config shapes, indexed by the number the compiler inserts
 	// as defineAnalyzer's first argument.
 	Schemas []ts.Shape
+	// sources maps each script module to its source's name.
+	sources   map[string]string
+	libraries []string
 }
 
 // Compile type-checks every script in sources as one program, then transpiles
 // each after inserting the schema index of its defineAnalyzer calls.
 func Compile(ctx context.Context, sources []Source) (*Program, error) {
+	if err := checkNames(sources); err != nil {
+		return nil, err
+	}
 	files, err := declarationFiles()
 	if err != nil {
 		return nil, err
 	}
+	compiled := &Program{Modules: map[string]string{}, sources: map[string]string{}}
 	var scripts []string
 	for _, source := range sources {
 		found, err := readSource(source, files)
 		if err != nil {
 			return nil, err
 		}
+		for _, name := range found {
+			compiled.sources[strings.TrimPrefix(name, "/")] = source.Name
+		}
 		scripts = append(scripts, found...)
+		if source.Library {
+			compiled.libraries = append(compiled.libraries, source.Name)
+		}
 	}
-	program, err := ts.NewProgram(ctx, files)
+	program, err := ts.NewProgram(ctx, files, compiled.libraries)
 	if err != nil {
 		return nil, errors.Wrap(err, "type-check scripts")
 	}
-	compiled := &Program{Modules: map[string]string{}}
 	for _, name := range scripts {
 		source, err := insertSchemas(program, compiled, name, files[name])
 		if err != nil {
@@ -79,6 +94,39 @@ func Compile(ctx context.Context, sources []Source) (*Program, error) {
 		compiled.Entries = append(compiled.Entries, module)
 	}
 	return compiled, nil
+}
+
+// checkNames rejects sources whose module names could collide.
+func checkNames(sources []Source) error {
+	for i, a := range sources {
+		for _, b := range sources[i+1:] {
+			if a.Name == b.Name || strings.HasPrefix(a.Name, b.Name+"/") || strings.HasPrefix(b.Name, a.Name+"/") {
+				return errors.Errorf("script sources %s and %s overlap", a.Name, b.Name)
+			}
+		}
+	}
+	return nil
+}
+
+// Source returns the name of the source a script module came from.
+func (p *Program) Source(module string) (source string, ok bool) {
+	source, ok = p.sources[module]
+	return source, ok
+}
+
+// IsLibrary reports whether a source is a library.
+func (p *Program) IsLibrary(source string) bool {
+	return slices.Contains(p.libraries, source)
+}
+
+// Library returns the library whose import path prefixes specifier.
+func (p *Program) Library(specifier string) (library string, ok bool) {
+	for _, library := range p.libraries {
+		if strings.HasPrefix(specifier, library+"/") {
+			return library, true
+		}
+	}
+	return "", false
 }
 
 // Declarations returns the host declaration files by base name, for editors.

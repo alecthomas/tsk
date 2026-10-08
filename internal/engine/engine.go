@@ -34,7 +34,8 @@ type Engine struct {
 }
 
 // Load compiles and evaluates sources. Later sources override analyzers of
-// the same name in earlier ones. Script console output goes to logger.
+// the same name in earlier ones, except that two libraries may not define the
+// same name. Script console output goes to logger.
 func Load(ctx context.Context, logger *slog.Logger, sources []compile.Source) (*Engine, error) {
 	start := time.Now()
 	program, err := compile.Compile(ctx, sources)

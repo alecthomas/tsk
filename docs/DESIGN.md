@@ -115,8 +115,10 @@ Loading sources:
    confines relative imports to the importing script's source.
 6. Evaluate in a bootstrap runtime to collect analyzer definitions.
 
-Compiled-in sources come first and the `.tsk` directory last. A later
-definition with the same name replaces an earlier one and is logged.
+Compiled-in sources come first, then [linter libraries](libraries.md), and the
+`.tsk` directory last. A later definition with the same name replaces an
+earlier one and is logged, except that two libraries defining one name is an
+error.
 
 ### Analyzer definition surface
 
