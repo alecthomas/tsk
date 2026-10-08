@@ -46,3 +46,6 @@ strconcat = false
 
 [reassign]
 patterns = [".*"]
+
+[rowserrcheck]
+packages = ["github.com/jmoiron/sqlx"]

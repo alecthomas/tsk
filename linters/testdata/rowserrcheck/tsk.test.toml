@@ -1,0 +1,5 @@
+[[case]]
+name = "packages"
+packages = ["p"]
+[case.config]
+packages = ["db"]
