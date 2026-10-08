@@ -4,7 +4,8 @@ Tsk (`tsk`) runs Go linters written in TypeScript. Each script is a real
 [`go/analysis`](https://pkg.go.dev/golang.org/x/tools/go/analysis) analyzer,
 with access to the Go AST, type information, and facts, through APIs that
 mirror Go's own. Your project's linters live alongside its code in
-`.tsk/`, so there is no driver, plugin, or build step to maintain.
+`.tsk/`, so there is no driver, plugin, or build step to maintain. Linters
+shared between projects come from git repositories as libraries.
 
 ## Install
 
@@ -71,7 +72,8 @@ tsk
 
 `tsk` lints `./...` by default; pass package patterns to narrow it. It exits
 with status 3 when it reports findings. Alongside your scripts, it runs the
-linters built into `tsk`; `tsk config` lists every linter and its options.
+linters built into `tsk` and those of any [libraries](#libraries) you import.
+`tsk list` lists every linter, and `tsk config` documents their options.
 
 ## Reference
 
@@ -84,12 +86,16 @@ linters built into `tsk`; `tsk config` lists every linter and its options.
 | `tsk check` | Type-checks scripts and validates `.tsk/config.toml`. |
 | `tsk init` | Writes the script declarations to `.tsk/types/` and a `tsconfig.json` to `.tsk/`, for editor completion and type checking. |
 | `tsk config [linters...]` | Prints a `.tsk/config.toml` documenting each linter and option, set to its default. |
+| `tsk list` | Lists every linter, whether it is enabled, where it is defined, and its summary. |
+| `tsk get [libraries...]` | Adds or updates [libraries](#libraries) and pins them in `.tsk/lock.toml`. |
+| `tsk sync` | Downloads every pinned library missing from the cache. |
 
 `tsk` uses the nearest `.tsk/` at or above the working directory, searching up
 to your home directory, so modules in one repository can share it. If there is
 none, `tsk init` creates it beside the nearest `go.mod`. The config file is
 `config.toml` inside it. `--dir` and `--config` override them. `--log-level`
 sets the level of script and `tsk` logging, which defaults to `error`.
+`--cache`, or `TSK_CACHE`, sets where libraries are cached.
 
 ### Configuration
 
@@ -114,6 +120,60 @@ unknown options, and values of the wrong type are errors.
 `tsk config` output is a starting point for this file. Empty lists show one
 placeholder entry to fill in or delete.
 
+### Libraries
+
+A library is a directory of linter scripts in a git repository, shared between
+projects. Add one with `tsk get`:
+
+```sh
+tsk get github.com/acme/linters@v1.2.0
+```
+
+This adds it to the `imports` setting in `.tsk/config.toml`, and pins it to a
+commit in `.tsk/lock.toml`:
+
+```toml
+imports = [
+  "github.com/acme/linters@v1.2.0",
+]
+```
+
+Every linter in a listed library runs, as if its scripts were in `.tsk/`. Turn
+off the ones you do not want with `disable`. `tsk get` prints the linters each
+change adds or removes, because an update can add new ones.
+
+An import is `<repository>[@<version>][//<dir>]`:
+
+- The repository is fetched from `https://<repository>`, with your git
+  credentials, so private repositories work. To use SSH instead, rewrite the
+  URL with git's `url.<base>.insteadOf` setting.
+- The version is a tag, branch, or commit. Without one, `tsk get` picks the
+  highest semver tag, or the default branch if there are none.
+- `//<dir>` names a directory within the repository holding the scripts, as in
+  `github.com/acme/linters@v1.2.0//strict`. Without it, the library is the
+  whole repository. One import cannot lie within another.
+
+Commit `lock.toml`, so everyone runs the same commit of each library. `tsk get`
+without arguments updates the lock file after you edit `imports` by hand, and
+naming an import without a version, as in `tsk get github.com/acme/linters`,
+updates it to its latest version. Until the lock
+file matches `imports`, other commands fail.
+
+`tsk` needs `git` to download libraries. It keeps them in `tsk` in your user
+cache directory, such as `~/Library/Caches/tsk` on macOS. Commands download a
+pinned library the first time they need it, and otherwise work offline. `tsk
+sync` downloads them all in advance, as for CI. Deleting the cache is always
+safe.
+
+Your scripts can import a library's scripts by its repository and directory
+joined, as in `import { helper } from "github.com/acme/linters/strict/helper"`.
+A library's scripts can import each other only by relative paths, not other
+libraries. Rerun `tsk init` after `tsk get`, so your editor finds library
+scripts.
+
+To write a library, put scripts and their `testdata/` in a directory of a git
+repository, and run `tsk test --dir <directory>` there to test them.
+
 ### Suppressing findings
 
 Suppress findings with a `//nolint:<linter>[,<linter>...] [<reason>]` comment,
@@ -127,8 +187,9 @@ the same column. A bare `//nolint` covers every linter.
 
 `tsk` loads every `.ts` file under `.tsk/`, including subdirectories, except
 those under `testdata/` and `types/`. Scripts can import each other with
-relative paths, but not packages from npm. A script defining a linter with the
-same name as a built-in one replaces it.
+relative paths, and [library](#libraries) scripts by path, but not packages
+from npm. A script defining a linter with the same name as a built-in or
+library one replaces it. Two libraries defining the same linter is an error.
 
 Scripts are type-checked as one strict ES2020 project before they run.
 Errors point at your `.ts` source, and so do the stack traces of exceptions
