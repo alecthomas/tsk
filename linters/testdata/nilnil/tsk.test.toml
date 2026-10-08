@@ -1,0 +1,11 @@
+[[case]]
+name = "default"
+packages = ["p"]
+
+[[case]]
+name = "options"
+packages = ["opposite"]
+[case.config]
+detect-opposite = true
+only-two = false
+checked-types = ["map", "ptr"]
