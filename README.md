@@ -321,6 +321,12 @@ Their APIs follow Go's, with these conversions:
   empty array.
 - **Pointers to slices and interfaces** read as their target, so
   `value.referrers()` is an array.
+
+`go/format` takes an `io.Writer`, so `tsk` exports `formatNode(node, fset?)`
+instead. It returns the node as `go/format` prints it: on one line without a
+file set, or in its source layout with `pass.fset`. Use it for messages and
+suggested fixes; `types.exprString` abbreviates function and composite
+literals.
 - **Results.** A `(value, ok)` result is the value or `undefined`. Other
   multiple results are arrays.
 - **Errors.** A non-nil trailing `error` result is thrown. Go errors extend

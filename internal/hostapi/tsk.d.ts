@@ -35,6 +35,11 @@ declare module "tsk" {
   export function and<T>(...predicates: Predicate<T>[]): Predicate<T>;
   export function or<T>(...predicates: Predicate<T>[]): Predicate<T>;
   export function not<T>(predicate: Predicate<T>): Predicate<T>;
+  /**
+   * Formats a syntax node with go/format. Without a file set the node prints
+   * on one line; with pass.fset it keeps its source layout.
+   */
+  export function formatNode(node: ast.Node, fset?: token.FileSet): string;
 
   /** A read-only view of a Go map. Keys keep Go identity. */
   export interface MapView<K, V> extends Iterable<[K, V]> {

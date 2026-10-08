@@ -251,6 +251,37 @@ func f(n int) int {
 	analysistest.Run(t, dir, analyzers[0], "example")
 }
 
+const formatScript = `import { defineAnalyzer, formatNode } from "tsk";
+import { inspect } from "tsk/passes";
+import * as ast from "go/ast";
+
+export default defineAnalyzer({
+  name: "format",
+  doc: "report how each return value formats",
+  requires: [inspect],
+  run(pass) {
+    for (const cursor of pass.resultOf(inspect).root().preorder(ast.ReturnStmt)) {
+      const value = (cursor.node() as ast.ReturnStmt).results[0]!;
+      pass.report({ pos: value.pos(), message: formatNode(value) + " | " + formatNode(value, pass.fset) });
+    }
+  },
+});
+`
+
+func TestFormatNode(t *testing.T) {
+	e := load(t, map[string]string{"format.ts": formatScript})
+	analyzers, err := e.Analyzers(config.File{}, nil)
+	assert.NoError(t, err)
+	dir, cleanup, err := analysistest.WriteFiles(map[string]string{
+		"example/example.go": "package example\n\n" +
+			"func f(a, b, c int) int {\n\treturn a + b*c // want `^a \\+ b\\*c \\| a \\+ b\\*c$`\n}\n\n" +
+			"func g() []int {\n\treturn []int{ // want `^\\[\\]int\\{1, 2\\} \\| \\[\\]int\\{\\n\\t1,\\n\\t2,\\n\\}$`\n\t\t1,\n\t\t2,\n\t}\n}\n",
+	})
+	assert.NoError(t, err)
+	defer cleanup()
+	analysistest.Run(t, dir, analyzers[0], "example")
+}
+
 // filesScript reports every file, at its package clause.
 func filesScript(definition string) string {
 	return `import { defineAnalyzer } from "tsk";

@@ -1,9 +1,13 @@
 package vm
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
+	"go/ast"
+	"go/format"
+	"go/token"
 	"log/slog"
 	"reflect"
 	"slices"
@@ -144,6 +148,7 @@ func (r *Runtime) installGlobals() error {
 		native.Set("combine", r.combine),
 		native.Set("registerAnalyzer", r.registerAnalyzer),
 		native.Set("hostAnalyzer", r.hostAnalyzer),
+		native.Set("formatNode", r.formatNode),
 		r.rt.Set("__tsk", native),
 	} {
 		if err != nil {
@@ -191,6 +196,36 @@ func (r *Runtime) combine(call sobek.FunctionCall) sobek.Value {
 		values[i] = call.Argument(1).ToObject(r.rt).Get(strconv.Itoa(i))
 	}
 	return r.bridge.combine(call.Argument(0).String(), values)
+}
+
+// formatNode formats a syntax node with go/format. Without a file set, as with
+// an empty one, the node prints on one line regardless of its source layout.
+func (r *Runtime) formatNode(call sobek.FunctionCall) sobek.Value {
+	node, ok := r.goArgument(call.Argument(0)).(ast.Node)
+	if !ok {
+		panic(r.bridge.typeError("formatNode requires a syntax node"))
+	}
+	fset, ok := r.goArgument(call.Argument(1)).(*token.FileSet)
+	if !ok {
+		fset = token.NewFileSet()
+	}
+	var out bytes.Buffer
+	if err := format.Node(&out, fset, node); err != nil {
+		panic(r.bridge.goError(err))
+	}
+	return r.rt.ToValue(out.String())
+}
+
+// goArgument returns the Go value a wrapped argument holds, or nil.
+func (r *Runtime) goArgument(value sobek.Value) any {
+	if isAbsent(value) {
+		return nil
+	}
+	held, ok := r.bridge.lookup(value.ToObject(r.rt))
+	if !ok || !held.CanInterface() {
+		return nil
+	}
+	return held.Interface()
 }
 
 // registerAnalyzer records a definition. A later definition with the same
