@@ -39,10 +39,13 @@ func TestRunText(t *testing.T) {
 		Context int
 		Want    string
 	}{
+		// The generated test main's functions are not reported.
 		{Name: "NoContext", Context: -1, Want: "sub/sub.go:3:6: function A (funcs)\n" +
-			"sub/sub.go:5:6: function B (funcs)\n"},
+			"sub/sub.go:5:6: function B (funcs)\n" +
+			"sub/sub_test.go:5:6: function TestC (funcs)\n"},
 		{Name: "Context", Context: 0, Want: "sub/sub.go:3:6: function A (funcs)\n3\tfunc A() {}\n" +
-			"sub/sub.go:5:6: function B (funcs)\n5\tfunc B() {}\n"},
+			"sub/sub.go:5:6: function B (funcs)\n5\tfunc B() {}\n" +
+			"sub/sub_test.go:5:6: function TestC (funcs)\n5\tfunc TestC(t *testing.T) {}\n"},
 	}
 	for _, test := range tests {
 		t.Run(test.Name, func(t *testing.T) {

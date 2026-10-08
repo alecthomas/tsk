@@ -8,6 +8,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 
 	"github.com/alecthomas/errors"
@@ -42,7 +43,7 @@ func Run(analyzers []*analysis.Analyzer, c Config, dir string, stdout, stderr io
 	if printErrors(stderr, initial) > 0 {
 		exitCode = 1
 	}
-	graph, err := checker.Analyze(analyzers, initial, nil)
+	graph, err := checker.Analyze(analyzers, withoutTestMains(initial), nil)
 	if err != nil {
 		return 1, errors.Wrap(err, "analyze packages")
 	}
@@ -53,6 +54,20 @@ func Run(analyzers []*analysis.Analyzer, c Config, dir string, stdout, stderr io
 		return 1, err
 	}
 	return max(exitCode, textExitCode(graph)), nil
+}
+
+// withoutTestMains drops the test binaries that loading with Tests adds. In
+// go/packages' IDs, loading "fmt" with tests also yields its test binary,
+// "fmt.test", whose source go test generates rather than the user writes.
+func withoutTestMains(pkgs []*packages.Package) []*packages.Package {
+	loaded := map[string]bool{}
+	for _, pkg := range pkgs {
+		loaded[pkg.ID] = true
+	}
+	return slices.DeleteFunc(slices.Clone(pkgs), func(pkg *packages.Package) bool {
+		tested, isBinary := strings.CutSuffix(pkg.ID, ".test")
+		return isBinary && loaded[tested]
+	})
 }
 
 // needFacts reports whether an analyzer, or one it requires, uses facts, so
