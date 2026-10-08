@@ -1,0 +1,6 @@
+# These clones are about 100 nodes, under the default threshold of 150.
+[[case]]
+name = "threshold"
+packages = ["clones"]
+[case.config]
+threshold = 50
