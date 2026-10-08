@@ -25,6 +25,10 @@ statements = 50
 [godoclint]
 enable = ["no-unused-link"]
 
+# golangci-lint excludes the one local replacement, of the TypeScript shim.
+[gomoddirectives]
+replace-local = true
+
 # golangci-lint excludes godot findings on lines with TODO.
 [godot]
 exclude = ["TODO"]
