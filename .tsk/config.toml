@@ -7,7 +7,7 @@ replace = { "github.com/alecthomas/tsk//linters" = "../linters" }
 
 # Settings below mirror .golangci.yml.
 
-skip-tests = ["bodyclose", "dupl", "errcheck", "funlen", "goconst"]
+skip-tests = ["bodyclose", "dupl", "errcheck", "funlen", "goconst", "godot"]
 
 [errcheck]
 check-blank = true
@@ -24,6 +24,10 @@ statements = 50
 
 [godoclint]
 enable = ["no-unused-link"]
+
+# golangci-lint excludes godot findings on lines with TODO.
+[godot]
+exclude = ["TODO"]
 
 [forbidigo]
 analyze-types = true

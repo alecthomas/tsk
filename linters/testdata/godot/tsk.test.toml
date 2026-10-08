@@ -1,0 +1,12 @@
+[[case]]
+name = "default"
+packages = ["comments"]
+[case.config]
+exclude = ["TODO"]
+
+[[case]]
+name = "capital-all"
+packages = ["capital"]
+[case.config]
+scope = "all"
+capital = true
