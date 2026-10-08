@@ -24,7 +24,7 @@ func remotes(t *testing.T) string {
 	root := t.TempDir()
 	// Git hooks export variables such as GIT_DIR naming the repository being
 	// pushed; left set, test git commands would modify it.
-	for _, key := range strings.Fields(run(t, root, "rev-parse", "--local-env-vars")) {
+	for key := range strings.FieldsSeq(run(t, root, "rev-parse", "--local-env-vars")) {
 		t.Setenv(key, "")
 		assert.NoError(t, os.Unsetenv(key))
 	}
@@ -153,6 +153,25 @@ func TestSnapshot(t *testing.T) {
 	snapshot, err = cache.Snapshot(t.Context(), locked)
 	assert.NoError(t, err)
 	assert.Equal(t, []string{"a.ts", "sub/b.ts"}, slices.Sorted(maps.Keys(readTree(t, snapshot))))
+}
+
+func TestCacheInsideGitHook(t *testing.T) {
+	root := remotes(t)
+	const repository = "github.com/acme/linters"
+	head := commit(t, root, repository, map[string]string{"lib/a.ts": "a"})
+	hooked := t.TempDir()
+	run(t, hooked, "init", "--quiet")
+	t.Setenv("GIT_DIR", filepath.Join(hooked, ".git"))
+	t.Setenv("GIT_WORK_TREE", hooked)
+	t.Setenv("GIT_INDEX_FILE", filepath.Join(hooked, ".git", "index"))
+	cache, _ := newCache(t)
+	locked, err := cache.Resolve(t.Context(), library.Import{Repository: repository, Version: Some("main"), Dir: "lib"})
+	assert.NoError(t, err)
+	assert.Equal(t, library.Locked{Repository: repository, Version: "main", Dir: "lib", Commit: head}, locked)
+	snapshot, err := cache.Snapshot(t.Context(), locked)
+	assert.NoError(t, err)
+	assert.Equal(t, map[string]string{"a.ts": "a"}, readTree(t, snapshot))
+	assert.Equal(t, "", run(t, hooked, "for-each-ref"))
 }
 
 func readTree(t *testing.T, dir string) map[string]string {

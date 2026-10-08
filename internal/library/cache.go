@@ -9,6 +9,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"slices"
 	"strings"
 	"syscall"
 
@@ -187,10 +188,8 @@ func extract(ctx context.Context, mirror, commit, dir, staging string) error {
 	if dir != "" {
 		args = append(args, dir)
 	}
-	command := exec.CommandContext(ctx, "git", args...)
-	command.Dir = mirror
 	// Archiving a blobless mirror fetches file contents, so it may prompt too.
-	command.Env = append(command.Environ(), "GIT_TERMINAL_PROMPT=0")
+	command := gitCommand(ctx, mirror, args...)
 	var stderr bytes.Buffer
 	command.Stderr = &stderr
 	output, err := command.StdoutPipe()
@@ -258,10 +257,7 @@ func writeFile(path string, content io.Reader) error {
 
 // git runs git in dir and returns its trimmed output.
 func git(ctx context.Context, dir string, args ...string) (string, error) {
-	command := exec.CommandContext(ctx, "git", args...)
-	command.Dir = dir
-	// tsk cannot answer a credential prompt, so git fails rather than waits.
-	command.Env = append(command.Environ(), "GIT_TERMINAL_PROMPT=0")
+	command := gitCommand(ctx, dir, args...)
 	var stderr bytes.Buffer
 	command.Stderr = &stderr
 	output, err := command.Output()
@@ -269,6 +265,26 @@ func git(ctx context.Context, dir string, args ...string) (string, error) {
 		return "", errors.Errorf("git %s: %v: %s", strings.Join(args, " "), err, strings.TrimSpace(stderr.String()))
 	}
 	return strings.TrimSpace(string(output)), nil
+}
+
+// gitCommand returns a git command that runs on the repository in dir.
+func gitCommand(ctx context.Context, dir string, args ...string) *exec.Cmd {
+	command := exec.CommandContext(ctx, "git", args...)
+	command.Dir = dir
+	// Git hooks, such as one running tsk, export these to select the repository
+	// being pushed; inherited, they would override dir. Config variables stay.
+	selectors := []string{
+		"GIT_ALTERNATE_OBJECT_DIRECTORIES", "GIT_COMMON_DIR", "GIT_DIR", "GIT_GRAFT_FILE",
+		"GIT_IMPLICIT_WORK_TREE", "GIT_INDEX_FILE", "GIT_NO_REPLACE_OBJECTS", "GIT_OBJECT_DIRECTORY",
+		"GIT_PREFIX", "GIT_REPLACE_REF_BASE", "GIT_SHALLOW_FILE", "GIT_WORK_TREE",
+	}
+	command.Env = slices.DeleteFunc(command.Environ(), func(variable string) bool {
+		name, _, _ := strings.Cut(variable, "=")
+		return slices.Contains(selectors, name)
+	})
+	// tsk cannot answer a credential prompt, so git fails rather than waits.
+	command.Env = append(command.Env, "GIT_TERMINAL_PROMPT=0")
+	return command
 }
 
 // lockFile takes an exclusive lock on path, creating it, and returns the

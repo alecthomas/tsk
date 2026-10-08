@@ -23,7 +23,7 @@ func remotes(t *testing.T) string {
 	root := t.TempDir()
 	// Git hooks export variables such as GIT_DIR naming the repository being
 	// pushed; left set, test git commands would modify it.
-	for _, key := range strings.Fields(git(t, root, "rev-parse", "--local-env-vars")) {
+	for key := range strings.FieldsSeq(git(t, root, "rev-parse", "--local-env-vars")) {
 		t.Setenv(key, "")
 		assert.NoError(t, os.Unsetenv(key))
 	}
