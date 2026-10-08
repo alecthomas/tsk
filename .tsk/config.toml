@@ -14,3 +14,11 @@ check-blank = true
 
 [exhaustive]
 check = ["switch", "map"]
+
+[forbidigo]
+analyze-types = true
+forbid = [
+  { pattern = '^fmt\.Errorf$', pkg = '^fmt$', msg = "Use github.com/alecthomas/errors.Errorf instead" },
+  { pattern = "", pkg = '^errors$', msg = "Use github.com/alecthomas/errors instead" },
+  { pattern = '\.MustGet$', pkg = '^github\.com/alecthomas/types/optional$', msg = "Use Get or Default and handle the absent case instead of MustGet" },
+]

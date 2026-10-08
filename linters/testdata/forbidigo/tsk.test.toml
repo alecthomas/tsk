@@ -1,0 +1,14 @@
+[[case]]
+name = "default"
+packages = ["defaults"]
+
+[[case]]
+name = "analyze-types"
+packages = ["typed"]
+[case.config]
+analyze-types = true
+forbid = [
+  { pattern = '^errors\.', pkg = '^errors$', msg = "use github.com/alecthomas/errors instead" },
+  { pattern = '^strings\.Builder\.Write(# no builders)?' },
+  { pattern = '^fmt\.Errorf$' },
+]
