@@ -1,0 +1,9 @@
+[[case]]
+name = "default"
+packages = ["a"]
+
+[[case]]
+name = "check-consumption"
+packages = ["consumption"]
+[case.config]
+check-consumption = true
