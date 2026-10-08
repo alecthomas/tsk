@@ -1,0 +1,10 @@
+[[case]]
+name = "default"
+packages = ["order"]
+
+[[case]]
+name = "alphabetical-and-functions"
+packages = ["sorted"]
+[case.config]
+alphabetical = true
+function = true

@@ -15,6 +15,9 @@ check-blank = true
 [exhaustive]
 check = ["switch", "map"]
 
+[funcorder]
+struct-method = false
+
 [forbidigo]
 analyze-types = true
 forbid = [
