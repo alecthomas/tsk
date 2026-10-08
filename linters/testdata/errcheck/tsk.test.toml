@@ -1,0 +1,22 @@
+[[case]]
+name = "default"
+packages = ["a"]
+
+[[case]]
+name = "check-blank"
+packages = ["blank"]
+[case.config]
+check-blank = true
+
+[[case]]
+name = "check-type-assertions"
+packages = ["assert"]
+[case.config]
+check-type-assertions = true
+
+[[case]]
+name = "exclude-functions"
+packages = ["custom"]
+[case.config]
+disable-default-exclusions = true
+exclude-functions = ["(custom.ErrorMakerInterface).MakeNilError"]

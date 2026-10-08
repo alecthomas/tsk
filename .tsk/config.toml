@@ -7,4 +7,7 @@ replace = { "github.com/alecthomas/tsk//linters" = "../linters" }
 
 # Settings below mirror .golangci.yml.
 
-skip-tests = ["bodyclose", "dupl"]
+skip-tests = ["bodyclose", "dupl", "errcheck"]
+
+[errcheck]
+check-blank = true
