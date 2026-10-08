@@ -4,6 +4,7 @@ import * as token from "go/token";
 import * as types from "go/types";
 import { defineAnalyzer, formatNode, type Pass, type SuggestedFix, type TextEdit } from "tsk";
 import { inspect } from "tsk/passes";
+import { quote } from "./internal/strconv";
 
 interface Config {
   /** Optimize integer formatting. */
@@ -225,7 +226,7 @@ class SprintChecker {
       return diagnostic("integer-format", "can be replaced with faster strconv.FormatUint", "Use strconv.FormatUint", wrap("strconv.FormatUint(", `, ${base}`));
     }
     if (is(types.String) && fn === "fmt.Sprintf" && isConcatable(verb) && c.stringFormat) {
-      const literal = (s: string) => goQuote(s).replace(/%%/g, "%");
+      const literal = (s: string) => quote(s).replace(/%%/g, "%");
       let fix: string;
       if (verb.endsWith("%s")) {
         fix = `${literal(verb.slice(0, -2))}+${source()}`;
@@ -372,27 +373,4 @@ function otherUse(loop: ast.Node, adds: Map<string, ast.AssignStmt[]>): string |
     return true;
   });
   return found;
-}
-
-// goQuote quotes a string like Go's strconv.Quote for ASCII escapes.
-function goQuote(s: string): string {
-  const escapes: Record<string, string> = {
-    "\x07": "\\a",
-    "\b": "\\b",
-    "\f": "\\f",
-    "\n": "\\n",
-    "\r": "\\r",
-    "\t": "\\t",
-    "\v": "\\v",
-    '"': '\\"',
-    "\\": "\\\\",
-  };
-  const quoted = Array.from(s, (c) => {
-    const code = c.charCodeAt(0);
-    if (escapes[c] !== undefined) {
-      return escapes[c];
-    }
-    return code < 0x20 || code === 0x7f ? `\\x${code.toString(16).padStart(2, "0")}` : c;
-  });
-  return `"${quoted.join("")}"`;
 }

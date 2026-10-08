@@ -4,6 +4,7 @@ import * as token from "go/token";
 import type * as inspector from "golang.org/x/tools/go/ast/inspector";
 import { defineAnalyzer, type Pass } from "tsk";
 import { inspect } from "tsk/passes";
+import { unquote } from "./internal/strconv";
 
 interface Config {
   /** Regular expressions of strings to ignore. */
@@ -246,7 +247,7 @@ class Collector {
     if (expr?.$type !== "BasicLit" || !this.tokens.has(expr.kind) || this.excluded.has(context)) {
       return;
     }
-    const str = unquote(expr.value);
+    const str = unquoteOrStrip(expr.value);
     if (str.length === 0 || [...str].length < this.config.minLen || this.ignore?.test(str) || this.outOfRange(str)) {
       return;
     }
@@ -256,7 +257,7 @@ class Collector {
   }
 
   private addConst(name: string, value: string, pos: token.Pos, valueKey: string): void {
-    const unquoted = unquote(value);
+    const unquoted = unquoteOrStrip(value);
     if ([...unquoted].length < this.config.minLen || this.ignore?.test(unquoted)) {
       return;
     }
@@ -361,20 +362,14 @@ function constValueStrings(value: constant.Value): [string, string] {
   return [value.string(), `${constant.Kind.string(value.kind())}:${value.exactString()}`];
 }
 
-// unquote unquotes a Go string literal, or strips its quotes if it does
-// not parse, as upstream does.
-function unquote(literal: string): string {
-  if (literal.startsWith("`")) {
-    return literal.slice(1, -1).split("\r").join("");
+// unquoteOrStrip unquotes a Go string literal, or strips its quotes if it
+// does not parse, as upstream does for truncated constant values.
+function unquoteOrStrip(literal: string): string {
+  const unquoted = unquote(literal);
+  if (unquoted !== null || !literal.startsWith('"')) {
+    return unquoted ?? literal;
   }
-  if (!literal.startsWith('"')) {
-    return literal;
-  }
-  try {
-    return JSON.parse(literal);
-  } catch {
-    return literal.length >= 2 ? literal.slice(1, -1) : literal;
-  }
+  return literal.length >= 2 ? literal.slice(1, -1) : literal;
 }
 
 // parseGoInt parses an integer as strconv.ParseInt with base 0 does, or

@@ -1,6 +1,7 @@
 import * as ast from "go/ast";
 import * as token from "go/token";
 import { defineAnalyzer, type Pass } from "tsk";
+import { unquote } from "./internal/strconv";
 
 type LintFunc = "Help" | "MetricUnits" | "Counter" | "HistogramSummaryReserved" | "MetricTypeInName" | "ReservedChars" | "CamelCase" | "lintUnitAbbreviations";
 
@@ -423,20 +424,6 @@ function buildFQName(namespace: string, subsystem: string, name: string): string
 
 function trimQuotes(s: string): string {
   return s.replace(/^"+|"+$/g, "");
-}
-
-// unquote decodes a Go string literal.
-function unquote(literal: string): string {
-  if (literal.startsWith("`")) {
-    return literal.slice(1, -1).replace(/\r/g, "");
-  }
-  const simple: Record<string, string> = { a: "\x07", b: "\b", f: "\f", n: "\n", r: "\r", t: "\t", v: "\v", "\\": "\\", "'": "'", '"': '"' };
-  return literal.slice(1, -1).replace(/\\(?:([abfnrtv\\'"])|x([0-9a-fA-F]{2})|([0-7]{3})|u([0-9a-fA-F]{4})|U([0-9a-fA-F]{8}))/g, (_, c, x, o, u, U) => {
-    if (c !== undefined) {
-      return simple[c];
-    }
-    return String.fromCodePoint(Number.parseInt(x ?? o ?? u ?? U, x !== undefined ? 16 : o !== undefined ? 8 : 16));
-  });
 }
 
 // lint runs promlint's checks on a family, returning each problem's text.

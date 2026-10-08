@@ -5,6 +5,7 @@ import * as types from "go/types";
 import * as typeutil from "golang.org/x/tools/go/types/typeutil";
 import { defineAnalyzer, type Pass } from "tsk";
 import { inspect } from "tsk/passes";
+import { unquote } from "./internal/strconv";
 
 interface Config {
   /** Header keys to accept as written, such as `exclusioN`. */
@@ -142,7 +143,7 @@ function checkCall(pass: Pass<Config>, call: ast.CallExpr, headerType: types.Typ
   let key: string;
   let quote: string | null = null;
   if (arg.$type === "BasicLit") {
-    const unquoted = unquote(arg);
+    const unquoted = arg.kind === token.STRING ? unquote(arg.value) : null;
     if (unquoted === null) {
       return;
     }
@@ -210,22 +211,6 @@ function headerMethod(pass: Pass<Config>, call: ast.CallExpr): { receiver: types
     return null;
   }
   return { receiver: pass.typesInfo.objectOf(rhs.x)?.type() ?? null, name: rhs.sel!.name };
-}
-
-// unquote returns a string literal's value, or null if it is not a string.
-function unquote(lit: ast.BasicLit): string | null {
-  if (lit.kind !== token.STRING || lit.value.length < 2) {
-    return null;
-  }
-  if (lit.value[0] === "`") {
-    return lit.value.slice(1, -1).split("\r").join("");
-  }
-  try {
-    return JSON.parse(lit.value);
-  } catch {
-    // Escapes Go has and JSON lacks, such as \x41, are rare in header keys.
-    return null;
-  }
 }
 
 // canonicalHeaderKey mirrors net/http.CanonicalHeaderKey: a key with any

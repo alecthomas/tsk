@@ -5,6 +5,7 @@ import * as types from "go/types";
 import * as typeutil from "golang.org/x/tools/go/types/typeutil";
 import { defineAnalyzer, formatNode, type Pass } from "tsk";
 import { inspect } from "tsk/passes";
+import { quote } from "./internal/strconv";
 
 interface Config {
   /** Check github.com/go-kit/log calls. */
@@ -188,13 +189,13 @@ class Checker {
         this.pass.report({
           pos: arg.pos(),
           end: arg.end(),
-          message: `logging keys are expected to be inlined constant strings, please replace ${goQuote(ellipsis(formatNode(arg, this.pass.fset)))} provided with string`,
+          message: `logging keys are expected to be inlined constant strings, please replace ${quote(ellipsis(formatNode(arg, this.pass.fset)))} provided with string`,
         });
       } else if (Array.from(value).some((c) => c.codePointAt(0)! >= 0x80)) {
         this.pass.report({
           pos: arg.pos(),
           end: arg.end(),
-          message: `logging keys are expected to be alphanumeric strings, please remove any non-latin characters from ${goQuote(value)}`,
+          message: `logging keys are expected to be alphanumeric strings, please remove any non-latin characters from ${quote(value)}`,
         });
       }
     }
@@ -225,7 +226,7 @@ class Checker {
       const value = this.stringConstant(arg);
       const specifier = value === null ? null : printfSpecifier(value);
       if (specifier !== null) {
-        this.pass.report({ pos: arg.pos(), end: arg.end(), message: `logging message should not use format specifier ${goQuote(specifier)}` });
+        this.pass.report({ pos: arg.pos(), end: arg.end(), message: `logging message should not use format specifier ${quote(specifier)}` });
         return;
       }
     }
@@ -312,29 +313,6 @@ function receiverName(t: types.Type | null): string {
 function ellipsis(s: string): string {
   const chars = Array.from(s);
   return chars.length > 20 ? `${chars.slice(0, 17).join("")}...` : s;
-}
-
-// goQuote quotes a string like Go's %q verb for ASCII escapes.
-function goQuote(s: string): string {
-  const escapes: Record<string, string> = {
-    "\x07": "\\a",
-    "\b": "\\b",
-    "\f": "\\f",
-    "\n": "\\n",
-    "\r": "\\r",
-    "\t": "\\t",
-    "\v": "\\v",
-    '"': '\\"',
-    "\\": "\\\\",
-  };
-  const quoted = Array.from(s, (c) => {
-    const code = c.charCodeAt(0);
-    if (escapes[c] !== undefined) {
-      return escapes[c];
-    }
-    return code < 0x20 || code === 0x7f ? `\\x${code.toString(16).padStart(2, "0")}` : c;
-  });
-  return `"${quoted.join("")}"`;
 }
 
 const printfVerbFlags: Record<string, string> = {
