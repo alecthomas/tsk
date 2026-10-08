@@ -1,0 +1,10 @@
+[[case]]
+name = "default"
+packages = ["headers", "global"]
+
+[[case]]
+name = "exclusions"
+packages = ["exclusions"]
+[case.config]
+exclusions = ["exclusioN"]
+use-default-exclusion = false
