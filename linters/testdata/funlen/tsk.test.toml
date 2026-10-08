@@ -1,0 +1,10 @@
+[[case]]
+name = "default"
+packages = ["defaults"]
+
+[[case]]
+name = "small-limits"
+packages = ["small"]
+[case.config]
+lines = 2
+statements = 3
