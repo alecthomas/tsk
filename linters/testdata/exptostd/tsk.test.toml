@@ -1,0 +1,3 @@
+[[case]]
+name = "default"
+packages = ["expmaps", "expslices", "expmixed"]
