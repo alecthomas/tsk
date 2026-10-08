@@ -1,0 +1,9 @@
+[[case]]
+name = "default"
+packages = ["append"]
+
+[[case]]
+name = "always"
+packages = ["always"]
+[case.config]
+always = true
