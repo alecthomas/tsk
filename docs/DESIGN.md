@@ -10,8 +10,8 @@ the `tsk` driver and `analysistest`, with facts, config, `Requires`,
 and results all working.
 
 Scripts load from a `.tsk` directory found by walking up from the
-working directory, and from TypeScript sources compiled into the binary. Each
-analyzer may declare a typed config, populated from `.tsk/config.toml`.
+working directory, and from the [linter libraries](libraries.md) it imports.
+Each analyzer may declare a typed config, populated from `.tsk/config.toml`.
 
 The ported `optionalnil` and `encapsulation` linters in `linters/` are the
 acceptance tests. They pass their original fixtures and report exactly what the
@@ -115,10 +115,9 @@ Loading sources:
    confines relative imports to the importing script's source.
 6. Evaluate in a bootstrap runtime to collect analyzer definitions.
 
-Compiled-in sources come first, then [linter libraries](libraries.md), and the
-`.tsk` directory last. A later definition with the same name replaces an
-earlier one and is logged, except that two libraries defining one name is an
-error.
+[Linter libraries](libraries.md) come first and the `.tsk` directory last. A
+later definition with the same name replaces an earlier one and is logged,
+except that two libraries defining one name is an error.
 
 ### Analyzer definition surface
 
@@ -419,8 +418,9 @@ golangci-lint and `go vet -vettool` integration are out of scope.
   and analyzer construction.
 - `internal/project/`: discovery, loading, and editor files.
 - `internal/scripttest/`: test cases and the test runner.
-- `linters/`: the compiled-in ports and their test data. `bit lint` runs them
-  on this repository.
+- `linters/`: the ported linters and their test data, published as a library.
+  This repository's `.tsk/config.toml` imports them and replaces the import
+  with the directory, so `bit lint` runs the linters in the same commit.
 
 ## Risks
 

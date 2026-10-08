@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"go/ast"
 	"log/slog"
+	"os"
+	"path/filepath"
 	"reflect"
 	"testing"
 
@@ -18,7 +20,6 @@ import (
 	"github.com/alecthomas/tsk/internal/compile"
 	"github.com/alecthomas/tsk/internal/config"
 	"github.com/alecthomas/tsk/internal/engine"
-	"github.com/alecthomas/tsk/linters"
 )
 
 // module is this repository's module, the main module the benchmarks lint.
@@ -127,7 +128,9 @@ func BenchmarkAnalysis(b *testing.B) {
 		}
 	}
 	b.Run("Linters", func(b *testing.B) {
-		e, err := engine.Load(context.Background(), slog.New(slog.DiscardHandler), []compile.Source{{Name: "builtin", FS: linters.Scripts}})
+		e, err := engine.Load(context.Background(), slog.New(slog.DiscardHandler), []compile.Source{
+			{Name: "github.com/alecthomas/tsk/linters", FS: os.DirFS(filepath.Join("..", "..", "linters")), Library: true},
+		})
 		assert.NoError(b, err)
 		analyzers, err := e.Analyzers(config.File{}, []string{module})
 		assert.NoError(b, err)

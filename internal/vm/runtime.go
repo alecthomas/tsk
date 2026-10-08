@@ -194,7 +194,7 @@ func (r *Runtime) combine(call sobek.FunctionCall) sobek.Value {
 }
 
 // registerAnalyzer records a definition. A later definition with the same
-// name replaces an earlier one, so project scripts override compiled-in ones.
+// name replaces an earlier one, so project scripts override library ones.
 // Two libraries defining one name is an error, as neither is meant to win.
 func (r *Runtime) registerAnalyzer(call sobek.FunctionCall) sobek.Value {
 	handle := call.Argument(0).ToObject(r.rt)
@@ -357,7 +357,7 @@ type Metadata struct {
 	// Defaults is the config property as JSON, or null.
 	Defaults json.RawMessage
 	// Module is the script module that defined the analyzer, such as
-	// "builtin/encapsulation.ts".
+	// "project/nopanic.ts".
 	Module string
 }
 

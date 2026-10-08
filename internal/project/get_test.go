@@ -8,7 +8,6 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
-	"testing/fstest"
 
 	"github.com/alecthomas/assert/v2"
 
@@ -73,6 +72,56 @@ export default defineAnalyzer({ name: "` + name + `", doc: "` + name + ` linter"
 `
 }
 
+// sources loads a project and maps each analyzer to where it is defined.
+func sources(t *testing.T, c project.Config, cache *library.Cache) map[string]string {
+	t.Helper()
+	p, err := project.Load(t.Context(), slog.New(slog.DiscardHandler), c, cache)
+	assert.NoError(t, err)
+	described, err := p.Describe(nil)
+	assert.NoError(t, err)
+	found := map[string]string{}
+	for _, analyzer := range described {
+		found[analyzer.Name] = analyzer.Source
+	}
+	return found
+}
+
+// A replaced import loads from its directory: nothing is fetched or locked,
+// so the library need not be published.
+func TestReplace(t *testing.T) {
+	work := t.TempDir()
+	t.Chdir(work)
+	c := project.Config{Dir: filepath.Join(work, ".tsk"), Config: filepath.Join(work, ".tsk", "config.toml")}
+	assert.NoError(t, os.MkdirAll(c.Dir, 0o750))
+	assert.NoError(t, os.WriteFile(c.Config, []byte(`imports = ["git.example.com/unpublished@v1//lib"]
+replace = { "git.example.com/unpublished//lib" = "../local" }
+`), 0o600))
+	assert.NoError(t, os.MkdirAll(filepath.Join(work, "local"), 0o750))
+	assert.NoError(t, os.WriteFile(filepath.Join(work, "local", "one.ts"), []byte(analyzerScript("one")), 0o600))
+	assert.NoError(t, os.WriteFile(filepath.Join(c.Dir, "two.ts"), []byte(analyzerScript("two")), 0o600))
+	assert.NoError(t, os.MkdirAll(filepath.Join(work, "sub"), 0o750))
+	logger := slog.New(slog.DiscardHandler)
+	cache := library.NewCache(library.Config{Cache: t.TempDir()}, logger)
+
+	var out bytes.Buffer
+	assert.NoError(t, project.Get(t.Context(), logger, c, cache, nil, &out))
+	assert.Equal(t, "", out.String())
+	lock, err := library.LoadLock(c.LockFile())
+	assert.NoError(t, err)
+	assert.Equal(t, library.Lock{}, lock)
+
+	// Sources are relative to the working directory, and always start with
+	// "./" or "../" so they cannot read as library paths.
+	assert.Equal(t, map[string]string{"one": "./local", "two": "./.tsk/two.ts"}, sources(t, c, cache))
+	t.Chdir(filepath.Join(work, "sub"))
+	assert.Equal(t, map[string]string{"one": "../local", "two": "../.tsk/two.ts"}, sources(t, c, cache))
+
+	unversioned, err := library.ParseImport("git.example.com/unpublished//lib")
+	assert.NoError(t, err)
+	err = project.Get(t.Context(), logger, c, cache, []library.Import{unversioned}, &out)
+	assert.EqualError(t, err, "git.example.com/unpublished//lib is replaced, so its latest version cannot be resolved; give a version")
+}
+
 func TestGet(t *testing.T) {
 	root := remotes(t)
 	repository := filepath.Join(root, "github.com", "acme", "linters")
@@ -106,7 +155,7 @@ func TestGet(t *testing.T) {
 
 	assert.Equal(t, "add github.com/acme/linters@v1.0.0//lib ("+first+")\n  + one\n", get("github.com/acme/linters@v1.0.0//lib"))
 	assert.Equal(t, "imports = [\n  \"github.com/acme/linters@v1.0.0//lib\",\n]\n\n# Kept.\ndisable = [\"two\"]\n", readConfig())
-	p, err := project.Load(t.Context(), logger, fstest.MapFS{}, c, cache)
+	p, err := project.Load(t.Context(), logger, c, cache)
 	assert.NoError(t, err)
 	described, err := p.Describe(nil)
 	assert.NoError(t, err)
@@ -119,7 +168,7 @@ func TestGet(t *testing.T) {
 
 	// A version edited by hand fails to load until tsk get pins it.
 	assert.NoError(t, os.WriteFile(c.Config, []byte(`imports = ["github.com/acme/linters@v1.0.0//lib"]`), 0o600))
-	_, err = project.Load(t.Context(), logger, fstest.MapFS{}, c, cache)
+	_, err = project.Load(t.Context(), logger, c, cache)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "github.com/acme/linters@v1.0.0//lib is locked as github.com/acme/linters@v1.1.0//lib")
 	assert.Equal(t, "update github.com/acme/linters@v1.1.0//lib ("+second+") => v1.0.0 ("+first+")\n  - two\n", get())

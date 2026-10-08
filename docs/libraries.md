@@ -21,6 +21,8 @@ The core decisions:
    content hash is needed.
 3. **No transitive imports.** A library may not import another library, so
    there is no manifest and no version selection.
+4. **No built-in linters.** tsk's own linters are a library in this
+   repository's `linters/`, so they are opt-in like any other.
 
 ## Declaring libraries
 
@@ -36,6 +38,27 @@ should be committed.
 Every command that loads scripts checks that the lock file covers exactly the
 listed imports at their listed versions. A mismatch is an error asking the user
 to run `tsk get`, so editing `imports` by hand is safe.
+
+## Replacing imports
+
+A `replace` setting maps imports, written without a version, to local
+directories relative to `config.toml`, as Go's `replace` directive does:
+
+```toml
+replace = { "github.com/acme/linters//strict" = "../linters/strict" }
+```
+
+A replaced import loads from its directory, read on every run, under the same
+rules as any library. It is never fetched or locked, so `tsk get` skips it and
+the lock check ignores it, and an unpublished library works. Its import still
+needs a version, so removing the replacement and running `tsk get` pins it. A
+replacement must name a listed import, so a misspelt one is an error.
+
+`replace` lives in `config.toml` and is committed, because a repository may
+need it permanently: this one imports its own `linters/` and replaces it, so
+`bit lint-tsk` checks each commit with the linters in that commit. The cost,
+as in Go, is that a replacement meant only for one machine can be committed by
+mistake.
 
 ## Import paths
 
@@ -73,7 +96,8 @@ project configures its analyzers.
   that is missing. Otherwise they never touch the network.
 - `tsk list` prints one line per analyzer: its name, whether it is enabled,
   its source, and the first line of its documentation. The source is
-  `builtin`, a library's path and short commit, or a project script's path.
+  a library's path and short commit, a replaced library's directory, or a
+  project script's path.
   It reads what `Project.Describe` already gathers for `tsk config`.
 - `tsk test` tests only the project's analyzers. A library tests itself in its
   own repository with `tsk test --dir <library>`.
@@ -118,12 +142,11 @@ Everything in the cache can be rebuilt, so deleting it is always safe.
 
 ## Loading
 
-Sources load in order: built-in, then libraries in `imports` order, then the
-project's `.tsk/`. Every module of every source is evaluated, as today.
+Sources load in order: libraries in `imports` order, then the project's
+`.tsk/`. Every module of every source is evaluated.
 
-- An analyzer in the project replaces a library analyzer of the same name, as
-  it replaces a built-in one. Two libraries defining the same name is an error
-  naming both.
+- An analyzer in the project replaces a library analyzer of the same name.
+  Two libraries defining the same name is an error naming both.
 - Project scripts may import library modules by path, such as
   `github.com/acme/linters/helpers`, for shared code and `requires` handles.
   A library script may import only within its own library, by relative path.

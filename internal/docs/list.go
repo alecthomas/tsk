@@ -1,6 +1,7 @@
 package docs
 
 import (
+	"encoding/json"
 	"io"
 	"strings"
 	"text/tabwriter"
@@ -23,4 +24,25 @@ func List(w io.Writer, analyzers []Analyzer) error {
 		}
 	}
 	return errors.WithStack(table.Flush())
+}
+
+// listed is one analyzer as ListJSON writes it.
+type listed struct {
+	Name    string `json:"name"`
+	Enabled bool   `json:"enabled"`
+	Source  string `json:"source"`
+	Doc     string `json:"doc"`
+	URL     string `json:"url,omitzero"`
+}
+
+// ListJSON writes the analyzers as a JSON array, with each one's full
+// documentation rather than only its first line.
+func ListJSON(w io.Writer, analyzers []Analyzer) error {
+	entries := make([]listed, 0, len(analyzers))
+	for _, analyzer := range analyzers {
+		entries = append(entries, listed{Name: analyzer.Name, Enabled: analyzer.Enabled, Source: analyzer.Source, Doc: analyzer.Doc, URL: analyzer.URL})
+	}
+	encoder := json.NewEncoder(w)
+	encoder.SetIndent("", "  ")
+	return errors.Wrap(encoder.Encode(entries), "encode analyzers")
 }

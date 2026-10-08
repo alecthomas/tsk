@@ -21,6 +21,13 @@ cd tsk
 go build -o ~/go/bin/tsk ./cmd/tsk
 ```
 
+Optionally Install linters from [libraries](#Libraries):
+
+```sh
+tsk add github.com/alecthomas/tsk//linters
+```
+
+
 ## Quick start
 
 Put this in `.tsk/nopanic.ts` at the root of your repository:
@@ -67,13 +74,22 @@ tsk
 ```
 
 ```text
-/path/to/project/demo.go:4:2: return an error instead of panicking
+package/path//demo.go:4:2: return an error instead of panicking
 ```
 
 `tsk` lints `./...` by default; pass package patterns to narrow it. It exits
 with status 3 when it reports findings. Alongside your scripts, it runs the
-linters built into `tsk` and those of any [libraries](#libraries) you import.
-`tsk list` lists every linter, and `tsk config` documents their options.
+linters of any [libraries](#using-libraries) you import. `tsk list` lists
+every linter, and `tsk config` documents their options.
+
+## Libraries
+
+These libraries are known to work with `tsk`. Add one with `tsk get
+<library>`.
+
+| Library | Linters |
+|---|---|
+| `github.com/alecthomas/tsk//linters` | `encapsulation` reports private-field access and construction outside a struct's API. `optionalnil` reports nil used to mean "no value" where an option type could be used. `sumtype` checks that type switches on sealed interfaces cover every variant. |
 
 ## Reference
 
@@ -86,8 +102,8 @@ linters built into `tsk` and those of any [libraries](#libraries) you import.
 | `tsk check` | Type-checks scripts and validates `.tsk/config.toml`. |
 | `tsk init` | Writes the script declarations to `.tsk/types/` and a `tsconfig.json` to `.tsk/`, for editor completion and type checking. |
 | `tsk config [linters...]` | Prints a `.tsk/config.toml` documenting each linter and option, set to its default. |
-| `tsk list` | Lists every linter, whether it is enabled, where it is defined, and its summary. |
-| `tsk get [libraries...]` | Adds or updates [libraries](#libraries) and pins them in `.tsk/lock.toml`. |
+| `tsk list` | Lists every linter, whether it is enabled, where it is defined, and its summary. `--json` prints a JSON array instead, with each linter's full documentation and URL. |
+| `tsk get [libraries...]` | Adds or updates [libraries](#using-libraries) and pins them in `.tsk/lock.toml`. |
 | `tsk sync` | Downloads every pinned library missing from the cache. |
 
 `tsk` uses the nearest `.tsk/` at or above the working directory, searching up
@@ -120,7 +136,7 @@ unknown options, and values of the wrong type are errors.
 `tsk config` output is a starting point for this file. Empty lists show one
 placeholder entry to fill in or delete.
 
-### Libraries
+### Using libraries
 
 A library is a directory of linter scripts in a git repository, shared between
 projects. Add one with `tsk get`:
@@ -156,8 +172,8 @@ An import is `<repository>[@<version>][//<dir>]`:
 Commit `lock.toml`, so everyone runs the same commit of each library. `tsk get`
 without arguments updates the lock file after you edit `imports` by hand, and
 naming an import without a version, as in `tsk get github.com/acme/linters`,
-updates it to its latest version. Until the lock
-file matches `imports`, other commands fail.
+updates it to its latest version. Until the lock file matches `imports`, other
+commands fail.
 
 `tsk` needs `git` to download libraries. It keeps them in `tsk` in your user
 cache directory, such as `~/Library/Caches/tsk` on macOS. Commands download a
@@ -174,6 +190,23 @@ scripts.
 To write a library, put scripts and their `testdata/` in a directory of a git
 repository, and run `tsk test --dir <directory>` there to test them.
 
+To try a library in a project while you develop it, or to use one that is not
+published, replace its import with a local directory:
+
+```toml
+imports = [
+  "github.com/acme/linters@v1.2.0//strict",
+]
+
+replace = { "github.com/acme/linters//strict" = "../linters/strict" }
+```
+
+The key is the import without its version, and the directory is relative to
+`config.toml`. A replaced library loads from that directory on every run, and
+is never fetched or locked. Its import still needs a version, which `tsk get`
+pins once you remove the replacement. `replace` is committed with the rest of
+the config, so remove one meant only for your machine before you commit.
+
 ### Suppressing findings
 
 Suppress findings with a `//nolint:<linter>[,<linter>...] [<reason>]` comment,
@@ -187,9 +220,9 @@ the same column. A bare `//nolint` covers every linter.
 
 `tsk` loads every `.ts` file under `.tsk/`, including subdirectories, except
 those under `testdata/` and `types/`. Scripts can import each other with
-relative paths, and [library](#libraries) scripts by path, but not packages
-from npm. A script defining a linter with the same name as a built-in or
-library one replaces it. Two libraries defining the same linter is an error.
+relative paths, and [library](#using-libraries) scripts by path, but not packages
+from npm. A script defining a linter with the same name as a library one
+replaces it. Two libraries defining the same linter is an error.
 
 Scripts are type-checked as one strict ES2020 project before they run.
 Errors point at your `.ts` source, and so do the stack traces of exceptions

@@ -82,7 +82,7 @@ func (e *Engine) Names() []string {
 }
 
 // Describe documents every analyzer in registration order. Source holds the
-// defining module, such as "builtin/encapsulation.ts", and Enabled is unset:
+// defining module, such as "project/nopanic.ts", and Enabled is unset:
 // both depend on the project.
 func (e *Engine) Describe() ([]docs.Analyzer, error) {
 	described := make([]docs.Analyzer, 0, len(e.metadata))

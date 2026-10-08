@@ -20,7 +20,6 @@ import (
 	"github.com/alecthomas/tsk/internal/logger"
 	"github.com/alecthomas/tsk/internal/project"
 	"github.com/alecthomas/tsk/internal/scripttest"
-	"github.com/alecthomas/tsk/linters"
 )
 
 type cli struct {
@@ -47,7 +46,7 @@ type lintCommand struct {
 }
 
 func (l lintCommand) Run(ctx context.Context, log *slog.Logger, c *project.Config, cache *library.Cache) error {
-	p, err := project.Load(ctx, log, linters.Scripts, *c, cache)
+	p, err := project.Load(ctx, log, *c, cache)
 	if err != nil {
 		return errors.WithStack(err)
 	}
@@ -89,7 +88,7 @@ func (l lintCommand) flagArgs() []string {
 type testCommand struct{}
 
 func (testCommand) Run(ctx context.Context, log *slog.Logger, c *project.Config, cache *library.Cache) error {
-	p, err := project.Load(ctx, log, linters.Scripts, *c, cache)
+	p, err := project.Load(ctx, log, *c, cache)
 	if err != nil {
 		return errors.WithStack(err)
 	}
@@ -99,7 +98,7 @@ func (testCommand) Run(ctx context.Context, log *slog.Logger, c *project.Config,
 type checkCommand struct{}
 
 func (checkCommand) Run(ctx context.Context, log *slog.Logger, c *project.Config, cache *library.Cache) error {
-	p, err := project.Load(ctx, log, linters.Scripts, *c, cache)
+	p, err := project.Load(ctx, log, *c, cache)
 	if err != nil {
 		return errors.WithStack(err)
 	}
@@ -122,7 +121,7 @@ type configCommand struct {
 }
 
 func (d configCommand) Run(ctx context.Context, log *slog.Logger, c *project.Config, cache *library.Cache) error {
-	p, err := project.Load(ctx, log, linters.Scripts, *c, cache)
+	p, err := project.Load(ctx, log, *c, cache)
 	if err != nil {
 		return errors.WithStack(err)
 	}
@@ -136,16 +135,21 @@ func (d configCommand) Run(ctx context.Context, log *slog.Logger, c *project.Con
 	return errors.WithStack(docs.TOML(os.Stdout, analyzers, colour))
 }
 
-type listCommand struct{}
+type listCommand struct {
+	JSON bool `help:"Print a JSON array of analyzers, with their full documentation."`
+}
 
-func (listCommand) Run(ctx context.Context, log *slog.Logger, c *project.Config, cache *library.Cache) error {
-	p, err := project.Load(ctx, log, linters.Scripts, *c, cache)
+func (l listCommand) Run(ctx context.Context, log *slog.Logger, c *project.Config, cache *library.Cache) error {
+	p, err := project.Load(ctx, log, *c, cache)
 	if err != nil {
 		return errors.WithStack(err)
 	}
 	analyzers, err := p.Describe(nil)
 	if err != nil {
 		return errors.WithStack(err)
+	}
+	if l.JSON {
+		return errors.WithStack(docs.ListJSON(os.Stdout, analyzers))
 	}
 	return errors.WithStack(docs.List(os.Stdout, analyzers))
 }

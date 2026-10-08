@@ -42,7 +42,7 @@ func defaults() map[string]any {
 
 func analyzers() []docs.Analyzer {
 	return []docs.Analyzer{
-		{Name: "rules", Doc: "check rules\n\nRules apply to every package.", URL: "https://example.com", Source: "builtin", Enabled: true,
+		{Name: "rules", Doc: "check rules\n\nRules apply to every package.", URL: "https://example.com", Source: "github.com/acme/linters@0123456789ab", Enabled: true,
 			Config: Some(docs.Config{Shape: shape(), Defaults: defaults()})},
 		{Name: "plain", Doc: "no options", Source: ".tsk/plain.ts"},
 	}
@@ -58,6 +58,9 @@ func TestTOML(t *testing.T) {
 		`# Linter libraries whose analyzers run, as repository@version[//dir]. tsk get adds and updates them.`,
 		`imports = []`,
 		``,
+		`# Imports, as repository[//dir], to load from local directories instead, relative to this file. They are not fetched or locked.`,
+		`replace = {}`,
+		``,
 		`# Analyzers that do not run.`,
 		`disable = []`,
 		``,
@@ -67,7 +70,7 @@ func TestTOML(t *testing.T) {
 		`# Analyzers that run when disable-all is true.`,
 		`enable = []`,
 		``,
-		`# rules (enabled, builtin)`,
+		`# rules (enabled, github.com/acme/linters@0123456789ab)`,
 		`#`,
 		`# check rules`,
 		`#`,
@@ -112,10 +115,31 @@ func TestList(t *testing.T) {
 	var out bytes.Buffer
 	assert.NoError(t, docs.List(&out, analyzers()))
 	assert.Equal(t, strings.Join([]string{
-		`rules  enabled   builtin        check rules`,
-		`plain  disabled  .tsk/plain.ts  no options`,
+		`rules  enabled   github.com/acme/linters@0123456789ab  check rules`,
+		`plain  disabled  .tsk/plain.ts                         no options`,
 		``,
 	}, "\n"), out.String())
+}
+
+func TestListJSON(t *testing.T) {
+	var out bytes.Buffer
+	assert.NoError(t, docs.ListJSON(&out, analyzers()))
+	assert.Equal(t, `[
+  {
+    "name": "rules",
+    "enabled": true,
+    "source": "github.com/acme/linters@0123456789ab",
+    "doc": "check rules\n\nRules apply to every package.",
+    "url": "https://example.com"
+  },
+  {
+    "name": "plain",
+    "enabled": false,
+    "source": ".tsk/plain.ts",
+    "doc": "no options"
+  }
+]
+`, out.String())
 }
 
 // Colour only adds ANSI escapes: removing them gives the plain output.

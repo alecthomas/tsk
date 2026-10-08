@@ -19,11 +19,11 @@ import (
 )
 
 // Get adds requested imports to the config file or changes their versions,
-// then pins every import in the lock file. Requested imports are resolved
-// again; others keep their locked commit unless their version changed. Each
-// library the lock file adds, changes, or drops is reported to out with the
-// analyzers the change adds or removes, because an update can enable new
-// linters. c must be resolved.
+// then pins every import that is not replaced in the lock file. Requested
+// imports are resolved again; others keep their locked commit unless their
+// version changed. Each library the lock file adds, changes, or drops is
+// reported to out with the analyzers the change adds or removes, because an
+// update can enable new linters. c must be resolved.
 func Get(ctx context.Context, logger *slog.Logger, c Config, cache *library.Cache, requests []library.Import, out io.Writer) error {
 	text, err := os.ReadFile(c.Config)
 	if err != nil && !errors.Is(err, os.ErrNotExist) {
@@ -51,6 +51,13 @@ func Get(ctx context.Context, logger *slog.Logger, c Config, cache *library.Cach
 	}
 	var lock library.Lock
 	for i, imported := range imports {
+		// A replaced import loads from its directory, so it has nothing to pin.
+		if _, replaced := file.Replacement(imported); replaced {
+			if _, hasVersion := imported.Version.Get(); !hasVersion {
+				return errors.Errorf("%s is replaced, so its latest version cannot be resolved; give a version", imported)
+			}
+			continue
+		}
 		locked, err := pin(ctx, cache, previous, imported, requested(requests, imported.Path()))
 		if err != nil {
 			return err

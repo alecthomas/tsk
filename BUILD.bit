@@ -31,11 +31,12 @@ lint-go[go-module] = go.lint {
   dir = go-module
   depends_on = [build-go]
 }
-# Lint this repository with its own compiled-in script linters.
+# Lint this repository with its own linters, which .tsk/config.toml imports
+# from linters/ in the same commit.
 lint-tsk[go-module] = exec.test {
   command = "#{root}/#{tsk-bin.path} ./..."
   dir = go-module
-  inputs = ["#{go-module}/**/*.go", "#{go-module}/go.mod", "#{go-module}/go.sum", "**/*.go", "linters/*.ts", "internal/hostapi/*", "internal/bindings/dts/*.d.ts"]
+  inputs = ["#{go-module}/**/*.go", "#{go-module}/go.mod", "#{go-module}/go.sum", "**/*.go", "linters/*.ts", ".tsk/config.toml", "internal/hostapi/*", "internal/bindings/dts/*.d.ts"]
   depends_on = [build-go, tsk-bin]
 }
 
@@ -96,6 +97,13 @@ explicit bump = exec {
   resolve = "git rev-parse HEAD"
 }
 
+# Test this repository's linter library the way any library tests itself.
+test-linters = exec.test {
+  command = "#{root}/#{tsk-bin.path} test --dir linters"
+  inputs = ["linters/**", "internal/hostapi/*", "internal/bindings/dts/*.d.ts"]
+  depends_on = [tsk-bin]
+}
+
 explicit tsk-bin = go.exe {
   package = "./cmd/tsk"
   output = "dist/devel/tsk"
@@ -103,7 +111,7 @@ explicit tsk-bin = go.exe {
 }
 
 # Run all tests
-target test = [test-go]
+target test = [test-go, test-linters]
 
 # Lint everything
 target lint = [lint-go, lint-tsk, fmt-check-go, lint-ts, lint-actions, lint-action-pins, lint-release]

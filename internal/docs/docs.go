@@ -23,7 +23,7 @@ type Analyzer struct {
 	Name string
 	Doc  string
 	URL  string
-	// Source names where the analyzer is defined, such as "builtin" or a
+	// Source names where the analyzer is defined, such as a library or a
 	// script path.
 	Source  string
 	Enabled bool

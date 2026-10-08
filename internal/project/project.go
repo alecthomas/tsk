@@ -84,29 +84,27 @@ type Project struct {
 	config    Config
 	engine    *engine.Engine
 	file      config.File
-	libraries []library.Locked
+	libraries []libraryDir
 	// mainModules are the modules being linted, as go list -m reports them,
 	// so a workspace has several.
 	mainModules []string
 }
 
-// Load compiles the compiled-in scripts, then the config's libraries, then the
-// scripts directory if present, each overriding analyzers of the same name in
-// the ones before. c must be resolved. Script console output goes to logger.
-func Load(ctx context.Context, logger *slog.Logger, builtin fs.FS, c Config, cache *library.Cache) (*Project, error) {
+// Load compiles the config's libraries, then the scripts directory if present,
+// each overriding analyzers of the same name in the ones before. c must be
+// resolved. Script console output goes to logger.
+func Load(ctx context.Context, logger *slog.Logger, c Config, cache *library.Cache) (*Project, error) {
 	file, err := config.Load(c.Config)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
-	libraries, err := snapshots(ctx, c, file, cache)
+	libraries, err := libraryDirs(ctx, c, file, cache)
 	if err != nil {
 		return nil, err
 	}
-	sources := []compile.Source{{Name: "builtin", FS: builtin}}
-	locked := make([]library.Locked, 0, len(libraries))
-	for _, snapshot := range libraries {
-		sources = append(sources, compile.Source{Name: snapshot.locked.Path(), FS: os.DirFS(snapshot.dir), Library: true})
-		locked = append(locked, snapshot.locked)
+	sources := make([]compile.Source, 0, len(libraries)+1)
+	for _, loaded := range libraries {
+		sources = append(sources, compile.Source{Name: loaded.imported.Path(), FS: os.DirFS(loaded.dir), Library: true})
 	}
 	if info, err := os.Stat(c.Dir); err == nil && info.IsDir() {
 		sources = append(sources, compile.Source{Name: "project", FS: os.DirFS(c.Dir)})
@@ -119,7 +117,7 @@ func Load(ctx context.Context, logger *slog.Logger, builtin fs.FS, c Config, cac
 	if err != nil {
 		return nil, err
 	}
-	return &Project{config: c, engine: e, file: file, libraries: locked, mainModules: mainModules}, nil
+	return &Project{config: c, engine: e, file: file, libraries: libraries, mainModules: mainModules}, nil
 }
 
 // Sync downloads every library the lock file pins that is missing from the
@@ -129,36 +127,75 @@ func Sync(ctx context.Context, c Config, cache *library.Cache) error {
 	if err != nil {
 		return errors.WithStack(err)
 	}
-	_, err = snapshots(ctx, c, file, cache)
+	_, err = libraryDirs(ctx, c, file, cache)
 	return err
 }
 
-// snapshot is a locked library and the cache directory holding it.
-type snapshot struct {
-	locked library.Locked
-	dir    string
+// libraryDir is an imported library and the directory its scripts load from:
+// a snapshot in the cache, or its replacement.
+type libraryDir struct {
+	imported library.Import
+	dir      string
+	// locked is absent for a replaced library, which is never locked.
+	locked Option[library.Locked]
 }
 
-// snapshots checks that the lock file pins exactly the config's imports, and
-// returns each in import order, downloading any missing from the cache.
-func snapshots(ctx context.Context, c Config, file config.File, cache *library.Cache) ([]snapshot, error) {
+// libraryDirs checks that the lock file pins exactly the config's imports that
+// are not replaced. It returns every import in order with its directory,
+// downloading any snapshot missing from the cache.
+func libraryDirs(ctx context.Context, c Config, file config.File, cache *library.Cache) ([]libraryDir, error) {
 	lock, err := library.LoadLock(c.LockFile())
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
-	if err := lock.Check(file.Imports); err != nil {
+	if err := lock.Check(pinned(file)); err != nil {
 		return nil, errors.Wrapf(err, "%s does not match the imports in %s; run tsk get", c.LockFile(), c.Config)
 	}
-	found := make([]snapshot, 0, len(file.Imports))
+	found := make([]libraryDir, 0, len(file.Imports))
 	for _, imported := range file.Imports {
+		if replacement, replaced := file.Replacement(imported); replaced {
+			dir, err := replacementDir(c, replacement)
+			if err != nil {
+				return nil, errors.Wrapf(err, "replace %s", imported)
+			}
+			found = append(found, libraryDir{imported: imported, dir: dir, locked: None[library.Locked]()})
+			continue
+		}
 		locked, _ := lock.Find(imported.Path())
 		dir, err := cache.Snapshot(ctx, locked)
 		if err != nil {
 			return nil, errors.WithStack(err)
 		}
-		found = append(found, snapshot{locked: locked, dir: dir})
+		found = append(found, libraryDir{imported: imported, dir: dir, locked: Some(locked)})
 	}
 	return found, nil
+}
+
+// pinned returns the imports the lock file pins: those not replaced.
+func pinned(file config.File) []library.Import {
+	var imports []library.Import
+	for _, imported := range file.Imports {
+		if _, replaced := file.Replacement(imported); !replaced {
+			imports = append(imports, imported)
+		}
+	}
+	return imports
+}
+
+// replacementDir resolves a replacement relative to the config file, and
+// checks that it is a directory.
+func replacementDir(c Config, dir string) (string, error) {
+	if !filepath.IsAbs(dir) {
+		dir = filepath.Join(filepath.Dir(c.Config), dir)
+	}
+	info, err := os.Stat(dir)
+	if err != nil {
+		return "", errors.WithStack(err)
+	}
+	if !info.IsDir() {
+		return "", errors.Errorf("%s is not a directory", dir)
+	}
+	return dir, nil
 }
 
 // listMainModules asks the go command for the main modules of the working
@@ -223,24 +260,38 @@ func (p *Project) Describe(names []string) ([]docs.Analyzer, error) {
 	return selected, nil
 }
 
-// source names where a module is defined: "builtin" for compiled-in scripts,
-// a library's path and commit, or the script's path, relative to the working
-// directory if it is within it.
+// source names where a module is defined: a locked library's path and commit,
+// a replaced library's directory, or the script's path.
 func (p *Project) source(module string) string {
-	for _, locked := range p.libraries {
-		if strings.HasPrefix(module, locked.Path()+"/") {
+	for _, loaded := range p.libraries {
+		if !strings.HasPrefix(module, loaded.imported.Path()+"/") {
+			continue
+		}
+		if locked, ok := loaded.locked.Get(); ok {
 			return locked.Path() + "@" + locked.Short()
 		}
+		return displayPath(loaded.dir)
 	}
-	script, isProject := strings.CutPrefix(module, "project/")
-	if !isProject {
-		return "builtin"
+	if script, isProject := strings.CutPrefix(module, "project/"); isProject {
+		return displayPath(filepath.Join(p.config.Dir, script))
 	}
-	path := filepath.Join(p.config.Dir, script)
-	if cwd, err := os.Getwd(); err == nil {
-		if relative, err := filepath.Rel(cwd, path); err == nil && !strings.HasPrefix(relative, "..") {
-			return relative
-		}
+	return module
+}
+
+// displayPath returns path relative to the working directory, starting with
+// "./" or "../" so it cannot read as a library path, or path itself when it
+// has no relative form.
+func displayPath(path string) string {
+	cwd, err := os.Getwd()
+	if err != nil {
+		return path
 	}
-	return path
+	relative, err := filepath.Rel(cwd, path)
+	switch {
+	case err != nil:
+		return path
+	case relative == "." || relative == ".." || strings.HasPrefix(relative, "../"):
+		return relative
+	}
+	return "./" + relative
 }

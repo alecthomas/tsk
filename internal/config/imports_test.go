@@ -39,6 +39,36 @@ func TestParseImports(t *testing.T) {
 	}
 }
 
+func TestReplace(t *testing.T) {
+	const imports = `imports = ["github.com/acme/a@v1.0.0//x", "github.com/acme/b@v1"]` + "\n"
+	tests := []struct {
+		Name    string
+		Replace string
+		Error   string
+	}{
+		{Name: "Replaced", Replace: `replace = { "github.com/acme/a//x" = "../a" }`},
+		{Name: "Table", Replace: "[replace]\n\"github.com/acme/a//x\" = \"../a\""},
+		{Name: "Versioned", Replace: `replace = { "github.com/acme/a@v1.0.0//x" = "../a" }`, Error: "test.toml: replace github.com/acme/a@v1.0.0//x: write the import without a version, as github.com/acme/a//x"},
+		{Name: "NotImported", Replace: `replace = { "github.com/acme/a" = "../a" }`, Error: "test.toml: replace github.com/acme/a: not imported"},
+		{Name: "EmptyDir", Replace: `replace = { "github.com/acme/a//x" = "" }`, Error: "test.toml: replace github.com/acme/a//x: empty directory"},
+		{Name: "BadImport", Replace: `replace = { "acme" = "../a" }`, Error: `test.toml: replace: import acme: repository "acme" must be a host name followed by a path`},
+	}
+	for _, test := range tests {
+		t.Run(test.Name, func(t *testing.T) {
+			file, err := config.Parse("test.toml", imports+test.Replace)
+			if test.Error != "" {
+				assert.EqualError(t, err, test.Error)
+				return
+			}
+			assert.NoError(t, err)
+			dir, ok := file.Replacement(file.Imports[0])
+			assert.Equal(t, [2]any{"../a", true}, [2]any{dir, ok})
+			_, ok = file.Replacement(file.Imports[1])
+			assert.False(t, ok)
+		})
+	}
+}
+
 func TestSetImports(t *testing.T) {
 	imports := []library.Import{
 		{Repository: "github.com/acme/a", Version: Some("v1.0.0")},

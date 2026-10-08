@@ -10,6 +10,7 @@ import (
 	"slices"
 
 	"github.com/alecthomas/errors"
+	. "github.com/alecthomas/types/optional"
 	ts "github.com/microsoft/TypeScript/tsc/shim/typescript"
 	"github.com/pelletier/go-toml/v2"
 
@@ -23,10 +24,13 @@ const FileName = "config.toml"
 // File is a parsed config file. Each top-level setting's help tag documents it
 // in tsk config.
 type File struct {
-	Imports    []library.Import `toml:"imports" help:"Linter libraries whose analyzers run, as repository@version[//dir]. tsk get adds and updates them."`
-	Disable    []string         `toml:"disable" help:"Analyzers that do not run."`
-	DisableAll bool             `toml:"disable-all" help:"Turn every analyzer off except those listed in enable."`
-	Enable     []string         `toml:"enable" help:"Analyzers that run when disable-all is true."`
+	Imports []library.Import `toml:"imports" help:"Linter libraries whose analyzers run, as repository@version[//dir]. tsk get adds and updates them."`
+	// Replace maps imports, as ParseImport formats them without a version, to
+	// directories relative to the config file.
+	Replace    map[string]string `toml:"replace" help:"Imports, as repository[//dir], to load from local directories instead, relative to this file. They are not fetched or locked."`
+	Disable    []string          `toml:"disable" help:"Analyzers that do not run."`
+	DisableAll bool              `toml:"disable-all" help:"Turn every analyzer off except those listed in enable."`
+	Enable     []string          `toml:"enable" help:"Analyzers that run when disable-all is true."`
 	// Tables maps analyzer names to their raw tables.
 	Tables map[string]map[string]any `toml:"-"`
 }
@@ -50,8 +54,11 @@ func Settings() []Setting {
 			continue
 		}
 		value := reflect.Zero(field.Type)
-		if field.Type.Kind() == reflect.Slice {
+		switch field.Type.Kind() { //nolint:exhaustive // Other kinds keep their zero value.
+		case reflect.Slice:
 			value = reflect.MakeSlice(field.Type, 0, 0)
+		case reflect.Map:
+			value = reflect.MakeMap(field.Type)
 		}
 		settings = append(settings, Setting{Key: key, Doc: field.Tag.Get("help"), Default: value.Interface()})
 	}
@@ -68,6 +75,40 @@ func (f File) Enabled(name string) bool {
 		return slices.Contains(f.Enable, name)
 	}
 	return !slices.Contains(f.Disable, name)
+}
+
+// Replacement returns the directory replacing an import, as written,
+// relative to the config file.
+func (f File) Replacement(imported library.Import) (dir string, ok bool) {
+	dir, ok = f.Replace[replaceKey(imported)]
+	return dir, ok
+}
+
+// checkReplace requires each replacement to name an import, so a misspelt
+// one is not silently ignored.
+func (f File) checkReplace() error {
+	for _, key := range slices.Sorted(maps.Keys(f.Replace)) {
+		replaced, err := library.ParseImport(key)
+		if err != nil {
+			return errors.Wrap(err, "replace")
+		}
+		_, hasVersion := replaced.Version.Get()
+		switch {
+		case hasVersion:
+			return errors.Errorf("replace %s: write the import without a version, as %s", key, replaceKey(replaced))
+		case f.Replace[key] == "":
+			return errors.Errorf("replace %s: empty directory", key)
+		case !slices.ContainsFunc(f.Imports, func(imported library.Import) bool { return replaceKey(imported) == key }):
+			return errors.Errorf("replace %s: not imported", key)
+		}
+	}
+	return nil
+}
+
+// replaceKey formats an import without its version.
+func replaceKey(imported library.Import) string {
+	imported.Version = None[string]()
+	return imported.String()
 }
 
 // Load parses a config file. A missing file is an empty config.
@@ -111,6 +152,9 @@ func Parse(name, text string) (File, error) {
 		}
 	}
 	if err := library.CheckImports(file.Imports); err != nil {
+		return File{}, errors.Wrapf(err, "%s", name)
+	}
+	if err := file.checkReplace(); err != nil {
 		return File{}, errors.Wrapf(err, "%s", name)
 	}
 	// Each combination below would silently ignore a setting.

@@ -17,20 +17,20 @@ import (
 
 // WriteEditorFiles writes the host declarations to types/ in the scripts
 // directory, and a tsconfig.json matching the options scripts are checked
-// with. Library imports map to the libraries' snapshots in the cache, so the
-// file is specific to this machine. c must be resolved.
+// with. Library imports map to the libraries' snapshots in the cache, or their
+// replacements, so the file is specific to this machine. c must be resolved.
 func WriteEditorFiles(ctx context.Context, c Config, cache *library.Cache) error {
 	file, err := config.Load(c.Config)
 	if err != nil {
 		return errors.WithStack(err)
 	}
-	libraries, err := snapshots(ctx, c, file, cache)
+	libraries, err := libraryDirs(ctx, c, file, cache)
 	if err != nil {
 		return err
 	}
 	paths := map[string][]string{}
-	for _, snapshot := range libraries {
-		paths[snapshot.locked.Path()+"/*"] = []string{filepath.ToSlash(snapshot.dir) + "/*"}
+	for _, loaded := range libraries {
+		paths[loaded.imported.Path()+"/*"] = []string{filepath.ToSlash(loaded.dir) + "/*"}
 	}
 	declarations, err := compile.Declarations()
 	if err != nil {
