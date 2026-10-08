@@ -22,6 +22,9 @@ struct-method = false
 lines = 250
 statements = 50
 
+[godoclint]
+enable = ["no-unused-link"]
+
 [forbidigo]
 analyze-types = true
 forbid = [
