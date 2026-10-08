@@ -15,6 +15,7 @@ import (
 	. "github.com/alecthomas/types/optional"
 	ts "github.com/microsoft/TypeScript/tsc/shim/typescript"
 	"golang.org/x/tools/go/analysis"
+	"golang.org/x/tools/go/analysis/passes/buildssa"
 	"golang.org/x/tools/go/analysis/passes/inspect"
 
 	"github.com/alecthomas/tsk/internal/compile"
@@ -102,7 +103,7 @@ func (e *Engine) Describe() ([]docs.Analyzer, error) {
 
 // hostAnalyzers are the Go analyzers "tsk/passes" exports.
 func hostAnalyzers() map[string]*analysis.Analyzer {
-	return map[string]*analysis.Analyzer{"inspect": inspect.Analyzer}
+	return map[string]*analysis.Analyzer{"inspect": inspect.Analyzer, "buildssa": buildssa.Analyzer}
 }
 
 // Analyzers builds analyzers configured by file, omitting disabled ones.

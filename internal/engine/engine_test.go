@@ -207,6 +207,50 @@ func TestDisableAllEnable(t *testing.T) {
 	assert.EqualError(t, err, "enable names unknown analyzer missing")
 }
 
+const ssaScript = `import { defineAnalyzer } from "tsk";
+import { buildssa } from "tsk/passes";
+
+export default defineAnalyzer({
+  name: "ssacalls",
+  doc: "report each call's callee and operands, and whether the result is used",
+  requires: [buildssa],
+  run(pass) {
+    for (const fn of pass.resultOf(buildssa).srcFuncs) {
+      for (const block of fn!.blocks) {
+        for (const instr of block!.instrs) {
+          if (instr?.$type !== "Call") {
+            continue;
+          }
+          const operands = instr.operands([]).map((operand) => operand?.name()).join(" ");
+          const used = instr.referrers().length > 0;
+          pass.report({ pos: instr.pos(), message: instr.call.value!.name() + "(" + operands + ") used=" + used });
+        }
+      }
+    }
+  },
+});
+`
+
+func TestSSA(t *testing.T) {
+	e := load(t, map[string]string{"ssacalls.ts": ssaScript})
+	analyzers, err := e.Analyzers(config.File{}, nil)
+	assert.NoError(t, err)
+	dir, cleanup, err := analysistest.WriteFiles(map[string]string{
+		"example/example.go": `package example
+
+func double(n int) int { return n * 2 }
+
+func f(n int) int {
+	double(n) // want "double\\(double n\\) used=false"
+	return double(n) // want "double\\(double n\\) used=true"
+}
+`,
+	})
+	assert.NoError(t, err)
+	defer cleanup()
+	analysistest.Run(t, dir, analyzers[0], "example")
+}
+
 const documentedScript = `import { defineAnalyzer } from "tsk";
 
 interface Config {

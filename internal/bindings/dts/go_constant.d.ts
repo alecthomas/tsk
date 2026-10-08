@@ -7,8 +7,10 @@ declare module "go/constant" {
   import type * as token from "go/token";
   import type * as types from "go/types";
   import type * as modfile from "golang.org/x/mod/modfile";
+  import type * as buildssa from "golang.org/x/tools/go/analysis/passes/buildssa";
   import type * as edge from "golang.org/x/tools/go/ast/edge";
   import type * as inspector from "golang.org/x/tools/go/ast/inspector";
+  import type * as ssa from "golang.org/x/tools/go/ssa";
   import type * as typeutil from "golang.org/x/tools/go/types/typeutil";
   import type * as fs from "io/fs";
   import type * as os from "os";

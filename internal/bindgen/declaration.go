@@ -281,6 +281,10 @@ func (d *declarer) tsType(t types.Type) string {
 	case *types.Named:
 		return d.namedType(t)
 	case *types.Pointer:
+		// The runtime reads pointers to slices and interfaces as their target.
+		if _, ok := t.Elem().Underlying().(*types.Slice); ok || types.IsInterface(t.Elem()) {
+			return d.tsType(t.Elem())
+		}
 		named, ok := types.Unalias(t.Elem()).(*types.Named)
 		if ok && d.isExposed(named) {
 			return d.reference(named.Obj()) + " | null"

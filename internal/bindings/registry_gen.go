@@ -9,8 +9,10 @@ import (
 	"go/token"
 	"go/types"
 	"golang.org/x/mod/modfile"
+	"golang.org/x/tools/go/analysis/passes/buildssa"
 	"golang.org/x/tools/go/ast/edge"
 	"golang.org/x/tools/go/ast/inspector"
+	"golang.org/x/tools/go/ssa"
 	"golang.org/x/tools/go/types/typeutil"
 	"io/fs"
 	"os"
@@ -543,6 +545,12 @@ func Packages() []Package {
 			ErrorTypes: []string{"Error", "ErrorList"},
 		},
 		{
+			Path: "golang.org/x/tools/go/analysis/passes/buildssa",
+			Types: map[string]reflect.Type{
+				"SSA": reflect.TypeFor[buildssa.SSA](),
+			},
+		},
+		{
 			Path: "golang.org/x/tools/go/ast/edge",
 			Consts: map[string]any{
 				"ArrayType_Elt":         edge.ArrayType_Elt,
@@ -663,6 +671,87 @@ func Packages() []Package {
 			Types: map[string]reflect.Type{
 				"Cursor":    reflect.TypeFor[inspector.Cursor](),
 				"Inspector": reflect.TypeFor[inspector.Inspector](),
+			},
+		},
+		{
+			Path: "golang.org/x/tools/go/ssa",
+			Funcs: map[string]any{
+				"EnclosingFunction":    ssa.EnclosingFunction,
+				"HasEnclosingFunction": ssa.HasEnclosingFunction,
+				"NewConst":             ssa.NewConst,
+				"NewProgram":           ssa.NewProgram,
+				"WriteFunction":        ssa.WriteFunction,
+				"WritePackage":         ssa.WritePackage,
+			},
+			Consts: map[string]any{
+				"BareInits":            ssa.BareInits,
+				"BuildSerially":        ssa.BuildSerially,
+				"BuilderModeDoc":       ssa.BuilderModeDoc,
+				"GlobalDebug":          ssa.GlobalDebug,
+				"InstantiateGenerics":  ssa.InstantiateGenerics,
+				"LogSource":            ssa.LogSource,
+				"NaiveForm":            ssa.NaiveForm,
+				"PrintFunctions":       ssa.PrintFunctions,
+				"PrintPackages":        ssa.PrintPackages,
+				"SanityCheckFunctions": ssa.SanityCheckFunctions,
+			},
+			Types: map[string]reflect.Type{
+				"Alloc":               reflect.TypeFor[ssa.Alloc](),
+				"BasicBlock":          reflect.TypeFor[ssa.BasicBlock](),
+				"BinOp":               reflect.TypeFor[ssa.BinOp](),
+				"BuilderMode":         reflect.TypeFor[ssa.BuilderMode](),
+				"Builtin":             reflect.TypeFor[ssa.Builtin](),
+				"Call":                reflect.TypeFor[ssa.Call](),
+				"CallCommon":          reflect.TypeFor[ssa.CallCommon](),
+				"CallInstruction":     reflect.TypeFor[ssa.CallInstruction](),
+				"ChangeInterface":     reflect.TypeFor[ssa.ChangeInterface](),
+				"ChangeType":          reflect.TypeFor[ssa.ChangeType](),
+				"Const":               reflect.TypeFor[ssa.Const](),
+				"Convert":             reflect.TypeFor[ssa.Convert](),
+				"DebugRef":            reflect.TypeFor[ssa.DebugRef](),
+				"Defer":               reflect.TypeFor[ssa.Defer](),
+				"Extract":             reflect.TypeFor[ssa.Extract](),
+				"Field":               reflect.TypeFor[ssa.Field](),
+				"FieldAddr":           reflect.TypeFor[ssa.FieldAddr](),
+				"FreeVar":             reflect.TypeFor[ssa.FreeVar](),
+				"Function":            reflect.TypeFor[ssa.Function](),
+				"Global":              reflect.TypeFor[ssa.Global](),
+				"Go":                  reflect.TypeFor[ssa.Go](),
+				"If":                  reflect.TypeFor[ssa.If](),
+				"Index":               reflect.TypeFor[ssa.Index](),
+				"IndexAddr":           reflect.TypeFor[ssa.IndexAddr](),
+				"Instruction":         reflect.TypeFor[ssa.Instruction](),
+				"Jump":                reflect.TypeFor[ssa.Jump](),
+				"Lookup":              reflect.TypeFor[ssa.Lookup](),
+				"MakeChan":            reflect.TypeFor[ssa.MakeChan](),
+				"MakeClosure":         reflect.TypeFor[ssa.MakeClosure](),
+				"MakeInterface":       reflect.TypeFor[ssa.MakeInterface](),
+				"MakeMap":             reflect.TypeFor[ssa.MakeMap](),
+				"MakeSlice":           reflect.TypeFor[ssa.MakeSlice](),
+				"MapUpdate":           reflect.TypeFor[ssa.MapUpdate](),
+				"Member":              reflect.TypeFor[ssa.Member](),
+				"MultiConvert":        reflect.TypeFor[ssa.MultiConvert](),
+				"NamedConst":          reflect.TypeFor[ssa.NamedConst](),
+				"Next":                reflect.TypeFor[ssa.Next](),
+				"Node":                reflect.TypeFor[ssa.Node](),
+				"Package":             reflect.TypeFor[ssa.Package](),
+				"Panic":               reflect.TypeFor[ssa.Panic](),
+				"Parameter":           reflect.TypeFor[ssa.Parameter](),
+				"Phi":                 reflect.TypeFor[ssa.Phi](),
+				"Program":             reflect.TypeFor[ssa.Program](),
+				"Range":               reflect.TypeFor[ssa.Range](),
+				"Return":              reflect.TypeFor[ssa.Return](),
+				"RunDefers":           reflect.TypeFor[ssa.RunDefers](),
+				"Select":              reflect.TypeFor[ssa.Select](),
+				"SelectState":         reflect.TypeFor[ssa.SelectState](),
+				"Send":                reflect.TypeFor[ssa.Send](),
+				"Slice":               reflect.TypeFor[ssa.Slice](),
+				"SliceToArrayPointer": reflect.TypeFor[ssa.SliceToArrayPointer](),
+				"Store":               reflect.TypeFor[ssa.Store](),
+				"Type":                reflect.TypeFor[ssa.Type](),
+				"TypeAssert":          reflect.TypeFor[ssa.TypeAssert](),
+				"UnOp":                reflect.TypeFor[ssa.UnOp](),
+				"Value":               reflect.TypeFor[ssa.Value](),
 			},
 		},
 		{
@@ -809,6 +898,8 @@ func Packages() []Package {
 // both values rather than a value and an ok flag.
 func TupleResults() map[string]bool {
 	return map[string]bool{
-		"go/types.MissingMethod": true,
+		"*ssa.Function.ValueForExpr": true,
+		"*ssa.Program.VarValue":      true,
+		"go/types.MissingMethod":     true,
 	}
 }

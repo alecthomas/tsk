@@ -267,7 +267,19 @@ func (b *bridge) wrap(value reflect.Value) sobek.Value {
 			return b.object(element)
 		}
 		return b.wrap(value.Elem())
-	case reflect.Pointer, reflect.Func, reflect.Chan, reflect.UnsafePointer:
+	case reflect.Pointer:
+		// Pointers to slices and interfaces have no methods of their own, so
+		// they read as their target, as ssa.Value.Referrers' *[]Instruction.
+		if kind := value.Type().Elem().Kind(); kind == reflect.Slice || kind == reflect.Interface {
+			if value.IsNil() {
+				return b.wrap(reflect.Zero(value.Type().Elem()))
+			}
+			return b.wrap(value.Elem())
+		}
+		if value.IsNil() {
+			return sobek.Null()
+		}
+	case reflect.Func, reflect.Chan, reflect.UnsafePointer:
 		if value.IsNil() {
 			return sobek.Null()
 		}

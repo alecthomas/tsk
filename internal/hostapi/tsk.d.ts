@@ -185,10 +185,13 @@ declare module "tsk" {
 }
 
 declare module "tsk/passes" {
+  import type * as buildssaPass from "golang.org/x/tools/go/analysis/passes/buildssa";
   import type * as inspector from "golang.org/x/tools/go/ast/inspector";
   import type { HostAnalyzer } from "tsk";
 
   export const inspect: HostAnalyzer<inspector.Inspector>;
+  /** The package in SSA form, and its functions declared in source. */
+  export const buildssa: HostAnalyzer<buildssaPass.SSA>;
 }
 
 declare module "go/types" {

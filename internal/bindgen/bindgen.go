@@ -46,8 +46,11 @@ func exposedPackages() []exposedPackage {
 		}},
 		{path: "path/filepath"},
 		{path: "golang.org/x/mod/modfile"},
+		// Only the result type: the analyzer itself is "tsk/passes".buildssa.
+		{path: "golang.org/x/tools/go/analysis/passes/buildssa", members: []string{"SSA"}},
 		{path: "golang.org/x/tools/go/ast/edge"},
 		{path: "golang.org/x/tools/go/ast/inspector"},
+		{path: "golang.org/x/tools/go/ssa"},
 		{path: "golang.org/x/tools/go/types/typeutil"},
 	}
 }

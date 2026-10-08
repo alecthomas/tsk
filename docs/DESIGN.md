@@ -127,7 +127,7 @@ needed. The definition mirrors `analysis.Analyzer`:
 - `name`, `doc`, `url`
 - `config`: default values; see [Config](#config).
 - `requires`: script analyzer handles, or host analyzers exported by
-  `tsk/passes`, currently `inspect`.
+  `tsk/passes`, currently `inspect` and `buildssa`.
 - `facts`: fact handles created with `defineFact<T>(name)`. Handles carry the
   value type, so fact functions are typed without a second type parameter on
   `defineAnalyzer`, which TypeScript could not infer alongside an explicit
@@ -263,6 +263,7 @@ Conversion rules:
 |---|---|
 | nil pointer, interface, or function | `null`, declared as `T \| null` |
 | nil slice | empty array |
+| pointer to a slice or interface | its target, as for `ssa.Value.Referrers` |
 | `(T, bool)` | `T \| undefined` |
 | trailing `error` | thrown as a `GoError` subclass when non-nil; see [Errors](#errors) |
 | other multiple results | tuple array |
