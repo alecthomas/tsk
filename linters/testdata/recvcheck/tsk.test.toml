@@ -1,0 +1,11 @@
+[[case]]
+name = "default"
+packages = ["p"]
+[case.config]
+exclusions = ["Excluded.B"]
+
+[[case]]
+name = "disable-builtin"
+packages = ["decoders"]
+[case.config]
+disable-builtin = true
