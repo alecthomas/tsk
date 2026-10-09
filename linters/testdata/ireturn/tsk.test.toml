@@ -1,0 +1,9 @@
+[[case]]
+name = "default"
+packages = ["p"]
+
+[[case]]
+name = "reject"
+packages = ["reject"]
+[case.config]
+reject = ["stdlib"]
