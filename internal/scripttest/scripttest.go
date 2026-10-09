@@ -8,10 +8,12 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 
 	"github.com/alecthomas/errors"
 	"github.com/pelletier/go-toml/v2"
+	"golang.org/x/sync/errgroup"
 	"golang.org/x/tools/go/analysis"
 	"golang.org/x/tools/go/analysis/analysistest"
 
@@ -93,10 +95,18 @@ func find(analyzers []*analysis.Analyzer, name string) (*analysis.Analyzer, bool
 	return nil, false
 }
 
+// analyzerCase is one case of one analyzer, with where its result goes.
+type analyzerCase struct {
+	analyzer string
+	dir      string
+	c        Case
+	recorder *recorder
+}
+
 // RunAll runs every case of every analyzer with testdata under the scripts
-// directory, writing one result line per case to out.
+// directory concurrently, writing one result line per case to out in order.
 func RunAll(e *engine.Engine, scripts string, out io.Writer) error {
-	failed, tested := 0, 0
+	var all []*analyzerCase
 	for _, analyzer := range e.Names() {
 		dir := Dir(scripts, analyzer)
 		if _, err := os.Stat(dir); err != nil {
@@ -107,27 +117,41 @@ func RunAll(e *engine.Engine, scripts string, out io.Writer) error {
 			return err
 		}
 		for _, c := range cases {
-			tested++
-			recorder := newRecorder()
-			if err := Run(recorder, e, analyzer, dir, c); err != nil {
-				return err
-			}
-			if len(recorder.Failures()) == 0 {
-				fmt.Fprintf(out, "ok   %s/%s\n", analyzer, c.Name) //nolint:errcheck // Output is best effort.
-				continue
-			}
-			failed++
-			fmt.Fprintf(out, "FAIL %s/%s\n", analyzer, c.Name) //nolint:errcheck // Output is best effort.
-			for _, failure := range recorder.Failures() {
-				fmt.Fprintln(out, "     "+strings.ReplaceAll(failure, "\n", "\n     ")) //nolint:errcheck // Output is best effort.
-			}
+			all = append(all, &analyzerCase{analyzer: analyzer, dir: dir, c: c, recorder: newRecorder()})
 		}
 	}
-	if tested == 0 {
+	if len(all) == 0 {
 		return errors.Errorf("no testdata found under %s", filepath.Join(scripts, "testdata"))
 	}
+	// Each case builds its own analyzers, and the engine's runtime pool is
+	// safe to share, so cases are independent. Each owns its recorder.
+	//
+	// Every case type-checks its dependencies from source, so more cases at
+	// once mostly add garbage collection; half the CPUs measured fastest.
+	var group errgroup.Group
+	group.SetLimit(max(1, runtime.GOMAXPROCS(0)/2))
+	for _, ac := range all {
+		group.Go(func() error {
+			return Run(ac.recorder, e, ac.analyzer, ac.dir, ac.c)
+		})
+	}
+	if err := group.Wait(); err != nil {
+		return errors.WithStack(err)
+	}
+	failed := 0
+	for _, ac := range all {
+		if len(ac.recorder.Failures()) == 0 {
+			fmt.Fprintf(out, "ok   %s/%s\n", ac.analyzer, ac.c.Name) //nolint:errcheck // Output is best effort.
+			continue
+		}
+		failed++
+		fmt.Fprintf(out, "FAIL %s/%s\n", ac.analyzer, ac.c.Name) //nolint:errcheck // Output is best effort.
+		for _, failure := range ac.recorder.Failures() {
+			fmt.Fprintln(out, "     "+strings.ReplaceAll(failure, "\n", "\n     ")) //nolint:errcheck // Output is best effort.
+		}
+	}
 	if failed > 0 {
-		return errors.Errorf("%d of %d cases failed", failed, tested)
+		return errors.Errorf("%d of %d cases failed", failed, len(all))
 	}
 	return nil
 }
