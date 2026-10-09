@@ -69,6 +69,7 @@ upstream's; each port is a translation of that code.
 | `noinlineerr` | [AlwxSin/noinlineerr](https://github.com/AlwxSin/noinlineerr) | v1.0.6 | MIT |
 | `nosprintfhostport` | [stbenjam/no-sprintf-host-port](https://github.com/stbenjam/no-sprintf-host-port) | v0.3.1 | MIT |
 | `perfsprint` | [catenacyber/perfsprint](https://github.com/catenacyber/perfsprint) | v0.10.1 | MIT |
+| `prealloc` | [alexkohler/prealloc](https://github.com/alexkohler/prealloc) | v1.1.0 | MIT |
 | `predeclared` | [nishanths/predeclared](https://github.com/nishanths/predeclared) | v0.2.2 | BSD-3-Clause |
 | `promlinter` | [yeya24/promlinter](https://github.com/yeya24/promlinter) | v0.3.0 | Apache-2.0 |
 | `protogetter` | [ghostiam/protogetter](https://github.com/ghostiam/protogetter) | v1.0.1 | MIT |

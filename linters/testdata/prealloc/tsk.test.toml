@@ -1,0 +1,10 @@
+[[case]]
+name = "default"
+packages = ["p"]
+
+[[case]]
+name = "loops"
+packages = ["loops"]
+[case.config]
+simple = false
+for-loops = true
