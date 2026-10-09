@@ -13,8 +13,6 @@ interface Config {
   function: boolean;
 }
 
-const readme = "https://github.com/manuelarte/funcorder?tab=readme-ov-file";
-
 // TypeHolder collects one file's declaration of a type with its
 // constructors and methods.
 interface TypeHolder {
@@ -30,7 +28,6 @@ export default defineAnalyzer<Config>({
 Constructors, exported functions named New... or Must... returning a type,
 should follow the type's declaration and precede its methods, and exported
 methods should precede unexported ones. Types are checked per file.`,
-  url: "https://github.com/manuelarte/funcorder",
   requires: [inspect],
   config: { constructor: true, structMethod: true, alphabetical: false, function: false },
   run(pass) {
@@ -117,14 +114,12 @@ function analyzeType(pass: Pass<Config>, h: TypeHolder): void {
   h.methods.sort((a, b) => a.pos() - b.pos());
   if (pass.config.constructor) {
     h.constructors.forEach((ctor, i) => {
-      const url = `${readme}#check-constructors-functions-are-placed-after-struct-declaration`;
       if (ctor.pos() < spec.pos()) {
-        pass.report({ pos: ctor.pos(), url, message: `constructor ${name(ctor)} for struct ${typeName} should be placed after the struct declaration` });
+        pass.report({ pos: ctor.pos(), message: `constructor ${name(ctor)} for struct ${typeName} should be placed after the struct declaration` });
       }
       if (h.methods.length > 0 && ctor.pos() > h.methods[0].pos()) {
         pass.report({
           pos: ctor.pos(),
-          url,
           message: `constructor ${name(ctor)} for struct ${typeName} should be placed before struct method ${name(h.methods[0])}`,
         });
       }
@@ -132,7 +127,6 @@ function analyzeType(pass: Pass<Config>, h: TypeHolder): void {
       if (pass.config.alphabetical && next !== undefined && ctor.name!.name > next.name!.name) {
         pass.report({
           pos: next.pos(),
-          url: `${readme}#check-constructorsmethods-are-sorted-alphabetically`,
           message: `constructor ${name(next)} for struct ${typeName} should be placed before constructor ${name(ctor)}`,
         });
       }
@@ -147,7 +141,6 @@ function analyzeType(pass: Pass<Config>, h: TypeHolder): void {
     if (lastExported !== undefined && !ast.isExported(method.name!.name) && method.pos() < lastExported.pos()) {
       pass.report({
         pos: method.pos(),
-        url: `${readme}#check-exported-methods-are-placed-before-unexported-methods`,
         message: `unexported method ${name(method)} for struct ${typeName} should be placed after the exported method ${name(lastExported)}`,
       });
     }
@@ -158,7 +151,6 @@ function analyzeType(pass: Pass<Config>, h: TypeHolder): void {
         if (group[i].name!.name > group[i + 1].name!.name) {
           pass.report({
             pos: group[i + 1].pos(),
-            url: `${readme}#check-constructorsmethods-are-sorted-alphabetically`,
             message: `method ${name(group[i + 1])} for struct ${typeName} should be placed before method ${name(group[i])}`,
           });
         }
@@ -178,7 +170,6 @@ function analyzeFunctions(pass: Pass<Config>, functions: ast.FuncDecl[]): void {
     if (!ast.isExported(fn.name!.name) && fn.pos() < lastExported.pos()) {
       pass.report({
         pos: fn.pos(),
-        url: `${readme}#check-exported-functions-are-placed-before-unexported-functions`,
         message: `unexported function ${JSON.stringify(fn.name!.name)} should be placed after the exported function ${JSON.stringify(lastExported.name!.name)}`,
       });
     }

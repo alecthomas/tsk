@@ -31,7 +31,6 @@ const nodeTypes = [
 export default defineAnalyzer<Config>({
   name: "protogetter",
   doc: "Reports direct reads from proto message fields when getters should be used",
-  url: "https://github.com/ghostiam/protogetter",
   requires: [inspect],
   config: { skipGeneratedBy: [], skipFiles: [], skipAnyGenerated: false, replaceFirstArgInAppend: false },
   run(pass) {

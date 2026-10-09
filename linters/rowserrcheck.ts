@@ -41,7 +41,6 @@ const valueInstrs = new Set([
 export default defineAnalyzer<Config>({
   name: "rowserrcheck",
   doc: "checks whether Rows.Err of rows is checked successfully",
-  url: "https://github.com/jingyugao/rowserrcheck",
   requires: [buildssa],
   config: { packages: [] },
   run(pass) {

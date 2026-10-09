@@ -53,7 +53,6 @@ const nestedBlockKinds = new Set([
 export default defineAnalyzer<Config>({
   name: "spancheck",
   doc: "Checks for mistakes with OpenTelemetry/Census spans.",
-  url: "https://github.com/jjti/go-spancheck",
   requires: [ctrlflow, inspect],
   config: { checks: ["end"], ignoreCheckSignatures: [], extraStartSpanSignatures: [] },
   run(pass) {

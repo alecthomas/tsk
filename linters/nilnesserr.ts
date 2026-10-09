@@ -20,7 +20,6 @@ export default defineAnalyzer({
   name: "nilnesserr",
   doc: `Reports constructs that checks for err != nil, but returns a different nil value error.
 Powered by nilness and nilerr.`,
-  url: "https://github.com/alingse/nilnesserr",
   requires: [buildssa],
   run(pass) {
     const errorType = types.Universe!.lookup("error")!.type()!.underlying() as types.Interface;

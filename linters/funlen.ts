@@ -17,7 +17,6 @@ export default defineAnalyzer<Config>({
 Reports functions with too many lines or statements. Statements in nested
 blocks and in function literals that are assigned, deferred, or started as
 goroutines count towards their function.`,
-  url: "https://github.com/ultraware/funlen",
   config: { lines: 60, statements: 40, ignoreComments: true },
   run(pass) {
     const lineLimit = pass.config.lines === 0 ? 60 : pass.config.lines;

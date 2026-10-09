@@ -35,7 +35,6 @@ export default defineAnalyzer<Config>({
 
 Reports identifiers matching any forbidden pattern. Declared names, such as
 those of functions, types, and fields, are not checked, only uses.`,
-  url: "https://github.com/ashanbrown/forbidigo",
   config: { forbid: [], excludeGodocExamples: true, analyzeTypes: false },
   run(pass) {
     const patterns = (pass.config.forbid.length === 0 ? [{ pattern: defaultPattern }] : pass.config.forbid).map(compile);

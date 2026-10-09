@@ -14,7 +14,6 @@ const builtinExclusions = ["*.UnmarshalText", "*.UnmarshalJSON", "*.UnmarshalYAM
 export default defineAnalyzer<Config>({
   name: "recvcheck",
   doc: "checks for receiver type consistency",
-  url: "https://github.com/raeperd/recvcheck",
   requires: [inspect],
   config: { disableBuiltin: false, exclusions: [] },
   run(pass) {

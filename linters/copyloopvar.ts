@@ -14,7 +14,6 @@ export default defineAnalyzer<Config>({
 
 Since Go 1.22 each iteration has its own loop variables, so copies such as
 v := v are redundant. Files built for an older Go version are skipped.`,
-  url: "https://github.com/karamaru-alpha/copyloopvar",
   requires: [inspect],
   config: { checkAlias: false },
   run(pass) {

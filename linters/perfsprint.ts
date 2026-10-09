@@ -36,7 +36,6 @@ interface Config {
 export default defineAnalyzer<Config>({
   name: "perfsprint",
   doc: "Checks that fmt.Sprintf can be replaced with a faster alternative.",
-  url: "https://github.com/catenacyber/perfsprint",
   requires: [inspect],
   config: {
     integerFormat: true,

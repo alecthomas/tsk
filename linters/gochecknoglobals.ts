@@ -11,7 +11,6 @@ Any function in a package can read and write a package-level variable, so
 global variables cause side effects that are hard to track. Sentinel errors
 named ErrXxx or errXxx, variables named _ or version, //go:embed targets, and
 regexp.MustCompile results are allowed.`,
-  url: "https://github.com/leighmcculloch/gochecknoglobals",
   runDespiteErrors: true,
   run(pass) {
     for (const file of pass.files) {

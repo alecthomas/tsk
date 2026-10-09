@@ -206,7 +206,6 @@ const constantKind = stringers(
 export default defineAnalyzer<Config>({
   name: "usestdlibvars",
   doc: "A linter that detect the possibility to use variables/constants from the Go standard library.",
-  url: "https://github.com/sashamelentyev/usestdlibvars",
   requires: [inspect],
   // Only syntax is needed, so packages with type errors are checked too.
   runDespiteErrors: true,

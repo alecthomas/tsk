@@ -110,7 +110,6 @@ Reports fmt.Errorf calls that format errors without %w, comparisons and value
 switches on errors instead of errors.Is, and type assertions and type switches
 on errors instead of errors.As. Errors that standard library functions return
 unwrapped, such as io.EOF from io.Reader.Read, may be compared directly.`,
-  url: "https://codeberg.org/polyfloyd/go-errorlint",
   requires: [inspect],
   config: { errorf: true, errorfMulti: true, asserts: true, comparison: true, allowedErrors: [], allowedErrorsWildcard: [] },
   run(pass) {

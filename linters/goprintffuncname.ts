@@ -9,7 +9,6 @@ export default defineAnalyzer({
 A function without results whose last parameters are format string and
 args ...any formats like fmt.Printf, so its name should end in f, which also
 lets go vet check its calls.`,
-  url: "https://github.com/golangci/go-printf-func-name",
   requires: [inspect],
   run(pass) {
     for (const cursor of pass.resultOf(inspect).root().preorder(ast.FuncDecl)) {

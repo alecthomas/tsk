@@ -41,7 +41,6 @@ export default defineAnalyzer<Config>({
 Checks that the last sentence of each comment in scope ends in a period, and
 optionally that sentences start with a capital letter. Indented lines, tags
 such as //nolint:, and lines ending in URLs are skipped.`,
-  url: "https://github.com/tetafro/godot",
   // Only syntax is needed, so packages with type errors are checked too.
   runDespiteErrors: true,
   config: { scope: "declarations", exclude: [], period: true, capital: false },

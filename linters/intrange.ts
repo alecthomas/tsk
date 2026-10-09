@@ -11,7 +11,6 @@ const intCasts = new Set(["int", "int8", "int16", "int32", "int64", "uint", "uin
 export default defineAnalyzer({
   name: "intrange",
   doc: "intrange is a linter to find places where for loops could make use of an integer range.",
-  url: "https://github.com/ckaznocha/intrange",
   requires: [inspect],
   run(pass) {
     for (const cursor of pass.resultOf(inspect).root().preorder(ast.ForStmt, ast.RangeStmt)) {

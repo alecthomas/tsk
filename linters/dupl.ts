@@ -16,7 +16,6 @@ export default defineAnalyzer<Config>({
 Each package's syntax trees are serialized into one sequence of node types, and
 a suffix tree finds repeated runs at least threshold nodes long. Runs are
 trimmed to whole statements and declarations before they are reported.`,
-  url: "https://github.com/golangci/dupl",
   config: { threshold: 150 },
   run(pass) {
     const data: SyntaxNode[] = [];

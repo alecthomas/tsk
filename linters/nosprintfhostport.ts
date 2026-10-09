@@ -10,7 +10,6 @@ const withUser = /^[a-zA-Z][a-zA-Z0-9+-.]*:\/\/[^/]*@%s:.*$/;
 export default defineAnalyzer({
   name: "nosprintfhostport",
   doc: "Checks for misuse of Sprintf to construct a host with port in a URL.",
-  url: "https://github.com/stbenjam/no-sprintf-host-port",
   requires: [inspect],
   // Only syntax is needed, so packages with type errors are checked too.
   runDespiteErrors: true,

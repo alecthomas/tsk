@@ -21,7 +21,6 @@ interface Config {
 export default defineAnalyzer<Config>({
   name: "unused",
   doc: "Checks Go code for unused constants, variables, functions and types",
-  url: "https://staticcheck.dev/docs/checks/#U1000",
   config: {
     fieldWritesAreUses: true,
     postStatementsAreReads: false,

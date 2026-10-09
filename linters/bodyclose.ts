@@ -21,7 +21,6 @@ export default defineAnalyzer<Config>({
 
 An unclosed response body leaks the connection. A function whose doc comment
 holds //bodyclose:handled takes over responsibility for responses passed to it.`,
-  url: "https://github.com/timakin/bodyclose",
   requires: [buildssa],
   config: { checkConsumption: false },
   run(pass) {

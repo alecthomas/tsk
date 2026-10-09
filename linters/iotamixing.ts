@@ -11,7 +11,6 @@ interface Config {
 export default defineAnalyzer<Config>({
   name: "iotamixing",
   doc: "checks if iotas are being used in const blocks with other non-iota declarations.",
-  url: "https://github.com/AdminBenni/iota-mixing",
   requires: [inspect],
   // Only syntax is needed, so packages with type errors are checked too.
   runDespiteErrors: true,

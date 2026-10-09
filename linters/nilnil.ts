@@ -18,7 +18,6 @@ interface Config {
 export default defineAnalyzer<Config>({
   name: "nilnil",
   doc: "Checks that there is no simultaneous return of `nil` error and an invalid value.",
-  url: "https://github.com/Antonboom/nilnil",
   requires: [inspect],
   config: {
     checkedTypes: ["chan", "func", "iface", "map", "ptr", "uintptr", "unsafeptr"],

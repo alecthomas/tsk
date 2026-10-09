@@ -13,7 +13,6 @@ interface Config {
 export default defineAnalyzer<Config>({
   name: "predeclared",
   doc: "find code that shadows one of Go's predeclared identifiers",
-  url: "https://github.com/nishanths/predeclared",
   // Only syntax is needed, so packages with type errors are checked too.
   runDespiteErrors: true,
   config: { ignore: [], qualifiedName: false },

@@ -66,7 +66,6 @@ const lintFuncText: Record<LintFunc, string[]> = {
 export default defineAnalyzer<Config>({
   name: "promlinter",
   doc: "Check Prometheus metrics naming via promlint",
-  url: "https://github.com/yeya24/promlinter",
   // Only syntax is needed, so packages with type errors are checked too.
   runDespiteErrors: true,
   config: { strict: false, disabledLinters: [] },

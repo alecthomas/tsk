@@ -7,7 +7,6 @@ const outputPrefix = /^[ \t\n\v\f\r]*(unordered )?output:/i;
 export default defineAnalyzer({
   name: "testableexamples",
   doc: "linter checks if examples are testable (have an expected output)",
-  url: "https://github.com/maratori/testableexamples",
   // Only syntax is needed, so packages with type errors are checked too.
   runDespiteErrors: true,
   run(pass) {

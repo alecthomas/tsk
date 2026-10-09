@@ -31,7 +31,6 @@ const fieldNames = ["Chdir", "MkdirTemp", "TempDir", "Setenv", "Background", "TO
 export default defineAnalyzer<Config>({
   name: "usetesting",
   doc: "Reports uses of functions with replacement inside the testing package.",
-  url: "https://github.com/ldez/usetesting",
   requires: [inspect],
   config: {
     contextBackground: false,

@@ -9,7 +9,6 @@ export default defineAnalyzer({
 
 Non-ASCII identifiers can hide look-alike characters, such as a Cyrillic а in
 place of a Latin a.`,
-  url: "https://github.com/tdakkota/asciicheck",
   requires: [inspect],
   run(pass) {
     const root = pass.resultOf(inspect).root();

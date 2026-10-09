@@ -10,7 +10,6 @@ export default defineAnalyzer({
 Error variables should be named ErrXxx or errXxx, error types XxxError or
 xxxError, and error slices and arrays XxxErrors. Names in all lower or upper
 case are accepted as initialisms.`,
-  url: "https://github.com/Antonboom/errname",
   requires: [inspect],
   run(pass) {
     const errorInterface = types.Universe!.lookup("error")!.type()!.underlying() as types.Interface;

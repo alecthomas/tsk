@@ -91,7 +91,6 @@ const violations: Violation[] = [
 export default defineAnalyzer({
   name: "mirror",
   doc: "reports wrong mirror patterns of bytes/strings usage",
-  url: "https://github.com/butuzov/mirror",
   requires: [inspect],
   run(pass) {
     for (const cursor of pass.resultOf(inspect).root().preorder(ast.CallExpr)) {

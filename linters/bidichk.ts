@@ -39,7 +39,6 @@ export default defineAnalyzer<Config>({
 
 Bidirectional control characters make source display differently from how it
 compiles, as in the Trojan Source attack.`,
-  url: "https://github.com/breml/bidichk",
   config: {
     leftToRightEmbedding: true,
     rightToLeftEmbedding: true,

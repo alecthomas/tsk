@@ -19,7 +19,6 @@ type Reason = typeof noUseUntilReturn | typeof reassignedSoon | typeof notWasted
 export default defineAnalyzer({
   name: "wastedassign",
   doc: "Finds wasted assignment statements.",
-  url: "https://github.com/sanposhiho/wastedassign",
   requires: [inspect],
   run(pass: Pass<unknown>) {
     const typeSwitchLines = new Set<number>();

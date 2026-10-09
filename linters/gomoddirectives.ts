@@ -42,7 +42,6 @@ Reports replacements, which break the module for its users, retractions
 without an explanation, ignore directives for paths Go already ignores, and
 optionally other directives. Findings are reported in the go.mod of each
 package's module.`,
-  url: "https://github.com/ldez/gomoddirectives",
   config: {
     replaceAllowList: [],
     replaceLocal: false,

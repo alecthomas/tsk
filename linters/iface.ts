@@ -32,7 +32,6 @@ Reports interfaces identical to another in the same package, and optionally
 interfaces or interface methods unused in their package, and unexported
 interfaces in exported signatures. //iface:ignore, or //iface:ignore=<checks>,
 on a declaration skips it. The opaque check is not supported.`,
-  url: "https://github.com/uudashr/iface",
   // Messages start with the check's name, as golangci-lint's do.
   requires: [inspect],
   config: { enable: ["identical"], settings: { unused: { exclude: [] }, unusedmethod: { exclude: [] } } },

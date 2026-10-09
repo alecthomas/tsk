@@ -40,7 +40,6 @@ type Action = "unhandled" | "handled" | "returned" | "passed" | "closed" | "othe
 export default defineAnalyzer({
   name: "sqlclosecheck",
   doc: "Checks that sql.Rows, sql.Stmt, sqlx.NamedStmt, pgx.Query are closed.",
-  url: "https://github.com/ryanrolds/sqlclosecheck",
   requires: [buildssa],
   run(pass) {
     const result = pass.resultOf(buildssa);

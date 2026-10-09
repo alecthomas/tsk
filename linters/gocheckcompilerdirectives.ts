@@ -39,7 +39,6 @@ export default defineAnalyzer({
 The compiler silently ignores directives with a space after // and ones it
 does not know, such as a misspelt //go:noinlne. As upstream, a directive is
 only checked when followed by a space.`,
-  url: "https://github.com/leighmcculloch/gocheckcompilerdirectives",
   run(pass) {
     for (const file of pass.files) {
       for (const group of file.comments) {

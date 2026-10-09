@@ -120,7 +120,6 @@ function enabledCheckers(config: Config): Checker[] {
 export default defineAnalyzer<Config>({
   name: "testifylint",
   doc: "Checks usage of github.com/stretchr/testify.",
-  url: "https://github.com/antonboom/testifylint",
   requires: [inspect],
   config: {
     enableAll: false,

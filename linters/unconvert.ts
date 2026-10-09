@@ -20,7 +20,6 @@ interface Step {
 export default defineAnalyzer<Config>({
   name: "unconvert",
   doc: "Remove unnecessary type conversions",
-  url: "https://github.com/mdempsky/unconvert",
   config: { fastMath: false, safe: false },
   run(pass) {
     for (const file of pass.files) {

@@ -82,7 +82,6 @@ notes read "Deprecated: ". Optional rules require docs and report unused
 link definitions. //godoclint:disable [rules...] in a doc, or a top-level
 comment, turns rules off. The max-len and require-stdlib-doclink rules are
 not supported.`,
-  url: "https://github.com/godoc-lint/godoc-lint",
   config: {
     default: "basic",
     enable: [],

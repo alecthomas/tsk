@@ -75,7 +75,6 @@ export default defineAnalyzer({
 Reports calls to golang.org/x/exp/maps and golang.org/x/exp/slices functions,
 and uses of constraints.Ordered, that the standard library now provides, and
 imports of those packages that can be replaced outright.`,
-  url: "https://github.com/ldez/exptostd",
   requires: [inspect],
   run(pass) {
     const goVersion = minorVersion(pass.pkg.goVersion());

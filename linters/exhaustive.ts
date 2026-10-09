@@ -58,7 +58,6 @@ An enum is a named type whose underlying type is an integer, float, or
 string, with constants of that type declared in the same scope. A switch on an
 enum must have a case for every member. //exhaustive:ignore on a switch or map
 skips it; on a type or constant declaration it excludes those.`,
-  url: "https://github.com/nishanths/exhaustive",
   requires: [inspect],
   facts: [enumMembers],
   // Enums declared in dependencies are known only through their facts.

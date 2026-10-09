@@ -63,7 +63,6 @@ export default defineAnalyzer<Config>({
 Reports calls whose error result is discarded, in expression, go, and defer
 statements, and optionally when assigned to _. Unchecked type assertions can be
 reported too.`,
-  url: "https://github.com/kisielk/errcheck",
   requires: [inspect],
   config: { disableDefaultExclusions: false, checkTypeAssertions: false, checkBlank: false, excludeFunctions: [], verbose: false },
   run(pass) {

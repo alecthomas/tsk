@@ -92,7 +92,6 @@ export default defineAnalyzer<Config>({
 
 Header methods canonicalize keys on every call, so a literal key in canonical
 form, such as "Content-Type", avoids the work and reads as it is stored.`,
-  url: "https://github.com/lasiar/canonicalheader",
   requires: [inspect],
   config: { exclusions: [], useDefaultExclusion: true },
   run(pass) {

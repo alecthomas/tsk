@@ -34,7 +34,6 @@ export default defineAnalyzer<Config>({
 Builds a flow graph of each function from its syntax and reports
 assignments overwritten or left unread on every path. Variables whose
 address is taken, or that are used by closures, are not checked.`,
-  url: "https://github.com/gordonklaus/ineffassign",
   // Only syntax is needed, so packages with type errors are checked too.
   runDespiteErrors: true,
   config: { checkEscapingErrors: false },

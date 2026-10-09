@@ -26,7 +26,6 @@ export default defineAnalyzer<Config>({
 Reassigning a context derived from itself, as ctx = context.WithValue(ctx, ...),
 in a loop or a function called repeatedly nests a new layer each time, so the
 context grows without bound.`,
-  url: "https://github.com/Crocmagnon/fatcontext",
   requires: [inspect],
   config: { checkStructPointers: false, checkLoops: true, checkFunctionLiterals: true },
   run(pass) {

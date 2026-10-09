@@ -10,7 +10,6 @@ interface Config {
 export default defineAnalyzer<Config>({
   name: "reassign",
   doc: "Checks that package variables are not reassigned",
-  url: "https://github.com/curioswitch/go-reassign",
   requires: [inspect],
   config: { patterns: ["EOF", "Err.*"] },
   run(pass) {

@@ -10,7 +10,6 @@ interface Config {
 export default defineAnalyzer<Config>({
   name: "nakedret",
   doc: "Checks that functions with naked returns are not longer than a maximum size (can be zero).",
-  url: "https://github.com/alexkohler/nakedret",
   requires: [inspect],
   // Only syntax is needed, so packages with type errors are checked too.
   runDespiteErrors: true,

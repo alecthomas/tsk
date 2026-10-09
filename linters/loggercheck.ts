@@ -77,7 +77,6 @@ const structuredTypes: Partial<Record<Logger, string>> = { slog: "Attr", zap: "F
 export default defineAnalyzer<Config>({
   name: "loggercheck",
   doc: "Checks key value pairs for common logger libraries (kitlog,klog,logr,slog,zap).",
-  url: "https://github.com/timonwong/loggercheck",
   requires: [inspect],
   config: {
     kitlog: true,

@@ -57,7 +57,6 @@ const replacements = new Map<string, string>([
 export default defineAnalyzer({
   name: "noctx",
   doc: "Detects function and method with missing usage of context.Context",
-  url: "https://github.com/sonatard/noctx",
   requires: [buildssa],
   run(pass) {
     for (const fn of pass.resultOf(buildssa).srcFuncs) {

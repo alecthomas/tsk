@@ -21,7 +21,6 @@ export default defineAnalyzer<Config>({
 
 Passing a []any to a ...any parameter without ... wraps the whole slice as a
 single argument, which is rarely intended.`,
-  url: "https://github.com/alingse/asasalint",
   requires: [inspect],
   config: { exclude: [], useBuiltinExclusions: true, ignoreTest: false },
   run(pass) {

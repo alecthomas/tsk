@@ -10,7 +10,6 @@ interface Config {
 export default defineAnalyzer<Config>({
   name: "testpackage",
   doc: "linter that makes you use a separate _test package",
-  url: "https://github.com/maratori/testpackage",
   // Only syntax is needed, so packages with type errors are checked too.
   runDespiteErrors: true,
   config: { skipRegexp: "(export|internal)_test\\.go", allowPackages: ["main"] },

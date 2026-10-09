@@ -11,7 +11,6 @@ export default defineAnalyzer({
 Multiplying two time.Durations squares the unit, so d * time.Second with d
 already a duration is almost always a bug. Constants and conversions such as
 time.Duration(n) are accepted as plain numbers.`,
-  url: "https://github.com/charithe/durationcheck",
   requires: [inspect],
   run(pass) {
     if (!pass.pkg.imports().some((pkg) => pkg!.path() === "time")) {

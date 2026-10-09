@@ -59,7 +59,6 @@ export default defineAnalyzer<Config>({
 Counts string literals in assignments, comparisons, cases, returns, calls,
 and composite literals, separately in test and other files, and reports
 each file with a string repeated at least min-occurrences times.`,
-  url: "https://github.com/jgautheron/goconst",
   requires: [inspect],
   config: {
     ignoreStringValues: [],

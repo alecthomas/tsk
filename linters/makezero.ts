@@ -14,7 +14,6 @@ export default defineAnalyzer<Config>({
   doc: `Find slice declarations with non-zero initial length
 
 A "nozero" comment on the line suppresses a finding.`,
-  url: "https://github.com/ashanbrown/makezero",
   requires: [inspect],
   config: { always: false },
   run(pass) {

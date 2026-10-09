@@ -10,7 +10,6 @@ export default defineAnalyzer({
   doc: `Find the code that returns nil even if it checks that the error is not nil.
 
 A "//lint:ignore nilerr reason" comment on the return suppresses a finding.`,
-  url: "https://github.com/gostaticanalysis/nilerr",
   requires: [buildssa],
   run(pass) {
     const checker = new Checker(pass);

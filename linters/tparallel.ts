@@ -6,7 +6,6 @@ import { buildssa } from "tsk/passes";
 export default defineAnalyzer({
   name: "tparallel",
   doc: "tparallel detects inappropriate usage of t.Parallel() method in your Go test codes.",
-  url: "https://github.com/moricho/tparallel",
   requires: [buildssa],
   run(pass) {
     const testing = pass.pkg.path() === "testing" ? pass.pkg : pass.pkg.imports().find((pkg) => pkg!.path() === "testing");

@@ -16,7 +16,6 @@ interface Config {
 export default defineAnalyzer<Config>({
   name: "unparam",
   doc: "Reports unused function parameters",
-  url: "https://github.com/mvdan/unparam",
   requires: [buildssa],
   config: { checkExported: false },
   run(pass) {
