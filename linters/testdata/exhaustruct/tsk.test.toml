@@ -1,0 +1,11 @@
+[[case]]
+name = "default"
+packages = ["p"]
+
+[[case]]
+name = "explicit"
+packages = ["explicit"]
+[case.config]
+explicit-mode = true
+enforce-patterns = ['.*\.Matched']
+allow-empty-declarations = true
