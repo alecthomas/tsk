@@ -78,6 +78,7 @@ upstream's; each port is a translation of that code.
 | `rowserrcheck` | [golangci/rowserrcheck](https://github.com/golangci/rowserrcheck) | c5f79b8a11ba | MIT |
 | `spancheck` | [jjti/go-spancheck](https://github.com/jjti/go-spancheck) | v0.6.5 | MIT |
 | `sqlclosecheck` | [ryanrolds/sqlclosecheck](https://github.com/ryanrolds/sqlclosecheck) | v0.6.0 | MIT |
+| `tagalign` | [4meepo/tagalign](https://github.com/4meepo/tagalign) | v1.4.4 | MIT |
 | `testableexamples` | [maratori/testableexamples](https://github.com/maratori/testableexamples) | v1.0.1 | MIT |
 | `testifylint` | [Antonboom/testifylint](https://github.com/Antonboom/testifylint) | v1.6.4 | MIT |
 | `testpackage` | [maratori/testpackage](https://github.com/maratori/testpackage) | v1.1.2 | MIT |
