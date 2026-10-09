@@ -16,9 +16,17 @@ test-go[go-module](package = "./...", run = ".") = go.test {
   flags = ["-timeout=30s", "-run=#{run}"]
 }
 
+# Modernise code with the analyzers that ship with go fix.
+fix-go[go-module] = exec {
+  command = "go fix ./..."
+  dir = go-module
+  inputs = ["#{go-module}/**/*.go", "#{go-module}/go.mod"]
+}
+# Formatting after fixing keeps the two from rewriting the same files at once.
 fmt-go[go-module] = go.fmt {
   package = "./..."
   dir = go-module
+  depends_on = [fix-go]
 }
 fmt-check-go[go-module] = go.fmt-l {
   package = "./..."
@@ -117,6 +125,6 @@ target test = [test-go, test-linters]
 target lint = [lint-go, lint-tsk, fmt-check-go, lint-ts, lint-actions, lint-action-pins, lint-release]
 
 # Format everything
-target fmt = [fmt-go, fmt-ts, fmt-action-pins]
+target fmt = [fix-go, fmt-go, fmt-ts, fmt-action-pins]
 
 target default = [test, lint]

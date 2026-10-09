@@ -60,7 +60,7 @@ func TestRunAllReportsCasesInOrder(t *testing.T) {
 	// Cases run concurrently but report in declaration order; failure
 	// details follow their case.
 	var results []string
-	for _, line := range strings.Split(strings.TrimSpace(out.String()), "\n") {
+	for line := range strings.SplitSeq(strings.TrimSpace(out.String()), "\n") {
 		if strings.HasPrefix(line, "ok") || strings.HasPrefix(line, "FAIL") {
 			results = append(results, line)
 		}
