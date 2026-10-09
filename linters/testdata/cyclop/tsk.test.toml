@@ -1,0 +1,9 @@
+[[case]]
+name = "default"
+packages = ["p"]
+
+[[case]]
+name = "average"
+packages = ["average"]
+[case.config]
+package-average = 2
