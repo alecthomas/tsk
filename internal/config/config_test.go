@@ -4,10 +4,22 @@ import (
 	"testing"
 
 	"github.com/alecthomas/assert/v2"
+	"github.com/alecthomas/kong"
 	ts "github.com/microsoft/TypeScript/tsc/shim/typescript"
 
 	"github.com/alecthomas/tsk/internal/config"
 )
+
+func TestLintSelectionFlags(t *testing.T) {
+	var selection config.LintSelection
+	parser, err := kong.New(&selection)
+	assert.NoError(t, err)
+	_, err = parser.Parse([]string{"--enable-all", "--disable=a,b"})
+	assert.NoError(t, err)
+	assert.Equal(t, config.LintSelection{Disable: []string{"a", "b"}, EnableAll: true}, selection)
+	_, err = parser.Parse([]string{"--enable-all", "--disable-all"})
+	assert.EqualError(t, err, "--disable-all and --enable-all can't be used together")
+}
 
 func encapsulationShape() ts.Shape {
 	rule := ts.ObjectShape{Properties: []ts.Property{
@@ -80,15 +92,26 @@ func TestResolveWithoutConfig(t *testing.T) {
 
 func TestEnabled(t *testing.T) {
 	tests := []struct {
-		Name    string
-		Text    string
-		Enabled []string
-		Error   string
+		Name      string
+		Text      string
+		Selection config.Selection
+		EnableAll bool
+		Enabled   []string
+		Error     string
 	}{
-		{Name: "Default", Text: ``, Enabled: []string{"a", "b"}},
-		{Name: "Disable", Text: `disable = ["a"]`, Enabled: []string{"b"}},
+		{Name: "SelectEnableAll", Text: "disable-all = true\nenable = [\"b\"]", EnableAll: true, Selection: config.Selection{Disable: []string{"c"}}, Enabled: []string{"a", "b"}},
+		{Name: "SelectEnableAllOverridesDisable", Text: `disable = ["a"]`, EnableAll: true, Enabled: []string{"a", "b", "c"}},
+		{Name: "Default", Text: ``, Enabled: []string{"a", "b", "c"}},
+		{Name: "Disable", Text: `disable = ["a"]`, Enabled: []string{"b", "c"}},
 		{Name: "DisableAll", Text: `disable-all = true`},
 		{Name: "DisableAllEnable", Text: "disable-all = true\nenable = [\"b\"]", Enabled: []string{"b"}},
+		{Name: "SelectDisable", Text: `disable = ["a"]`, Selection: config.Selection{Disable: []string{"b"}}, Enabled: []string{"c"}},
+		{Name: "SelectEnableOverridesDisable", Text: `disable = ["a", "b"]`, Selection: config.Selection{Enable: []string{"a"}}, Enabled: []string{"a", "c"}},
+		{Name: "SelectEnableWithDisableAll", Text: "disable-all = true\nenable = [\"b\"]", Selection: config.Selection{Enable: []string{"c"}}, Enabled: []string{"b", "c"}},
+		{Name: "SelectDisableWithDisableAll", Text: "disable-all = true\nenable = [\"b\", \"c\"]", Selection: config.Selection{Disable: []string{"b"}}, Enabled: []string{"c"}},
+		{Name: "SelectDisableAllIgnoresConfig", Text: "disable-all = true\nenable = [\"b\"]", Selection: config.Selection{DisableAll: true, Enable: []string{"a"}}, Enabled: []string{"a"}},
+		{Name: "SelectDisableWinsOverEnable", Selection: config.Selection{Enable: []string{"a"}, Disable: []string{"a"}}, Enabled: []string{"b", "c"}},
+		{Name: "SelectDisableAllDisableWinsOverEnable", Selection: config.Selection{DisableAll: true, Enable: []string{"a", "b"}, Disable: []string{"a"}}, Enabled: []string{"b"}},
 		{Name: "EnableWithoutDisableAll", Text: `enable = ["b"]`, Error: "test.toml: enable needs disable-all = true; every analyzer already runs"},
 		{Name: "DisableWithDisableAll", Text: "disable-all = true\ndisable = [\"a\"]", Error: "test.toml: disable has no effect with disable-all = true; list analyzers to run in enable"},
 		{Name: "DisableAllNotBool", Text: `disable-all = "yes"`, Error: "test.toml:1:15: toml: cannot decode TOML string"},
@@ -102,8 +125,9 @@ func TestEnabled(t *testing.T) {
 				return
 			}
 			assert.NoError(t, err)
+			file = file.SelectLint(config.LintSelection{Selection: test.Selection, EnableAll: test.EnableAll})
 			var enabled []string
-			for _, name := range []string{"a", "b"} {
+			for _, name := range []string{"a", "b", "c"} {
 				if file.Enabled(name) {
 					enabled = append(enabled, name)
 				}

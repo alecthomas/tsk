@@ -1,6 +1,7 @@
 package project_test
 
 import (
+	"log/slog"
 	"os"
 	"path/filepath"
 	"strings"
@@ -9,6 +10,8 @@ import (
 	"github.com/alecthomas/assert/v2"
 	. "github.com/alecthomas/types/optional"
 
+	"github.com/alecthomas/tsk/internal/config"
+	"github.com/alecthomas/tsk/internal/library"
 	"github.com/alecthomas/tsk/internal/project"
 )
 
@@ -122,4 +125,36 @@ func absolute(root string, c project.Config) project.Config {
 		c.Config = filepath.Join(root, c.Config)
 	}
 	return c
+}
+
+// Lint applies a selection over the config file; test ignores the config
+// file, so the selection picks from every analyzer.
+func TestSelect(t *testing.T) {
+	work := t.TempDir()
+	t.Chdir(work)
+	c := project.Config{Dir: filepath.Join(work, ".tsk"), Config: filepath.Join(work, ".tsk", "config.toml")}
+	assert.NoError(t, os.MkdirAll(c.Dir, 0o750))
+	assert.NoError(t, os.WriteFile(c.Config, []byte(`disable = ["one"]`), 0o600))
+	for _, name := range []string{"one", "two", "three"} {
+		assert.NoError(t, os.WriteFile(filepath.Join(c.Dir, name+".ts"), []byte(analyzerScript(name)), 0o600))
+	}
+	logger := slog.New(slog.DiscardHandler)
+	p, err := project.Load(t.Context(), logger, c, library.NewCache(library.Config{Cache: t.TempDir()}, logger))
+	assert.NoError(t, err)
+
+	selected, err := p.Selected(config.Selection{Disable: []string{"two"}})
+	assert.NoError(t, err)
+	assert.Equal(t, []string{"one", "three"}, selected)
+	_, err = p.Selected(config.Selection{Enable: []string{"four"}})
+	assert.EqualError(t, err, "--enable names unknown analyzer four")
+
+	assert.NoError(t, p.Select(config.LintSelection{Enable: []string{"one"}, Disable: []string{"three"}}))
+	analyzers, err := p.Analyzers()
+	assert.NoError(t, err)
+	var names []string
+	for _, analyzer := range analyzers {
+		names = append(names, analyzer.Name)
+	}
+	assert.Equal(t, []string{"one", "two"}, names)
+	assert.EqualError(t, p.Select(config.LintSelection{Disable: []string{"four"}}), "--disable names unknown analyzer four")
 }

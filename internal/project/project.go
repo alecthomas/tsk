@@ -220,6 +220,41 @@ func (p *Project) Analyzers() ([]*analysis.Analyzer, error) {
 	return configured, errors.Wrapf(err, "%s", p.config.Config)
 }
 
+// Select applies a command line selection over the config file, for
+// Analyzers.
+func (p *Project) Select(s config.LintSelection) error {
+	if err := p.checkSelection(s.Selection); err != nil {
+		return err
+	}
+	p.file = p.file.SelectLint(s)
+	return nil
+}
+
+// Selected returns the analyzers a selection picks from every analyzer,
+// ignoring the config file, as tsk test does.
+func (p *Project) Selected(s config.Selection) ([]string, error) {
+	if err := p.checkSelection(s); err != nil {
+		return nil, err
+	}
+	file := config.File{}.Select(s)
+	return slices.DeleteFunc(slices.Clone(p.Names()), func(name string) bool { return !file.Enabled(name) }), nil
+}
+
+func (p *Project) checkSelection(s config.Selection) error {
+	known := p.Names()
+	for _, flag := range []struct {
+		name  string
+		names []string
+	}{{"--disable", s.Disable}, {"--enable", s.Enable}} {
+		for _, name := range flag.names {
+			if !slices.Contains(known, name) {
+				return errors.Errorf("%s names unknown analyzer %s", flag.name, name)
+			}
+		}
+	}
+	return nil
+}
+
 // Names returns every loaded analyzer's name, enabled or not.
 func (p *Project) Names() []string {
 	return p.engine.Names()

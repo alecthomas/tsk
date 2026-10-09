@@ -103,11 +103,12 @@ type analyzerCase struct {
 	recorder *recorder
 }
 
-// RunAll runs every case of every analyzer with testdata under the scripts
-// directory concurrently, writing one result line per case to out in order.
-func RunAll(e *engine.Engine, scripts string, out io.Writer) error {
+// RunAll runs every case of the named analyzers with testdata under the
+// scripts directory concurrently, writing one result line per case to out in
+// order.
+func RunAll(e *engine.Engine, analyzers []string, scripts string, out io.Writer) error {
 	var all []*analyzerCase
-	for _, analyzer := range e.Names() {
+	for _, analyzer := range analyzers {
 		dir := Dir(scripts, analyzer)
 		if _, err := os.Stat(dir); err != nil {
 			continue

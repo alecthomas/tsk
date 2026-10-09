@@ -82,6 +82,49 @@ func (f File) Enabled(name string) bool {
 	return !slices.Contains(f.Disable, name)
 }
 
+// Selection picks analyzers on the command line, over the config file's
+// disable, disable-all and enable settings.
+type Selection struct {
+	Disable    []string `help:"Analyzers that do not run." placeholder:"ANALYZER"`
+	DisableAll bool     `help:"Turn every analyzer off except those listed in --enable, whatever the config file enables." xor:"all"`
+	Enable     []string `help:"Analyzers that run, even if the config file disables them." placeholder:"ANALYZER"`
+}
+
+// LintSelection is a Selection for lint, which applies the config file's, so
+// it can also undo all of it.
+type LintSelection struct {
+	Selection `embed:""`
+	EnableAll bool `help:"Turn every analyzer on except those listed in --disable, whatever the config file disables." xor:"all"`
+}
+
+// SelectLint returns the config with a lint selection applied over it.
+func (f File) SelectLint(s LintSelection) File {
+	if s.EnableAll {
+		f.Disable, f.DisableAll, f.Enable = nil, false, nil
+	}
+	return f.Select(s.Selection)
+}
+
+// Select returns the config with a selection applied over it. --disable wins
+// over --enable, which wins over --disable-all and the config file.
+func (f File) Select(s Selection) File {
+	switch {
+	case s.DisableAll:
+		f.DisableAll = true
+		f.Enable = without(s.Enable, s.Disable)
+		f.Disable = nil
+	case f.DisableAll:
+		f.Enable = without(slices.Concat(f.Enable, s.Enable), s.Disable)
+	default:
+		f.Disable = slices.Concat(without(f.Disable, s.Enable), s.Disable)
+	}
+	return f
+}
+
+func without(names, removed []string) []string {
+	return slices.DeleteFunc(slices.Clone(names), func(name string) bool { return slices.Contains(removed, name) })
+}
+
 // Replacement returns the directory replacing an import, as written,
 // relative to the config file.
 func (f File) Replacement(imported library.Import) (dir string, ok bool) {

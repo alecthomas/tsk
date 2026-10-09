@@ -54,7 +54,7 @@ func TestRunAllReportsCasesInOrder(t *testing.T) {
 	assert.NoError(t, err)
 
 	var out bytes.Buffer
-	err = scripttest.RunAll(e, scripts, &out)
+	err = scripttest.RunAll(e, e.Names(), scripts, &out)
 	assert.EqualError(t, err, "1 of 4 cases failed")
 
 	// Cases run concurrently but report in declaration order; failure
@@ -72,4 +72,9 @@ func TestRunAllReportsCasesInOrder(t *testing.T) {
 		"ok   beta/good",
 	}, results)
 	assert.Contains(t, out.String(), "FAIL alpha/bad\n     ")
+
+	// Only the named analyzers' cases run.
+	out.Reset()
+	assert.NoError(t, scripttest.RunAll(e, []string{"beta"}, scripts, &out))
+	assert.Equal(t, "ok   beta/good\n", out.String())
 }

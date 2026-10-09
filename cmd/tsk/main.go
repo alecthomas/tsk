@@ -17,6 +17,7 @@ import (
 	"golang.org/x/term"
 	"golang.org/x/tools/go/analysis/multichecker"
 
+	"github.com/alecthomas/tsk/internal/config"
 	"github.com/alecthomas/tsk/internal/docs"
 	"github.com/alecthomas/tsk/internal/library"
 	"github.com/alecthomas/tsk/internal/lint"
@@ -43,14 +44,18 @@ type cli struct {
 }
 
 type lintCommand struct {
-	lint.Config `embed:""`
-	Fix         bool `help:"Apply all suggested fixes."`
-	Diff        bool `help:"With --fix, print a unified diff instead of updating files."`
+	lint.Config          `embed:""`
+	config.LintSelection `embed:""`
+	Fix                  bool `help:"Apply all suggested fixes."`
+	Diff                 bool `help:"With --fix, print a unified diff instead of updating files."`
 }
 
 func (l lintCommand) Run(ctx context.Context, log *slog.Logger, c *project.Config, cache *library.Cache) error {
 	p, err := project.Load(ctx, log, *c, cache)
 	if err != nil {
+		return errors.WithStack(err)
+	}
+	if err := p.Select(l.LintSelection); err != nil {
 		return errors.WithStack(err)
 	}
 	analyzers, err := p.Analyzers()
@@ -88,14 +93,20 @@ func (l lintCommand) flagArgs() []string {
 	return append(args, l.Packages...)
 }
 
-type testCommand struct{}
+type testCommand struct {
+	config.Selection `embed:""`
+}
 
-func (testCommand) Run(ctx context.Context, log *slog.Logger, c *project.Config, cache *library.Cache) error {
+func (t testCommand) Run(ctx context.Context, log *slog.Logger, c *project.Config, cache *library.Cache) error {
 	p, err := project.Load(ctx, log, *c, cache)
 	if err != nil {
 		return errors.WithStack(err)
 	}
-	return errors.WithStack(scripttest.RunAll(p.Engine(), p.Dir(), os.Stdout))
+	analyzers, err := p.Selected(t.Selection)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+	return errors.WithStack(scripttest.RunAll(p.Engine(), analyzers, p.Dir(), os.Stdout))
 }
 
 type checkCommand struct{}
