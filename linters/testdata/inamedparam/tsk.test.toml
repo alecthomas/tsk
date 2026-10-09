@@ -1,0 +1,9 @@
+[[case]]
+name = "default"
+packages = ["p"]
+
+[[case]]
+name = "single"
+packages = ["single"]
+[case.config]
+skip-single-param = true

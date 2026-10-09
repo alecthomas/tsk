@@ -7,7 +7,7 @@ replace = { "github.com/alecthomas/tsk//linters" = "../linters" }
 
 # Settings below mirror .golangci.yml.
 
-disable = ["cyclop", "decorder", "embeddedstructfieldcheck", "exhaustruct", "godox"]
+disable = ["cyclop", "decorder", "embeddedstructfieldcheck", "exhaustruct", "godox", "inamedparam"]
 
 skip-tests = ["bodyclose", "dupl", "errcheck", "funlen", "goconst", "godot", "noctx", "wrapcheck"]
 
