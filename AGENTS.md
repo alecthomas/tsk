@@ -17,6 +17,14 @@
 
 - While the version is 0.x.y, make breaking changes freely. Do not add backwards-compatibility shims, deprecation paths, or migration code.
 
+# Licensing
+
+- tsk, including the `linters/` library, is MIT-licensed, and a port of a linter is a derived work of its source.
+- Port only linters under permissive licenses compatible with MIT, such as MIT, BSD, Apache-2.0, or ISC.
+- Never port, translate, or copy code from linters under GPL, LGPL, AGPL, MPL, or other copyleft licenses, or with no license. Write an original linter instead if the user wants the check.
+- golangci-lint is GPL-3.0. Do not use its code; match only its observable behaviour, such as defaults, options, and messages.
+- Record each port's upstream, version, and license in `linters/README.md`, and list each excluded linter there with the reason.
+
 # Automation
 
 - Use `bit` and define tasks in `BUILD.bit` for all automation that would normally go in a Makefile, Justfile, or other build file.
