@@ -1,0 +1,10 @@
+[[case]]
+name = "default"
+packages = ["p"]
+
+[[case]]
+name = "options"
+packages = ["options"]
+[case.config]
+empty-line = false
+forbid-mutex = true
