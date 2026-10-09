@@ -1,0 +1,9 @@
+[[case]]
+name = "default"
+packages = ["p"]
+
+[[case]]
+name = "keywords"
+packages = ["keywords"]
+[case.config]
+keywords = ["NOTE"]
