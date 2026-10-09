@@ -1,6 +1,7 @@
 import type * as ast from "go/ast";
 import { defineAnalyzer } from "tsk";
 import { quote } from "./internal/strconv";
+import { byteLength } from "./internal/utf8";
 
 interface Config {
   /** Keywords to report; an empty list means TODO, BUG and FIXME. */
@@ -38,7 +39,7 @@ function messages(comment: ast.Comment, keywords: readonly string[]): string[] {
   for (const raw of extractComment(comment.text).split("\n")) {
     // Lines are trimmed like Go's bytes.TrimSpace.
     const line = raw.replace(/^[\s\u0085]+|[\s\u0085]+$/gu, "");
-    if (utf8Length(line) < 4) {
+    if (byteLength(line) < 4) {
       continue;
     }
     const keyword = keywords.find((kw) => line.slice(0, kw.length).toUpperCase() === kw.toUpperCase() && !hasAlphanumRuneAdjacent(line.slice(kw.length)));
@@ -46,7 +47,7 @@ function messages(comment: ast.Comment, keywords: readonly string[]): string[] {
       continue;
     }
     // Upstream truncates to 40 runes once the line passes 40 bytes.
-    const shown = utf8Length(line) > 40 ? `${[...line].slice(0, 40).join("")}...` : line;
+    const shown = byteLength(line) > 40 ? `${[...line].slice(0, 40).join("")}...` : line;
     found.push(`Line contains ${keywords.join("/")}: ${quote(shown)}`);
   }
   return found;
@@ -64,13 +65,4 @@ function hasAlphanumRuneAdjacent(rest: string): boolean {
     return false;
   }
   return /^[\p{L}\p{N}]/u.test(rest);
-}
-
-function utf8Length(s: string): number {
-  let n = 0;
-  for (const ch of s) {
-    const code = ch.codePointAt(0)!;
-    n += code < 0x80 ? 1 : code < 0x800 ? 2 : code < 0x10000 ? 3 : 4;
-  }
-  return n;
 }
