@@ -7,7 +7,7 @@ replace = { "github.com/alecthomas/tsk//linters" = "../linters" }
 
 # Settings below mirror .golangci.yml.
 
-skip-tests = ["bodyclose", "dupl", "errcheck", "funlen", "goconst", "godot", "noctx"]
+skip-tests = ["bodyclose", "dupl", "errcheck", "funlen", "goconst", "godot", "noctx", "wrapcheck"]
 
 [errcheck]
 check-blank = true
@@ -52,3 +52,6 @@ packages = ["github.com/jmoiron/sqlx"]
 
 [usetesting]
 os-temp-dir = true
+
+[wrapcheck]
+ignore-package-globs = ["github.com/alecthomas/errors"]

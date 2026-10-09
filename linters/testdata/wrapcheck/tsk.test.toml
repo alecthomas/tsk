@@ -1,0 +1,16 @@
+[[case]]
+name = "default"
+packages = ["p"]
+
+[[case]]
+name = "options"
+packages = ["options"]
+[case.config]
+ignore-package-globs = ["encoding/*"]
+ignore-interface-regexps = ["^io\\."]
+
+[[case]]
+name = "internal"
+packages = ["own"]
+[case.config]
+report-internal-errors = true
