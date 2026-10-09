@@ -218,12 +218,13 @@ their Go originals:
 
 - the analysis framework: `go/token`, `go/constant`, `go/ast`, `go/types`, and
   the x/tools `edge`, `inspector`, and `typeutil` packages
-- the system: `io/fs`, `path/filepath`, and `os` limited to reads: `Getwd`,
-  `ReadFile`, `ReadDir`, `Readlink`, `Stat`, `Lstat`, their result types, and
-  its error variables. Scripts may read the system but not change it.
-- Go tooling: `go/build`, `go/parser`, and `golang.org/x/mod/modfile`. The
-  parser reads source a package's syntax trees do not cover, such as comments
-  in the files of its dependencies.
+- the system: `io/fs`, `path/filepath` without its walks, and `os` limited to
+  reads: `Getwd`, `ReadFile`, `ReadDir`, `Readlink`, `Stat`, `Lstat`, their
+  result types, and its error variables. Scripts may read the system but not
+  change it, and every read is tracked for the result cache.
+- Go tooling: `go/build` without `Context`, `go/parser` without `ParseDir`,
+  and `golang.org/x/mod/modfile`. The parser reads source a package's syntax
+  trees do not cover, such as comments in the files of its dependencies.
 
 A package can be limited to an allowlist of members. A type that exists but is
 not declared, such as `os.File`, is treated as unexposed everywhere, so no
@@ -357,8 +358,8 @@ Go functions report errors by throwing, and scripts catch them with ordinary
 - The exception's message is the full `Error()` text, and passing a caught
   exception back to Go passes the original error.
 
-Callbacks cannot yet return error variables to Go, as `filepath.WalkDir`
-callbacks return `fs.SkipDir`, because a class is not an error value.
+Callbacks cannot yet return error variables to Go, as `fs.WalkDir` callbacks
+return `fs.SkipDir`, because a class is not an error value.
 
 ### Facts
 
@@ -376,11 +377,45 @@ reason may follow after a space. The comment covers its own line, and on the
 line above a node in the same column it covers the whole node. `internal/nolint`
 scans a package's comments only once it reports a finding.
 
+### Result cache
+
+`tsk lint` caches each package's text findings in `<cache>/lint`, so a run
+only analyses packages whose inputs changed. A package's key, as in `go vet`,
+hashes:
+
+- the tsk executable, `go env` (less `GOGCCFLAGS`, which names a fresh
+  temporary directory), the compiled scripts, the effective config, and
+  `--test`
+- the package's ID and files: Go, other, ignored, and embedded. Files in
+  GOROOT or the module cache are named, not read, as they never change.
+- the keys of its imports, so a change reaches every package that depends on
+  it without any invalidation step.
+
+Scripts can also read files a key does not cover, such as a `go.mod`, so every
+bound function that reads the file system is replaced by a tracked one in
+`internal/inputs`. It memoises the call for the invocation, which keeps one
+run's view consistent, and records a digest of the result against the package
+being analysed. An entry holds those observations for the package and its
+dependencies, whose reads reach it through facts, and is used only if every
+call still returns the same digest. Bindings that read the file system in ways
+that cannot be tracked are left out: `go/build`'s `Context`, `parser.ParseDir`,
+and `filepath`'s walks. A read outside an analyzer run throws, because it
+belongs to no package. Scripts must not carry what they read between packages
+in module state, because the next package's run would not record it.
+
+A run first lists packages without syntax, which takes tens of milliseconds.
+If every package hits, nothing is loaded. Otherwise it loads as before and
+analyses only the packages that missed. Packages with load errors or failed
+analyzers are not stored, so their errors are reported again. JSON output and
+`--fix` are not cached. Entries unused for five days are removed.
+
 ### Script helpers (`tsk` module)
 
 - `console.debug`, `log`, `info`, `warn`, and `error`, written to tsk's
   log at the matching level and tagged with the analyzer and package during a
   run. The log level defaults to `error`; `--log-level` changes it.
+- `goroot()`, the Go installation `go env` reports, as `go/build`'s `Context`
+  is not exposed.
 
 ### Drivers and distribution
 
@@ -392,7 +427,8 @@ Kong:
   `internal/lint` runs `checker.Analyze` itself, so text findings show paths
   relative to the working directory and end with the analyzer name in
   parentheses. Applying fixes is internal to x/tools, so `--fix` instead
-  passes Kong's parsed options to `multichecker` as `flag` arguments.
+  passes Kong's parsed options to `multichecker` as `flag` arguments. Text
+  findings are cached; see [Result cache](#result-cache).
 - `test`: runs `analysistest` for each analyzer with
   `<scripts>/testdata/<analyzer>/`. An optional `tsk.test.toml` there
   lists `[[case]]` entries with a name, optional `dir`, package patterns, and
@@ -428,6 +464,8 @@ golangci-lint and `go vet -vettool` integration are out of scope.
 - `internal/hostapi/`: the hand-written `tsk` module and declarations.
 - `internal/vm/`, `internal/facts/`, `internal/engine/`: the runtime, fact pool,
   and analyzer construction.
+- `internal/inputs/`: tracking what scripts read from the file system.
+- `internal/lint/`: lint runs, output, and the result cache.
 - `internal/project/`: discovery, loading, and editor files.
 - `internal/scripttest/`: test cases and the test runner.
 - `linters/`: the ported linters and their test data, published as a library.

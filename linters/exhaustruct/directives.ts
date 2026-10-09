@@ -1,7 +1,7 @@
 import * as ast from "go/ast";
-import * as build from "go/build";
 import * as parser from "go/parser";
 import * as token from "go/token";
+import { goroot } from "tsk";
 
 export type Directive = "ignore" | "enforce" | "optional";
 
@@ -85,7 +85,7 @@ function parseExternal(filename: string): Map<number, Directive[]> {
 }
 
 function isGoRootFile(filename: string): boolean {
-  return hasPathPrefix(filename, "$GOROOT") || hasPathPrefix(filename, build.Default.goroot);
+  return hasPathPrefix(filename, "$GOROOT") || hasPathPrefix(filename, goroot());
 }
 
 function hasPathPrefix(path: string, prefix: string): boolean {

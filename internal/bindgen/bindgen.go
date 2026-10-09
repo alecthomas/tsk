@@ -31,13 +31,22 @@ type exposedPackage struct {
 }
 
 // exposedPackages lists the Go packages exposed to scripts. Scripts may read
-// but not change the system, so os is limited to reads.
+// but not change the system, so os is limited to reads. Lint results are
+// cached against what scripts read, so every function that reads the file
+// system must be one the vm package tracks: go/build's Context, parser's
+// ParseDir, and filepath's walks are left out.
 func exposedPackages() []exposedPackage {
 	return []exposedPackage{
 		{path: "go/ast"},
-		{path: "go/build"},
+		{path: "go/build", members: []string{
+			"AllowBinary", "ArchChar", "Directive", "FindOnly", "IgnoreVendor", "Import", "ImportComment",
+			"ImportDir", "ImportMode", "IsLocalImport", "MultiplePackageError", "NoGoError", "Package", "ToolDir",
+		}},
 		{path: "go/constant"},
-		{path: "go/parser"},
+		{path: "go/parser", members: []string{
+			"AllErrors", "DeclarationErrors", "ImportsOnly", "Mode", "PackageClauseOnly", "ParseComments",
+			"ParseExpr", "ParseExprFrom", "ParseFile", "SkipObjectResolution", "SpuriousErrors", "Trace",
+		}},
 		{path: "go/token"},
 		{path: "go/types"},
 		{path: "io/fs"},
@@ -45,7 +54,11 @@ func exposedPackages() []exposedPackage {
 			"DirEntry", "ErrExist", "ErrNotExist", "ErrPermission", "FileInfo", "FileMode",
 			"Getwd", "Lstat", "ReadDir", "ReadFile", "Readlink", "Stat",
 		}},
-		{path: "path/filepath"},
+		{path: "path/filepath", members: []string{
+			"Abs", "Base", "Clean", "Dir", "ErrBadPattern", "EvalSymlinks", "Ext", "FromSlash", "Glob", "HasPrefix",
+			"IsAbs", "IsLocal", "Join", "ListSeparator", "Localize", "Match", "Rel", "Separator", "Split",
+			"SplitList", "ToSlash", "VolumeName",
+		}},
 		{path: "golang.org/x/mod/modfile"},
 		// Only the result type: the analyzer itself is "tsk/passes".buildssa.
 		{path: "golang.org/x/tools/go/analysis/passes/buildssa", members: []string{"SSA"}},

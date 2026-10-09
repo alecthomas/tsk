@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"context"
 	"log/slog"
+	"path/filepath"
+	"strconv"
 	"strings"
 	"sync"
 	"testing"
@@ -317,6 +319,67 @@ func TestParser(t *testing.T) {
 	assert.NoError(t, err)
 	defer cleanup()
 	analysistest.Run(t, dir, analyzers[0], "example")
+}
+
+const readsScript = `import { defineAnalyzer } from "tsk";
+import * as os from "os";
+import * as parser from "go/parser";
+import * as filepath from "path/filepath";
+import * as token from "go/token";
+
+export default defineAnalyzer({
+  name: "reads",
+  doc: "report a note beside the package, read in several ways",
+  run(pass) {
+    const file = pass.files[0]!;
+    const dir = filepath.dir(pass.fset.file(file.fileStart)!.name());
+    const note = filepath.join(dir, "note.txt");
+    const parsed = parser.parseFile(token.newFileSet(), pass.fset.file(file.fileStart)!.name(), null, 0)!;
+    const sizes = os.readDir(dir).filter((entry) => entry!.name() === "note.txt").map((entry) => entry!.info()!.size());
+    pass.report({ pos: file.pos(), message: os.readFile(note).trim() + " " + parsed.name!.name + " " + sizes.join() });
+  },
+});
+`
+
+// Scripts' file system reads are recorded for the package being analysed,
+// including those made through parser.parseFile and directory entries.
+func TestTrackedReads(t *testing.T) {
+	e := load(t, map[string]string{"reads.ts": readsScript})
+	analyzers, err := e.Analyzers(config.File{}, nil)
+	assert.NoError(t, err)
+	dir, cleanup, err := analysistest.WriteFiles(map[string]string{
+		"example/example.go": "package example // want \"hello example 6\"\n",
+		"example/note.txt":   "hello\n",
+	})
+	assert.NoError(t, err)
+	defer cleanup()
+	analysistest.Run(t, dir, analyzers[0], "example")
+
+	pkgDir := filepath.Join(dir, "src", "example")
+	var calls []string
+	for _, observation := range e.Recorder().Observations([]string{"example"}) {
+		calls = append(calls, observation.Call.Func+" "+observation.Call.Args)
+	}
+	quote := strconv.Quote
+	assert.Equal(t, []string{
+		"os.Lstat [" + quote(filepath.Join(pkgDir, "note.txt")) + "]",
+		"os.ReadDir [" + quote(pkgDir) + "]",
+		"os.ReadFile [" + quote(filepath.Join(pkgDir, "example.go")) + "]",
+		"os.ReadFile [" + quote(filepath.Join(pkgDir, "note.txt")) + "]",
+	}, calls)
+	assert.Equal(t, 0, len(e.Recorder().Observations([]string{"other"})))
+}
+
+// Reads outside an analyzer run cannot be attributed to a package.
+func TestReadOutsideRun(t *testing.T) {
+	script := `import { defineAnalyzer } from "tsk";
+import * as os from "os";
+os.getwd();
+export default defineAnalyzer({ name: "early", doc: "", run() {} });
+`
+	_, err := engine.Load(context.Background(), slog.New(slog.DiscardHandler), []compile.Source{{Name: "project", FS: mapFS(map[string]string{"early.ts": script})}})
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "os.getwd reads the file system, which scripts may do only while an analyzer runs")
 }
 
 const formatScript = `import { defineAnalyzer, formatNode } from "tsk";

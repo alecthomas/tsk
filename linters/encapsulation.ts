@@ -771,25 +771,17 @@ class Checker {
   }
 }
 
-// standardPaths caches isStandardPath. Each runtime evaluates this module
-// once, so the cache lasts for the runtime's life.
-const standardPaths = new Map<string, boolean>();
-
 // isStandardPath checks GOROOT instead of inferring standard-library ownership
 // from the import path, which would also exclude packages in dotless modules.
 // IgnoreVendor keeps build.Import in-process; otherwise, in module mode, it
-// runs go list for every path outside GOROOT.
+// runs go list for every path outside GOROOT. tsk memoises the call for the
+// run, and records it for each package so cached results stay correct.
 function isStandardPath(importPath: string): boolean {
-  let standard = standardPaths.get(importPath);
-  if (standard === undefined) {
-    try {
-      standard = build.import_(importPath, "", build.FindOnly | build.IgnoreVendor)!.goroot;
-    } catch {
-      standard = false; // Import fails for paths it cannot find.
-    }
-    standardPaths.set(importPath, standard);
+  try {
+    return build.import_(importPath, "", build.FindOnly | build.IgnoreVendor)!.goroot;
+  } catch {
+    return false; // Import fails for paths it cannot find.
   }
-  return standard;
 }
 
 function matchesAccessName(name: string, object: types.Object | null, modulePath: string): boolean {

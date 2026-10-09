@@ -3,18 +3,26 @@ package lint
 
 import (
 	"bytes"
+	"cmp"
+	"context"
 	"fmt"
 	"go/token"
 	"io"
+	"log/slog"
+	"maps"
 	"os"
 	"path/filepath"
 	"slices"
 	"strings"
+	"time"
 
 	"github.com/alecthomas/errors"
+	. "github.com/alecthomas/types/optional"
 	"golang.org/x/tools/go/analysis"
 	"golang.org/x/tools/go/analysis/checker"
 	"golang.org/x/tools/go/packages"
+
+	"github.com/alecthomas/tsk/internal/inputs"
 )
 
 // Config holds the options of a lint run.
@@ -25,35 +33,206 @@ type Config struct {
 	Test     bool     `default:"true" negatable:"" help:"Analyze test files too."`
 }
 
+// Analysis is what a run checks packages with.
+type Analysis struct {
+	Analyzers []*analysis.Analyzer
+	// Recorder holds what the analyzers read from the file system.
+	Recorder *inputs.Recorder
+	// Fingerprint identifies the scripts and settings behind the analyzers.
+	Fingerprint string
+}
+
+// finding is a diagnostic resolved to file positions, as cached and printed.
+type finding struct {
+	Analyzer string         `json:"analyzer"`
+	Pos      token.Position `json:"pos"`
+	End      token.Position `json:"end"`
+	Message  string         `json:"message"`
+	Related  []related      `json:"related,omitzero"`
+}
+
+type related struct {
+	Pos     token.Position `json:"pos"`
+	End     token.Position `json:"end"`
+	Message string         `json:"message"`
+}
+
 // Run lints c.Packages in dir, printing text to stderr or JSON to stdout. Exit
-// codes follow multichecker: 1 for errors, 3 for findings in text mode.
-func Run(analyzers []*analysis.Analyzer, c Config, dir string, stdout, stderr io.Writer) (exitCode int, err error) {
+// codes follow multichecker: 1 for errors, 3 for findings in text mode. With
+// a cache, text mode reuses the findings of packages whose inputs are
+// unchanged and analyses only the rest.
+func Run(ctx context.Context, logger *slog.Logger, a Analysis, cache Option[*Cache], c Config, dir string, stdout, stderr io.Writer) (exitCode int, err error) {
+	if c.JSON {
+		return runJSON(ctx, a, c, dir, stdout, stderr)
+	}
+	findings := map[string][]finding{}
+	var cached cachedRun
+	if store, ok := cache.Get(); ok {
+		cached, err = lookup(ctx, logger, a, store, c, dir)
+		if err != nil {
+			return 1, err
+		}
+		maps.Copy(findings, cached.findings())
+		if cached.complete() {
+			return printFindings(stderr, findings, 0, false, c.Context, dir)
+		}
+	}
+	initial, err := load(ctx, a.Analyzers, c, dir)
+	if err != nil {
+		return 1, err
+	}
+	if printErrors(stderr, initial) > 0 {
+		exitCode = 1
+	}
+	roots := slices.DeleteFunc(lintedPackages(initial), func(pkg *packages.Package) bool {
+		return cached.hit(pkg.ID)
+	})
+	graph, err := checker.Analyze(a.Analyzers, roots, nil)
+	if err != nil {
+		return 1, errors.Wrap(err, "analyze packages")
+	}
+	failed := map[string]bool{}
+	var failures bytes.Buffer
+	for action := range graph.All() {
+		switch {
+		case action.Err != nil:
+			fmt.Fprintf(&failures, "%s: %v\n", action.Analyzer.Name, action.Err)
+			failed[action.Package.ID] = true
+		case action.IsRoot:
+			findings[action.Package.ID] = append(findings[action.Package.ID], resolve(action)...)
+		}
+	}
+	if _, err := stderr.Write(failures.Bytes()); err != nil {
+		return 1, errors.Wrap(err, "print failures")
+	}
+	if store, ok := cache.Get(); ok {
+		for _, pkg := range roots {
+			cached.store(store, a.Recorder, pkg, findings[pkg.ID], failed[pkg.ID])
+		}
+		store.trim(time.Now())
+	}
+	return printFindings(stderr, findings, exitCode, len(failed) > 0, c.Context, dir)
+}
+
+// runJSON lints without the cache, printing the checker's JSON tree.
+func runJSON(ctx context.Context, a Analysis, c Config, dir string, stdout, stderr io.Writer) (exitCode int, err error) {
+	initial, err := load(ctx, a.Analyzers, c, dir)
+	if err != nil {
+		return 1, err
+	}
+	if printErrors(stderr, initial) > 0 {
+		exitCode = 1
+	}
+	graph, err := checker.Analyze(a.Analyzers, lintedPackages(initial), nil)
+	if err != nil {
+		return 1, errors.Wrap(err, "analyze packages")
+	}
+	return exitCode, errors.Wrap(graph.PrintJSON(stdout), "print JSON")
+}
+
+// load loads c.Packages with syntax for analysis.
+func load(ctx context.Context, analyzers []*analysis.Analyzer, c Config, dir string) ([]*packages.Package, error) {
 	mode := packages.LoadSyntax | packages.NeedModule
 	if needFacts(analyzers) {
 		mode = packages.LoadAllSyntax | packages.NeedModule
 	}
-	initial, err := packages.Load(&packages.Config{Mode: mode, Dir: dir, Tests: c.Test}, c.Packages...)
+	initial, err := packages.Load(&packages.Config{Context: ctx, Mode: mode, Dir: dir, Tests: c.Test}, c.Packages...)
 	if err != nil {
-		return 1, errors.Wrap(err, "load packages")
+		return nil, errors.Wrap(err, "load packages")
 	}
 	if len(initial) == 0 {
-		return 1, errors.Errorf("%s matched no packages", strings.Join(c.Packages, " "))
+		return nil, errors.Errorf("%s matched no packages", strings.Join(c.Packages, " "))
 	}
-	// As in multichecker, package errors are reported but analysis continues.
-	if printErrors(stderr, initial) > 0 {
-		exitCode = 1
+	return initial, nil
+}
+
+// cachedRun is what the cache held for a run's packages.
+type cachedRun struct {
+	keyer *keyer
+	// hits maps package IDs to their still-valid entries.
+	hits map[string]entry
+	// allHit is set when every package hit.
+	allHit bool
+}
+
+// findings returns the cached findings by package ID.
+func (r cachedRun) findings() map[string][]finding {
+	findings := map[string][]finding{}
+	for id, e := range r.hits {
+		findings[id] = e.Findings
 	}
-	graph, err := checker.Analyze(analyzers, withoutTestedVariants(withoutTestMains(initial)), nil)
+	return findings
+}
+
+func (r cachedRun) hit(id string) bool {
+	_, ok := r.hits[id]
+	return ok
+}
+
+// complete reports whether every package hit, so none need loading.
+func (r cachedRun) complete() bool {
+	return r.allHit
+}
+
+// lookup lists c.Packages without syntax, which is cheap, and finds each
+// one's cached entry.
+func lookup(ctx context.Context, logger *slog.Logger, a Analysis, cache *Cache, c Config, dir string) (cachedRun, error) {
+	start := time.Now()
+	k, err := newKeyer(ctx, a.Fingerprint, c.Test, dir)
 	if err != nil {
-		return 1, errors.Wrap(err, "analyze packages")
+		return cachedRun{}, err
 	}
-	if c.JSON {
-		return exitCode, errors.Wrap(graph.PrintJSON(stdout), "print JSON")
+	mode := packages.NeedName | packages.NeedFiles | packages.NeedEmbedFiles | packages.NeedImports | packages.NeedDeps | packages.NeedModule
+	initial, err := packages.Load(&packages.Config{Context: ctx, Mode: mode, Dir: dir, Tests: c.Test}, c.Packages...)
+	if err != nil {
+		return cachedRun{}, errors.Wrap(err, "list packages")
 	}
-	if err := printText(stderr, graph, c.Context, dir); err != nil {
-		return 1, err
+	run := cachedRun{keyer: k, hits: map[string]entry{}}
+	linted := lintedPackages(initial)
+	for _, pkg := range linted {
+		key, cacheable := k.key(pkg)
+		if !cacheable {
+			logger.DebugContext(ctx, "Cache miss", "package", pkg.ID, "reason", "not cacheable")
+			continue
+		}
+		e, stored := cache.load(key)
+		switch {
+		case !stored:
+			logger.DebugContext(ctx, "Cache miss", "package", pkg.ID, "reason", "not stored")
+		case !a.Recorder.Valid(e.Observations):
+			logger.DebugContext(ctx, "Cache miss", "package", pkg.ID, "reason", "files read changed")
+		default:
+			run.hits[pkg.ID] = e
+		}
 	}
-	return max(exitCode, textExitCode(graph)), nil
+	run.allHit = len(linted) > 0 && len(run.hits) == len(linted)
+	logger.InfoContext(ctx, "Looked up cached findings", "hits", len(run.hits), "packages", len(linted), "duration", time.Since(start))
+	return run, nil
+}
+
+// store caches a package's findings, unless analysing it failed or it or a
+// dependency has errors, which only a fresh load reports. The entry holds
+// what analysing it and its dependencies read, which feeds its findings
+// directly or through facts.
+func (r cachedRun) store(cache *Cache, recorder *inputs.Recorder, pkg *packages.Package, findings []finding, failed bool) {
+	key, ok := r.keyer.computed(pkg.ID)
+	if !ok || failed {
+		return
+	}
+	var paths []string
+	for dep := range packages.Postorder([]*packages.Package{pkg}) {
+		if len(dep.Errors) > 0 || len(dep.TypeErrors) > 0 {
+			return
+		}
+		paths = append(paths, dep.PkgPath)
+	}
+	_ = cache.store(key, entry{Observations: recorder.Observations(paths), Findings: findings}) //nolint:errcheck // Caching is best effort.
+}
+
+// lintedPackages drops the packages loading with tests adds but which are not
+// linted.
+func lintedPackages(pkgs []*packages.Package) []*packages.Package {
+	return withoutTestedVariants(withoutTestMains(pkgs))
 }
 
 // withoutTestMains drops the test binaries that loading with Tests adds. In
@@ -121,92 +300,83 @@ func printErrors(w io.Writer, pkgs []*packages.Package) (count int) {
 	return count
 }
 
-func textExitCode(graph *checker.Graph) int {
-	var failures, findings int
-	for action := range graph.All() {
-		if action.Err != nil {
-			failures++
-		} else if action.IsRoot {
-			findings += len(action.Diagnostics)
+// resolve converts an action's diagnostics to file positions.
+func resolve(action *checker.Action) []finding {
+	fset := action.Package.Fset
+	findings := make([]finding, 0, len(action.Diagnostics))
+	for _, diagnostic := range action.Diagnostics {
+		f := finding{
+			Analyzer: action.Analyzer.Name,
+			Pos:      fset.Position(diagnostic.Pos),
+			End:      fset.Position(diagnostic.End),
+			Message:  diagnostic.Message,
 		}
+		for _, info := range diagnostic.Related {
+			f.Related = append(f.Related, related{Pos: fset.Position(info.Pos), End: fset.Position(info.End), Message: info.Message})
+		}
+		findings = append(findings, f)
+	}
+	return findings
+}
+
+// printFindings writes each finding as "file:line:col: message (analyzer)",
+// in position order with paths relative to dir, then its related information
+// and context lines. It returns the exit code: 1 if an analyzer failed,
+// otherwise 3 if there were findings, and never less than loadCode.
+func printFindings(w io.Writer, byPackage map[string][]finding, loadCode int, failed bool, contextLines int, dir string) (int, error) {
+	var all []finding
+	for _, findings := range byPackage {
+		all = append(all, findings...)
+	}
+	slices.SortFunc(all, func(a, b finding) int {
+		return cmp.Or(
+			cmp.Compare(a.Pos.Filename, b.Pos.Filename),
+			cmp.Compare(a.Pos.Offset, b.Pos.Offset),
+			cmp.Compare(a.Analyzer, b.Analyzer),
+			cmp.Compare(a.Message, b.Message),
+		)
+	})
+	// A file in several packages, such as foo and foo_test's test variant, is
+	// analysed once per package, so equal findings print once.
+	all = slices.CompactFunc(all, func(a, b finding) bool {
+		return a.Pos == b.Pos && a.End == b.End && a.Analyzer == b.Analyzer && a.Message == b.Message
+	})
+	var out bytes.Buffer
+	for _, f := range all {
+		printPosition(&out, f.Pos, f.End, fmt.Sprintf("%s (%s)", f.Message, f.Analyzer), contextLines, dir)
+		for _, info := range f.Related {
+			printPosition(&out, info.Pos, info.End, "\t"+info.Message, contextLines, dir)
+		}
+	}
+	if _, err := w.Write(out.Bytes()); err != nil {
+		return 1, errors.Wrap(err, "print findings")
 	}
 	switch {
-	case failures > 0:
-		return 1
-	case findings > 0:
-		return 3
+	case failed:
+		return max(loadCode, 1), nil
+	case len(all) > 0:
+		return max(loadCode, 3), nil
 	default:
-		return 0
+		return loadCode, nil
 	}
 }
 
-// printText writes each finding as "file:line:col: message (analyzer)", with
-// paths relative to dir, then its related information and context lines.
-func printText(w io.Writer, graph *checker.Graph, contextLines int, dir string) error {
-	// A file in several packages, such as foo and foo.test, is analyzed once
-	// per package, so findings are deduplicated by position, not token.Pos.
-	type key struct {
-		pos, end token.Position
-		analyzer *analysis.Analyzer
-		message  string
-	}
-	seen := map[key]bool{}
-	var out bytes.Buffer
-	for action := range graph.All() {
-		if action.Err != nil {
-			fmt.Fprintf(&out, "%s: %v\n", action.Analyzer.Name, action.Err)
-			continue
-		}
-		if !action.IsRoot {
-			continue
-		}
-		fset := action.Package.Fset
-		printer := newTextPrinter(&out, fset, contextLines, dir)
-		for _, diagnostic := range action.Diagnostics {
-			k := key{fset.Position(diagnostic.Pos), fset.Position(diagnostic.End), action.Analyzer, diagnostic.Message}
-			if seen[k] {
-				continue
-			}
-			seen[k] = true
-			printer.print(diagnostic.Pos, diagnostic.End, fmt.Sprintf("%s (%s)", diagnostic.Message, action.Analyzer.Name))
-			for _, related := range diagnostic.Related {
-				printer.print(related.Pos, related.End, "\t"+related.Message)
-			}
-		}
-	}
-	_, err := w.Write(out.Bytes())
-	return errors.Wrap(err, "print findings")
-}
-
-type textPrinter struct {
-	out          *bytes.Buffer
-	fset         *token.FileSet
-	contextLines int
-	dir          string
-}
-
-func newTextPrinter(out *bytes.Buffer, fset *token.FileSet, contextLines int, dir string) textPrinter {
-	return textPrinter{out: out, fset: fset, contextLines: contextLines, dir: dir}
-}
-
-func (p textPrinter) print(pos, end token.Pos, message string) {
-	start := p.fset.Position(pos)
+func printPosition(out *bytes.Buffer, start, end token.Position, message string, contextLines int, dir string) {
 	filename := start.Filename
 	if start.IsValid() {
-		start.Filename = relative(p.dir, filename)
+		start.Filename = relative(dir, filename)
 	}
-	fmt.Fprintf(p.out, "%s: %s\n", start, message)
-	if p.contextLines < 0 {
+	fmt.Fprintf(out, "%s: %s\n", start, message)
+	if contextLines < 0 {
 		return
 	}
-	last := p.fset.Position(end)
-	if !last.IsValid() {
-		last = start
+	if !end.IsValid() {
+		end = start
 	}
-	data, _ := os.ReadFile(filename) //nolint:errcheck // Context is best effort.
+	data, _ := os.ReadFile(filename) //nolint:errcheck,gosec // Context is best effort.
 	lines := strings.Split(string(data), "\n")
-	for i := max(start.Line-p.contextLines, 1); i <= min(last.Line+p.contextLines, len(lines)); i++ {
-		fmt.Fprintf(p.out, "%d\t%s\n", i, lines[i-1])
+	for i := max(start.Line-contextLines, 1); i <= min(end.Line+contextLines, len(lines)); i++ {
+		fmt.Fprintf(out, "%d\t%s\n", i, lines[i-1])
 	}
 }
 

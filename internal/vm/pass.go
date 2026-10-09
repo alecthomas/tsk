@@ -13,6 +13,7 @@ import (
 	"golang.org/x/tools/go/analysis"
 
 	"github.com/alecthomas/tsk/internal/facts"
+	"github.com/alecthomas/tsk/internal/inputs"
 )
 
 // Environment is what one analyzer run needs beyond the analysis.Pass.
@@ -31,6 +32,8 @@ type Environment struct {
 	// SkipTests drops diagnostics in _test.go files. Test packages are still
 	// analyzed, since other analyzers may need them.
 	SkipTests bool
+	// Recorder records what the run reads from the file system.
+	Recorder *inputs.Recorder
 }
 
 // passBinding implements the Pass methods for one run.

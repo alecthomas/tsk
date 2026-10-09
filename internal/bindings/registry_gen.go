@@ -152,7 +152,6 @@ func Packages() []Package {
 				"IsLocalImport": build.IsLocalImport,
 			},
 			Vars: map[string]func() any{
-				"Default": func() any { return build.Default },
 				"ToolDir": func() any { return build.ToolDir },
 			},
 			Consts: map[string]any{
@@ -162,7 +161,6 @@ func Packages() []Package {
 				"ImportComment": build.ImportComment,
 			},
 			Types: map[string]reflect.Type{
-				"Context":              reflect.TypeFor[build.Context](),
 				"Directive":            reflect.TypeFor[build.Directive](),
 				"ImportMode":           reflect.TypeFor[build.ImportMode](),
 				"MultiplePackageError": reflect.TypeFor[build.MultiplePackageError](),
@@ -223,7 +221,6 @@ func Packages() []Package {
 		{
 			Path: "go/parser",
 			Funcs: map[string]any{
-				"ParseDir":      parser.ParseDir,
 				"ParseExpr":     parser.ParseExpr,
 				"ParseExprFrom": parser.ParseExprFrom,
 				"ParseFile":     parser.ParseFile,
@@ -938,22 +935,15 @@ func Packages() []Package {
 				"SplitList":    filepath.SplitList,
 				"ToSlash":      filepath.ToSlash,
 				"VolumeName":   filepath.VolumeName,
-				"Walk":         filepath.Walk,
-				"WalkDir":      filepath.WalkDir,
 			},
 			Vars: map[string]func() any{
 				"ErrBadPattern": func() any { return filepath.ErrBadPattern },
-				"SkipAll":       func() any { return filepath.SkipAll },
-				"SkipDir":       func() any { return filepath.SkipDir },
 			},
 			Consts: map[string]any{
 				"ListSeparator": int64(filepath.ListSeparator),
 				"Separator":     int64(filepath.Separator),
 			},
-			Types: map[string]reflect.Type{
-				"WalkFunc": reflect.TypeFor[filepath.WalkFunc](),
-			},
-			ErrorVars: []string{"ErrBadPattern", "SkipAll", "SkipDir"},
+			ErrorVars: []string{"ErrBadPattern"},
 		},
 	}
 }

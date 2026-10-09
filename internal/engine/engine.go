@@ -3,7 +3,10 @@ package engine
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
+	"fmt"
 	"log/slog"
 	"maps"
 	"reflect"
@@ -23,6 +26,7 @@ import (
 	"github.com/alecthomas/tsk/internal/config"
 	"github.com/alecthomas/tsk/internal/docs"
 	"github.com/alecthomas/tsk/internal/facts"
+	"github.com/alecthomas/tsk/internal/inputs"
 	"github.com/alecthomas/tsk/internal/nolint"
 	"github.com/alecthomas/tsk/internal/vm"
 )
@@ -33,6 +37,9 @@ type Engine struct {
 	metadata []vm.Metadata
 	pool     *pool
 	logger   *slog.Logger
+	// recorder records what every analyzer run reads from the file system.
+	// One engine serves one invocation, so its reads share one view.
+	recorder *inputs.Recorder
 }
 
 // Load compiles and evaluates sources. Later sources override analyzers of
@@ -60,7 +67,7 @@ func Load(ctx context.Context, logger *slog.Logger, sources []compile.Source) (*
 	for _, name := range bootstrap.Overridden() {
 		logger.InfoContext(ctx, "Analyzer overridden by a later definition", "analyzer", name)
 	}
-	engine := &Engine{program: program, pool: newPool(modules, logger), logger: logger}
+	engine := &Engine{program: program, pool: newPool(modules, logger), logger: logger, recorder: inputs.NewRecorder()}
 	for _, name := range bootstrap.Analyzers() {
 		metadata, err := bootstrap.Metadata(name)
 		if err != nil {
@@ -102,6 +109,24 @@ func (e *Engine) Describe() ([]docs.Analyzer, error) {
 	return described, nil
 }
 
+// Recorder returns the recorder of what analyzer runs read from the file
+// system.
+func (e *Engine) Recorder() *inputs.Recorder {
+	return e.recorder
+}
+
+// Fingerprint identifies the compiled scripts and the settings analyzers built
+// from file and mainModules would run with, so results can be cached.
+func (e *Engine) Fingerprint(file config.File, mainModules []string) string {
+	h := sha256.New()
+	for _, name := range slices.Sorted(maps.Keys(e.program.Modules)) {
+		h.Write(fmt.Appendf(nil, "module %q %q\n", name, e.program.Modules[name]))
+	}
+	// fmt prints maps in key order, so equal settings print the same.
+	h.Write(fmt.Appendf(nil, "file %#v\nmain modules %q\n", file, mainModules))
+	return hex.EncodeToString(h.Sum(nil))
+}
+
 // hostAnalyzers are the Go analyzers "tsk/passes" exports.
 func hostAnalyzers() map[string]*analysis.Analyzer {
 	return map[string]*analysis.Analyzer{"inspect": inspect.Analyzer, "buildssa": buildssa.Analyzer, "ctrlflow": ctrlflow.Analyzer}
@@ -133,6 +158,7 @@ func (e *Engine) Analyzers(file config.File, mainModules []string) ([]*analysis.
 			Analyzers:     map[string]*analysis.Analyzer{},
 			SkipGenerated: !file.LintGenerated,
 			SkipTests:     metadata.SkipTests || file.NoTests || slices.Contains(file.SkipTests, metadata.Name),
+			Recorder:      e.recorder,
 		}
 		environments[metadata.Name] = environment
 		analyzers[metadata.Name] = e.analyzer(metadata, environment, mainModules, timer)

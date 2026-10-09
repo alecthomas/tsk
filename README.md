@@ -118,8 +118,8 @@ These libraries are known to work with `tsk`. Add one with `tsk get
 
 | Command | Does |
 |---|---|
-| `tsk [lint] [packages...]` | Lints packages with every enabled linter. `--fix` applies suggested fixes, `--diff` prints them instead, `--json` emits JSON, `-c N` shows N lines of context, and `--no-test` skips test files. |
-| `tsk test` | Runs each linter against its test data. See [Writing tests](#writing-tests). |
+| `tsk [lint] [packages...]` | Lints packages with every enabled linter. `--fix` applies suggested fixes, `--diff` prints them instead, `--json` emits JSON, `-c N` shows N lines of context, and `--no-test` skips test files. `--enable`, `--disable`, `--disable-all`, and `--enable-all` choose linters over the config file. |
+| `tsk test` | Runs each linter against its test data. `--enable`, `--disable`, and `--disable-all` choose which linters. See [Writing tests](#writing-tests). |
 | `tsk check` | Type-checks scripts and validates `.tsk/config.toml`. |
 | `tsk init` | Writes the script declarations to `.tsk/types/` and a `tsconfig.json` to `.tsk/`, for editor completion and type checking. |
 | `tsk config [linters...]` | Prints a `.tsk/config.toml` documenting each linter and option, set to its default. |
@@ -132,7 +132,11 @@ to your home directory, so modules in one repository can share it. If there is
 none, `tsk init` creates it beside the nearest `go.mod`. The config file is
 `config.toml` inside it. `--dir` and `--config` override them. `--log-level`
 sets the level of script and `tsk` logging, which defaults to `error`.
-`--cache`, or `TSK_CACHE`, sets where libraries are cached.
+`--cache`, or `TSK_CACHE`, sets where libraries and lint results are cached.
+
+`tsk lint` caches each package's findings, and analyses a package again only
+when its files, its dependencies, your scripts or config, or a file a script
+read have changed. JSON output and `--fix` are not cached.
 
 ### Configuration
 
@@ -329,8 +333,9 @@ Scripts import Go packages by their import paths:
 - `go/ast`, `go/constant`, `go/token`, and `go/types`
 - `golang.org/x/tools/go/ast/edge`, `golang.org/x/tools/go/ast/inspector`,
   `golang.org/x/tools/go/ssa`, and `golang.org/x/tools/go/types/typeutil`
-- `go/build`, `go/parser`, and `golang.org/x/mod/modfile`
-- `io/fs`, `path/filepath`, and a read-only subset of `os`
+- `go/build` without `Context`, `go/parser` without `parseDir`, and
+  `golang.org/x/mod/modfile`
+- `io/fs`, `path/filepath` without its walks, and a read-only subset of `os`
 
 Their APIs follow Go's, with these conversions:
 
@@ -364,6 +369,12 @@ literals.
 - **Named basic types.** Types such as `token.Pos` are numbers or strings.
   Their methods are functions taking the value first, as in
   `edge.Kind.string(kind)`.
+
+Scripts may read files only while a linter runs. `tsk` records each read for
+the package being analysed, so its cached findings are reused only while those
+files are unchanged. For the same reason, do not keep what you read for one
+package in module state to use for another. `goroot()` from `tsk` returns the
+Go installation's root, in place of `go/build`'s `Context`.
 
 #### Traversing syntax
 

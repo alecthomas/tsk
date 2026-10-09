@@ -41,6 +41,9 @@ declare module "tsk" {
    */
   export function formatNode(node: ast.Node, fset?: token.FileSet): string;
 
+  /** Returns the root of the Go installation that go env reports. */
+  export function goroot(): string;
+
   /** A read-only view of a Go map. Keys keep Go identity. */
   export interface MapView<K, V> extends Iterable<[K, V]> {
     readonly size: number;

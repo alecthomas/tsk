@@ -8,6 +8,7 @@ import (
 	"log/slog"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strconv"
 	"strings"
 
@@ -50,7 +51,7 @@ type lintCommand struct {
 	Diff                 bool `help:"With --fix, print a unified diff instead of updating files."`
 }
 
-func (l lintCommand) Run(ctx context.Context, log *slog.Logger, c *project.Config, cache *library.Cache) error {
+func (l lintCommand) Run(ctx context.Context, log *slog.Logger, c *project.Config, cache *library.Cache, results *lint.Cache) error {
 	p, err := project.Load(ctx, log, *c, cache)
 	if err != nil {
 		return errors.WithStack(err)
@@ -73,7 +74,8 @@ func (l lintCommand) Run(ctx context.Context, log *slog.Logger, c *project.Confi
 	if err != nil {
 		return errors.Wrap(err, "find working directory")
 	}
-	code, err := lint.Run(analyzers, l.Config, dir, os.Stdout, os.Stderr)
+	analysis := lint.Analysis{Analyzers: analyzers, Recorder: p.Engine().Recorder(), Fingerprint: p.Fingerprint()}
+	code, err := lint.Run(ctx, log, analysis, Some(results), l.Config, dir, os.Stdout, os.Stderr)
 	if err != nil {
 		return errors.WithStack(err)
 	}
@@ -208,5 +210,6 @@ func main() {
 	} else {
 		log.Debug("Could not find GOROOT", "error", err)
 	}
-	kctx.FatalIfErrorf(kctx.Run(&resolved, log, library.NewCache(cacheConfig, log)))
+	results := lint.NewCache(filepath.Join(cacheConfig.Cache, "lint"))
+	kctx.FatalIfErrorf(kctx.Run(&resolved, log, library.NewCache(cacheConfig, log), results))
 }

@@ -6,19 +6,25 @@ import (
 	"encoding/json"
 	"fmt"
 	"go/ast"
+	"go/build"
 	"go/format"
+	"go/parser"
 	"go/token"
+	"io/fs"
 	"log/slog"
+	"os"
 	"reflect"
 	"slices"
 	"strconv"
 	"strings"
 
 	"github.com/alecthomas/errors"
+	. "github.com/alecthomas/types/optional"
 	"github.com/grafana/sobek"
 
 	"github.com/alecthomas/tsk/internal/bindings"
 	"github.com/alecthomas/tsk/internal/compile"
+	"github.com/alecthomas/tsk/internal/inputs"
 	"github.com/alecthomas/tsk/internal/naming"
 )
 
@@ -37,6 +43,9 @@ type Runtime struct {
 	// console is the logger console output goes to: logger, tagged with the
 	// analyzer and package while one runs.
 	console *slog.Logger
+	// reads records file system reads for the package being analysed, and is
+	// absent outside a run, where reads cannot be attributed to a package.
+	reads Option[inputs.Reads]
 }
 
 type definition struct {
@@ -149,6 +158,7 @@ func (r *Runtime) installGlobals() error {
 		native.Set("registerAnalyzer", r.registerAnalyzer),
 		native.Set("hostAnalyzer", r.hostAnalyzer),
 		native.Set("formatNode", r.formatNode),
+		native.Set("goroot", func() string { return build.Default.GOROOT }),
 		r.rt.Set("__tsk", native),
 	} {
 		if err != nil {
@@ -301,7 +311,11 @@ func (r *Runtime) packageObject(pkg bindings.Package) *sobek.Object {
 			panic(b.typeError("%v", err))
 		}
 	}
+	tracked := r.trackedFuncs()
 	for name, function := range pkg.Funcs {
+		if replacement, ok := tracked[pkg.Path+"."+name]; ok {
+			function = replacement
+		}
 		set(naming.Function(name), b.function(reflect.ValueOf(function), b.tuple(pkg.Path+"."+name)))
 	}
 	for name, value := range pkg.Consts {
@@ -336,6 +350,52 @@ func (r *Runtime) packageObject(pkg bindings.Package) *sobek.Object {
 		}
 	}
 	return object
+}
+
+// trackedFuncs replaces the bound functions that read the file system with
+// ones that record each read for the package being analysed, so cached
+// results can be checked against them. Keys are qualified Go names.
+func (r *Runtime) trackedFuncs() map[string]any {
+	return map[string]any{
+		"os.Getwd":   func() (string, error) { return r.currentReads("os.getwd").Getwd() },
+		"os.Lstat":   func(name string) (fs.FileInfo, error) { return r.currentReads("os.lstat").Lstat(name) },
+		"os.ReadDir": func(name string) ([]os.DirEntry, error) { return r.currentReads("os.readDir").ReadDir(name) },
+		"os.ReadFile": func(name string) ([]byte, error) {
+			return r.currentReads("os.readFile").ReadFile(name)
+		},
+		"os.Readlink":                func(name string) (string, error) { return r.currentReads("os.readlink").Readlink(name) },
+		"os.Stat":                    func(name string) (fs.FileInfo, error) { return r.currentReads("os.stat").Stat(name) },
+		"path/filepath.Abs":          func(path string) (string, error) { return r.currentReads("filepath.abs").Abs(path) },
+		"path/filepath.EvalSymlinks": func(path string) (string, error) { return r.currentReads("filepath.evalSymlinks").EvalSymlinks(path) },
+		"path/filepath.Glob":         func(pattern string) ([]string, error) { return r.currentReads("filepath.glob").Glob(pattern) },
+		"go/build.Import": func(path, srcDir string, mode build.ImportMode) (*build.Package, error) {
+			return r.currentReads("build.import_").Import(path, srcDir, mode)
+		},
+		"go/build.ImportDir": func(dir string, mode build.ImportMode) (*build.Package, error) {
+			return r.currentReads("build.importDir").ImportDir(dir, mode)
+		},
+		// Without source, ParseFile reads the file itself.
+		"go/parser.ParseFile": func(fset *token.FileSet, filename string, src any, mode parser.Mode) (*ast.File, error) {
+			if src == nil {
+				data, err := r.currentReads("parser.parseFile").ReadFile(filename)
+				if err != nil {
+					return nil, err //nolint:wrapcheck // Scripts see the error os.ReadFile returns.
+				}
+				src = data
+			}
+			return parser.ParseFile(fset, filename, src, mode) //nolint:wrapcheck // Scripts see parser's own errors.
+		},
+	}
+}
+
+// currentReads returns the reads of the package being analysed, or throws
+// for a read made outside a run.
+func (r *Runtime) currentReads(function string) inputs.Reads {
+	reads, ok := r.reads.Get()
+	if !ok {
+		panic(r.bridge.typeError("%s reads the file system, which scripts may do only while an analyzer runs", function))
+	}
+	return reads
 }
 
 func (r *Runtime) typeMember(t reflect.Type) (sobek.Value, bool) {
@@ -497,8 +557,13 @@ func (r *Runtime) Run(name string, env Environment) (result json.RawMessage, err
 	if !ok {
 		return nil, errors.Errorf("analyzer %s: run must be a function", name)
 	}
+	if env.Recorder == nil {
+		return nil, errors.Errorf("analyzer %s: no recorder", name)
+	}
 	r.bridge.beginPass()
 	defer r.bridge.endPass()
+	r.reads = Some(env.Recorder.For(env.Pass.Pkg.Path()))
+	defer func() { r.reads = None[inputs.Reads]() }()
 	r.console = r.logger.With("analyzer", name, "package", env.Pass.Pkg.Path())
 	defer func() { r.console = r.logger }()
 	pass, err := newPassBinding(r.rt, r.bridge, r.helpers, env).bind(found.handle)

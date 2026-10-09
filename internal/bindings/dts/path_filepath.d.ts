@@ -2,7 +2,6 @@
 
 declare module "path/filepath" {
   import type { GoError } from "tsk";
-  import type * as fs from "io/fs";
   export function abs(path: string): string;
   export function base(path: string): string;
   export function clean(path: string): string;
@@ -23,17 +22,8 @@ declare module "path/filepath" {
   export function match(pattern: string, name: string): boolean;
   export function rel(basePath: string, targPath: string): string;
   export const Separator: number;
-  export class SkipAll extends GoError {
-    private constructor();
-  }
-  export class SkipDir extends GoError {
-    private constructor();
-  }
   export function split(path: string): [string, string];
   export function splitList(path: string): string[];
   export function toSlash(path: string): string;
   export function volumeName(path: string): string;
-  export function walk(root: string, fn: WalkFunc): void;
-  export function walkDir(root: string, fn: fs.WalkDirFunc): void;
-  export type WalkFunc = ((path: string, info: fs.FileInfo | null, err: GoError | null) => void) | null;
 }

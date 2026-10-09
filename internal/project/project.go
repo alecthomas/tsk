@@ -220,6 +220,11 @@ func (p *Project) Analyzers() ([]*analysis.Analyzer, error) {
 	return configured, errors.Wrapf(err, "%s", p.config.Config)
 }
 
+// Fingerprint identifies the scripts and settings Analyzers runs with.
+func (p *Project) Fingerprint() string {
+	return p.engine.Fingerprint(p.file, p.mainModules)
+}
+
 // Select applies a command line selection over the config file, for
 // Analyzers.
 func (p *Project) Select(s config.LintSelection) error {

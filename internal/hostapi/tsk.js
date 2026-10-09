@@ -117,6 +117,10 @@ export function formatNode(node, fset) {
   return native.formatNode(node, fset);
 }
 
+export function goroot() {
+  return native.goroot();
+}
+
 // schema is inserted by the compiler from the call's config type argument.
 export function defineAnalyzer(schema, definition) {
   if (typeof schema !== "number") {

@@ -113,6 +113,7 @@ The cache is `os.UserCacheDir()/tsk`, such as `~/Library/Caches/tsk` on macOS.
 ├── git/github.com/acme/linters.git.lock      serializes work on the mirror
 ├── src/github.com/acme/linters@3f9c2e1…/     one library at one commit
 ├── src/github.com/acme/linters/strict@3f9c2e1…/
+├── lint/                                       cached lint results, per package
 └── tmp/                                        staging for new snapshots
 ```
 

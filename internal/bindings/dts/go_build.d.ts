@@ -3,37 +3,8 @@
 declare module "go/build" {
   import type { GoError, MapView, TypeToken } from "tsk";
   import type * as token from "go/token";
-  import type * as fs from "io/fs";
   export const AllowBinary: ImportMode;
   export function archChar(goarch: string): string;
-  export interface Context {
-    readonly $type: "Context";
-    readonly goarch: string;
-    readonly goos: string;
-    readonly goroot: string;
-    readonly gopath: string;
-    readonly dir: string;
-    readonly cgoEnabled: boolean;
-    readonly useAllFiles: boolean;
-    readonly compiler: string;
-    readonly buildTags: string[];
-    readonly toolTags: string[];
-    readonly releaseTags: string[];
-    readonly installSuffix: string;
-    readonly joinPath: ((...elem: string[]) => string) | null;
-    readonly splitPathList: ((list: string) => string[]) | null;
-    readonly isAbsPath: ((path: string) => boolean) | null;
-    readonly isDir: ((path: string) => boolean) | null;
-    readonly hasSubdir: ((root: string, dir: string) => string | undefined) | null;
-    readonly readDir: ((dir: string) => (fs.FileInfo | null)[]) | null;
-    readonly openFile: ((path: string) => unknown) | null;
-    import(path: string, srcDir: string, mode: ImportMode): Package | null;
-    importDir(dir: string, mode: ImportMode): Package | null;
-    matchFile(dir: string, name: string): boolean;
-    srcDirs(): string[];
-  }
-  export const Context: TypeToken<Context>;
-  export const Default: Context;
   export interface Directive {
     readonly $type: "Directive";
     readonly text: string;

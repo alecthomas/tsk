@@ -20,7 +20,7 @@ import (
 
 // Config locates the library cache.
 type Config struct {
-	Cache string `help:"Linter library cache. Defaults to tsk in the user cache directory." env:"TSK_CACHE" type:"path"`
+	Cache string `help:"Cache of linter libraries and lint results. Defaults to tsk in the user cache directory." env:"TSK_CACHE" type:"path"`
 }
 
 // Resolve defaults the cache to tsk in userCache, the user cache directory.
