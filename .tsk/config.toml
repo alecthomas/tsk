@@ -49,3 +49,6 @@ patterns = [".*"]
 
 [rowserrcheck]
 packages = ["github.com/jmoiron/sqlx"]
+
+[usetesting]
+os-temp-dir = true

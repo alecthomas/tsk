@@ -1,0 +1,13 @@
+[[case]]
+name = "default"
+packages = ["p"]
+
+[[case]]
+name = "options"
+packages = ["options"]
+[case.config]
+context-background = true
+context-todo = true
+os-temp-dir = true
+os-setenv = false
+os-create-temp = false
