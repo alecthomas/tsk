@@ -37,6 +37,7 @@ func exposedPackages() []exposedPackage {
 		{path: "go/ast"},
 		{path: "go/build"},
 		{path: "go/constant"},
+		{path: "go/parser"},
 		{path: "go/token"},
 		{path: "go/types"},
 		{path: "io/fs"},

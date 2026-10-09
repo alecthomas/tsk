@@ -6,6 +6,7 @@ import (
 	"go/ast"
 	"go/build"
 	"go/constant"
+	"go/parser"
 	"go/token"
 	"go/types"
 	"golang.org/x/mod/modfile"
@@ -217,6 +218,28 @@ func Packages() []Package {
 			Types: map[string]reflect.Type{
 				"Kind":  reflect.TypeFor[constant.Kind](),
 				"Value": reflect.TypeFor[constant.Value](),
+			},
+		},
+		{
+			Path: "go/parser",
+			Funcs: map[string]any{
+				"ParseDir":      parser.ParseDir,
+				"ParseExpr":     parser.ParseExpr,
+				"ParseExprFrom": parser.ParseExprFrom,
+				"ParseFile":     parser.ParseFile,
+			},
+			Consts: map[string]any{
+				"AllErrors":            parser.AllErrors,
+				"DeclarationErrors":    parser.DeclarationErrors,
+				"ImportsOnly":          parser.ImportsOnly,
+				"PackageClauseOnly":    parser.PackageClauseOnly,
+				"ParseComments":        parser.ParseComments,
+				"SkipObjectResolution": parser.SkipObjectResolution,
+				"SpuriousErrors":       parser.SpuriousErrors,
+				"Trace":                parser.Trace,
+			},
+			Types: map[string]reflect.Type{
+				"Mode": reflect.TypeFor[parser.Mode](),
 			},
 		},
 		{

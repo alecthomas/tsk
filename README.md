@@ -308,7 +308,7 @@ Scripts import Go packages by their import paths:
 - `go/ast`, `go/constant`, `go/token`, and `go/types`
 - `golang.org/x/tools/go/ast/edge`, `golang.org/x/tools/go/ast/inspector`,
   `golang.org/x/tools/go/ssa`, and `golang.org/x/tools/go/types/typeutil`
-- `go/build` and `golang.org/x/mod/modfile`
+- `go/build`, `go/parser`, and `golang.org/x/mod/modfile`
 - `io/fs`, `path/filepath`, and a read-only subset of `os`
 
 Their APIs follow Go's, with these conversions:

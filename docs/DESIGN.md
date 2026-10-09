@@ -221,7 +221,9 @@ their Go originals:
 - the system: `io/fs`, `path/filepath`, and `os` limited to reads: `Getwd`,
   `ReadFile`, `ReadDir`, `Readlink`, `Stat`, `Lstat`, their result types, and
   its error variables. Scripts may read the system but not change it.
-- Go tooling: `go/build` and `golang.org/x/mod/modfile`
+- Go tooling: `go/build`, `go/parser`, and `golang.org/x/mod/modfile`. The
+  parser reads source a package's syntax trees do not cover, such as comments
+  in the files of its dependencies.
 
 A package can be limited to an allowlist of members. A type that exists but is
 not declared, such as `os.File`, is treated as unexposed everywhere, so no

@@ -290,6 +290,35 @@ func abs(n int) int { // want "returns=2"
 	analysistest.Run(t, dir, analyzers[0], "example")
 }
 
+const parserScript = `import { defineAnalyzer } from "tsk";
+import * as parser from "go/parser";
+import * as token from "go/token";
+
+export default defineAnalyzer({
+  name: "reparse",
+  doc: "report the comments of each file parsed again from disk",
+  run(pass) {
+    for (const file of pass.files) {
+      const filename = pass.fset.position(file!.pos()).filename;
+      const parsed = parser.parseFile(token.newFileSet(), filename, null, parser.ParseComments)!;
+      pass.report({ pos: file!.pos(), message: "comments=" + parsed.comments.length });
+    }
+  },
+});
+`
+
+func TestParser(t *testing.T) {
+	e := load(t, map[string]string{"reparse.ts": parserScript})
+	analyzers, err := e.Analyzers(config.File{}, nil)
+	assert.NoError(t, err)
+	dir, cleanup, err := analysistest.WriteFiles(map[string]string{
+		"example/example.go": "package example // want \"comments=2\"\n\n// A comment.\nvar x = 1\n",
+	})
+	assert.NoError(t, err)
+	defer cleanup()
+	analysistest.Run(t, dir, analyzers[0], "example")
+}
+
 const formatScript = `import { defineAnalyzer, formatNode } from "tsk";
 import { inspect } from "tsk/passes";
 import * as ast from "go/ast";
