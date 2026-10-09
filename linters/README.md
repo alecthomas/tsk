@@ -66,6 +66,7 @@ upstream's; each port is a translation of that code.
 | `nilnesserr` | [alingse/nilnesserr](https://github.com/alingse/nilnesserr) | v0.2.0 | MIT |
 | `nilnil` | [Antonboom/nilnil](https://github.com/Antonboom/nilnil) | v1.1.2 | MIT |
 | `noctx` | [sonatard/noctx](https://github.com/sonatard/noctx) | v0.5.1 | MIT |
+| `noinlineerr` | [AlwxSin/noinlineerr](https://github.com/AlwxSin/noinlineerr) | v1.0.6 | MIT |
 | `nosprintfhostport` | [stbenjam/no-sprintf-host-port](https://github.com/stbenjam/no-sprintf-host-port) | v0.3.1 | MIT |
 | `perfsprint` | [catenacyber/perfsprint](https://github.com/catenacyber/perfsprint) | v0.10.1 | MIT |
 | `predeclared` | [nishanths/predeclared](https://github.com/nishanths/predeclared) | v0.2.2 | BSD-3-Clause |
