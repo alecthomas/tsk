@@ -88,6 +88,7 @@ upstream's; each port is a translation of that code.
 | `unused` | [dominikh/go-tools](https://github.com/dominikh/go-tools) | v0.8.1 | MIT |
 | `usestdlibvars` | [sashamelentyev/usestdlibvars](https://github.com/sashamelentyev/usestdlibvars) | v1.29.0 | MIT |
 | `usetesting` | [ldez/usetesting](https://github.com/ldez/usetesting) | v0.5.0 | Apache-2.0 |
+| `varnamelen` | [blizzy78/varnamelen](https://github.com/blizzy78/varnamelen) | v0.8.0 | MIT |
 | `wastedassign` | [sanposhiho/wastedassign](https://github.com/sanposhiho/wastedassign) | v2.1.0 | MIT |
 | `whitespace` | [ultraware/whitespace](https://github.com/ultraware/whitespace) | v0.2.0 | MIT |
 | `wrapcheck` | [tomarrell/wrapcheck](https://github.com/tomarrell/wrapcheck) | v2.12.0 | MIT |
