@@ -43,7 +43,7 @@ func Run(analyzers []*analysis.Analyzer, c Config, dir string, stdout, stderr io
 	if printErrors(stderr, initial) > 0 {
 		exitCode = 1
 	}
-	graph, err := checker.Analyze(analyzers, withoutTestMains(initial), nil)
+	graph, err := checker.Analyze(analyzers, withoutTestedVariants(withoutTestMains(initial)), nil)
 	if err != nil {
 		return 1, errors.Wrap(err, "analyze packages")
 	}
@@ -67,6 +67,20 @@ func withoutTestMains(pkgs []*packages.Package) []*packages.Package {
 	return slices.DeleteFunc(slices.Clone(pkgs), func(pkg *packages.Package) bool {
 		tested, isBinary := strings.CutSuffix(pkg.ID, ".test")
 		return isBinary && loaded[tested]
+	})
+}
+
+// withoutTestedVariants drops a package when the variant compiled for its own
+// tests, "fmt [fmt.test]" beside "fmt" in go/packages' IDs, is loaded too. That
+// variant holds the same files plus the in-package tests, so code only the
+// tests use is not reported unused.
+func withoutTestedVariants(pkgs []*packages.Package) []*packages.Package {
+	loaded := map[string]bool{}
+	for _, pkg := range pkgs {
+		loaded[pkg.ID] = true
+	}
+	return slices.DeleteFunc(slices.Clone(pkgs), func(pkg *packages.Package) bool {
+		return loaded[pkg.ID+" ["+pkg.ID+".test]"]
 	})
 }
 

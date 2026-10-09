@@ -31,6 +31,31 @@ func funcsAnalyzer() *analysis.Analyzer {
 	}
 }
 
+// filesAnalyzer reports how many files each package pass sees.
+func filesAnalyzer() *analysis.Analyzer {
+	return &analysis.Analyzer{
+		Name:       "files",
+		Doc:        "Reports the number of files in each package.",
+		ResultType: reflect.TypeFor[struct{}](),
+		Run: func(pass *analysis.Pass) (any, error) {
+			for _, file := range pass.Files {
+				pass.Reportf(file.Name.Pos(), "files=%d", len(pass.Files))
+			}
+			return struct{}{}, nil
+		},
+	}
+}
+
+func TestRunLintsOnlyTestVariant(t *testing.T) {
+	dir, err := filepath.Abs("testdata")
+	assert.NoError(t, err)
+	var stdout, stderr bytes.Buffer
+	config := lint.Config{Packages: []string{"./..."}, Context: -1, Test: true}
+	_, err = lint.Run([]*analysis.Analyzer{filesAnalyzer()}, config, dir, &stdout, &stderr)
+	assert.NoError(t, err)
+	assert.Equal(t, "sub/sub.go:1:9: files=2 (files)\nsub/sub_test.go:1:9: files=2 (files)\n", stderr.String())
+}
+
 func TestRunText(t *testing.T) {
 	dir, err := filepath.Abs("testdata")
 	assert.NoError(t, err)
