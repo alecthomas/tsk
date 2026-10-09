@@ -102,8 +102,9 @@ These golangci-lint linters are left out on purpose.
 | `depguard`, `goheader`, `nonamedreturns` | GPL-3.0. A port would be a derived work, which this MIT-licensed library cannot include. |
 | `musttag`, `sloglint` | MPL-2.0. A port would have to stay under MPL-2.0, unlike the rest of this MIT-licensed library. |
 | `govet` | Its analyzers ship with Go; run `go vet`. |
+| `modernize` | Its analyzers ship with Go 1.26 and later; run `go fix -diff`. |
 | `gofmt`, `goimports` | Formatters rather than linters; run the tools themselves. |
-| `staticcheck`, `revive`, `gocritic`, `gosec`, `modernize` | Large suites of many checks, too big to port; run the tools themselves. |
+| `staticcheck`, `revive`, `gocritic`, `gosec` | Large suites of many checks, too big to port; run the tools themselves. |
 | `gochecksumtype` | `sumtype` covers the same check. |
 | `arangolint`, `ginkgolinter`, `zerologlint` | Specific to one library. |
 | `unqueryvet` | About 12,000 lines of code, too big to port for one check. |
