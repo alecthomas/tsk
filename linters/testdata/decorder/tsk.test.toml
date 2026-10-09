@@ -1,0 +1,11 @@
+[[case]]
+name = "default"
+packages = ["p"]
+
+[[case]]
+name = "checks"
+packages = ["checks"]
+[case.config]
+disable-dec-num-check = false
+disable-dec-order-check = false
+disable-init-func-first-check = false
