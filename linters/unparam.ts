@@ -3,8 +3,6 @@ import * as constant from "go/constant";
 import * as token from "go/token";
 import * as types from "go/types";
 import type * as ssa from "golang.org/x/tools/go/ssa";
-import * as os from "os";
-import * as filepath from "path/filepath";
 import { defineAnalyzer, formatNode, type Pass } from "tsk";
 import { buildssa } from "tsk/passes";
 
@@ -56,7 +54,7 @@ class Checker {
   private readonly signRequiredBy = new Map<ssa.Function, string>();
   private readonly paramsRequiredBy = new Map<ssa.Function, string>();
   private readonly resultsRequiredBy = new Map<ssa.Function, string>();
-  private readonly declCountCache = new Map<string, Map<string, number>>();
+  private declCountCache: Map<string, number> | undefined;
 
   constructor(
     private readonly pass: Pass<Config>,
@@ -419,42 +417,33 @@ class Checker {
   }
 
   // multipleImpls reports whether a function is declared more than once in
-  // its package's directory, as for different build tags.
+  // its package's files, as for different build tags.
   private multipleImpls(fn: ssa.Function): boolean {
     if (fn.parent() !== null) {
       return false;
     }
-    const dir = filepath.dir(this.pass.fset.position(fn.pos()).filename);
     let name = fn.name();
     const recv = fn.signature!.recv();
     if (recv !== null) {
       name = `${findNamed(recv.type())?.obj()?.name()}.${name}`;
     }
-    return (this.declCounts(dir, this.pass.pkg.name()).get(name) ?? 0) > 1;
+    return (this.declCounts().get(name) ?? 0) > 1;
   }
 
-  // declCounts counts each function declared in a directory's files of a
-  // package, whatever their build tags. Upstream parses the files; scanning
-  // their lines for declarations is close enough.
-  private declCounts(dir: string, pkgName: string): Map<string, number> {
-    const key = `${dir}:${pkgName}`;
-    const cached = this.declCountCache.get(key);
-    if (cached !== undefined) {
-      return cached;
+  // declCounts counts each function declared in the package's files, whatever
+  // their build tags. Upstream parses every file in the directory; reading
+  // only the pass's files keeps the result within the package's own inputs.
+  // Scanning their lines for declarations is close enough.
+  private declCounts(): Map<string, number> {
+    if (this.declCountCache !== undefined) {
+      return this.declCountCache;
     }
+    const pass = this.pass;
     const counts = new Map<string, number>();
-    let entries: ReturnType<typeof os.readDir> = [];
-    try {
-      entries = os.readDir(dir);
-    } catch {
-      // Upstream also ignores directories it cannot read.
-    }
-    for (const entry of entries) {
-      if (entry!.isDir() || !entry!.name().endsWith(".go")) {
-        continue;
-      }
-      const source = os.readFile(filepath.join(dir, entry!.name()));
-      if (/^package\s+(\w+)/m.exec(source)?.[1] !== pkgName) {
+    const filenames = [...pass.files.map((file) => pass.fset.file(file!.fileStart)!.name()), ...pass.ignoredFiles.filter((name) => name.endsWith(".go"))];
+    for (const filename of filenames) {
+      const source = pass.readFile(filename);
+      if (/^package\s+(\w+)/m.exec(source)?.[1] !== pass.pkg.name()) {
         continue;
       }
       for (const match of source.matchAll(/^func\s*(?:\(([^)]*)\))?\s*(\w+)/gm)) {
@@ -462,7 +451,7 @@ class Checker {
         counts.set(declName, (counts.get(declName) ?? 0) + 1);
       }
     }
-    this.declCountCache.set(key, counts);
+    this.declCountCache = counts;
     return counts;
   }
 }

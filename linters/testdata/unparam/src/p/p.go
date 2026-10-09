@@ -30,6 +30,15 @@ func Exported(a, b int) int {
 	return a
 }
 
+// perPlatform is declared again in a file that build tags exclude, so its
+// signature must stay as it is.
+func perPlatform(n int) int {
+	calls++
+	return calls
+}
+
+var calls int
+
 func panics(a int) int {
 	panic("not implemented")
 }
@@ -43,4 +52,5 @@ func _() {
 	_ = always(3)
 	_ = underscore(1, 2)
 	_ = panics(1)
+	_ = perPlatform(1)
 }
