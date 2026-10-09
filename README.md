@@ -7,6 +7,27 @@ mirror Go's own. Your project's linters live alongside its code in
 `.tsk/`, so there is no driver, plugin, or build step to maintain. Linters
 shared between projects come from git repositories as libraries.
 
+## Why
+
+Code review feedback is easy to give and easy to forget. A convention that
+lives only in a reviewer's head, a style guide, or an agent's memory gets
+broken again. A linter enforces it every time, but writing one has usually
+meant a Go module, a custom golangci-lint build, or a plugin.
+
+`tsk` makes a linter a single script in the repository, checked on the next
+run. That makes it practical to add one in the middle of a conversation. When
+a user corrects an agent with "don't do X" or "always do Y here", the agent
+can turn that correction into a rule instead of a note:
+
+1. Write `.tsk/<name>.ts` to report the pattern, with a fix where one is
+   obvious.
+2. Add test cases under `.tsk/testdata/<name>/` and run `tsk test`. See
+   [Writing tests](#writing-tests).
+3. Run `tsk` to find and fix existing violations.
+
+The rule then holds for every later change, by any author. Check it in with
+the code it protects.
+
 ## Install
 
 Download a prebuilt binary for your platform from the
@@ -89,7 +110,7 @@ These libraries are known to work with `tsk`. Add one with `tsk get
 
 | Library | Linters |
 |---|---|
-| `github.com/alecthomas/tsk//linters` | `encapsulation` reports private-field access and construction outside a struct's API. `optionalnil` reports nil used to mean "no value" where an option type could be used. `sumtype` checks that type switches on sealed interfaces cover every variant. Ports of golangci-lint linters, with upstream's options and defaults: `asasalint`, `asciicheck`, `bidichk`, `bodyclose`, `canonicalheader`, `copyloopvar`, `cyclop`, `decorder`, `dupl`, `durationcheck`, `embeddedstructfieldcheck`, `errcheck`, `errname`, `errorlint`, `exhaustive`, `exhaustruct`, `exptostd`, `fatcontext`, `forbidigo`, `funcorder`, `funlen`, `gocheckcompilerdirectives`, `gochecknoglobals`, `goconst`, `godoclint`, `godot`, `godox`, `gomoddirectives`, `goprintffuncname`, `iface`, `inamedparam`, `interfacebloat`, `ineffassign`, `intrange`, `iotamixing`, `ireturn`, `loggercheck`, `makezero`, `mirror`, `nakedret`, `nilerr`, `nilnesserr`, `nilnil`, `noctx`, `nosprintfhostport`, `perfsprint`, `predeclared`, `promlinter`, `protogetter`, `reassign`, `recvcheck`, `rowserrcheck`, `spancheck`, `sqlclosecheck`, `testableexamples`, `testifylint`, `testpackage`, `tparallel`, `unconvert`, `unparam`, `unused`, `usestdlibvars`, `usetesting`, `wastedassign`, `whitespace`, `wrapcheck`. |
+| `github.com/alecthomas/tsk//linters` | A few original linters and ports of most of golangci-lint's, with upstream's options and defaults. See [its README](linters/README.md). |
 
 ## Reference
 
