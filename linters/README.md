@@ -69,6 +69,7 @@ translation of that code.
 | [`intrange`](https://github.com/ckaznocha/intrange) | MIT | Intrange is a linter to find places where for loops could make use of an integer range. |
 | [`iotamixing`](https://github.com/AdminBenni/iota-mixing) | MIT | Checks if iotas are being used in const blocks with other non-iota declarations. |
 | [`ireturn`](https://github.com/butuzov/ireturn) | MIT | Accept Interfaces, Return Concrete Types. |
+| [`lll`](https://github.com/walle/lll) | MIT | Reports long lines. |
 | [`loggercheck`](https://github.com/timonwong/loggercheck) | MIT | Checks key value pairs for common logger libraries (kitlog,klog,logr,slog,zap). |
 | [`makezero`](https://github.com/ashanbrown/makezero) | Apache-2.0 | Find slice declarations with non-zero initial length. |
 | [`mirror`](https://github.com/butuzov/mirror) | MIT | Reports wrong mirror patterns of bytes/strings usage. |
