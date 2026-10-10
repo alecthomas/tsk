@@ -155,7 +155,9 @@ func (d configCommand) Run(ctx context.Context, log *slog.Logger, c *project.Con
 	// Colour only a terminal, so redirected output, such as a generated
 	// .tsk/config.toml, stays plain. NO_COLOR follows the no-color.org convention.
 	colour := term.IsTerminal(int(os.Stdout.Fd())) && os.Getenv("NO_COLOR") == ""
-	return errors.WithStack(docs.TOML(os.Stdout, analyzers, colour))
+	// Named analyzers get only their own tables, without the global settings.
+	options := docs.Options{Settings: len(d.Analyzers) == 0, Colour: colour}
+	return errors.WithStack(docs.TOML(os.Stdout, analyzers, options))
 }
 
 type listCommand struct {
