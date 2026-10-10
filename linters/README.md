@@ -41,6 +41,7 @@ translation of that code.
 | [`exptostd`](https://github.com/ldez/exptostd) | Apache-2.0 | Detect functions from golang.org/x/exp/ that can be replaced by std functions. |
 | [`fatcontext`](https://github.com/Crocmagnon/fatcontext) | MIT | Detect nested contexts in loops and function literals. |
 | [`forbidigo`](https://github.com/ashanbrown/forbidigo) | Apache-2.0 | Forbid identifiers. |
+| [`forcetypeassert`](https://github.com/gostaticanalysis/forcetypeassert) | MIT | Finds forced type assertions. |
 | [`funcorder`](https://github.com/manuelarte/funcorder) | Apache-2.0 | Check the order of functions, methods, and constructors. |
 | [`funlen`](https://github.com/ultraware/funlen) | MIT | Check for long functions. |
 | [`gocheckcompilerdirectives`](https://github.com/leighmcculloch/gocheckcompilerdirectives) | MIT | Check that go compiler directive comments (//go:) are valid. |

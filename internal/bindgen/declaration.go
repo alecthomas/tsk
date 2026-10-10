@@ -137,7 +137,7 @@ func (d *declarer) errorType(object *types.TypeName, named *types.Named) error {
 	case *types.Struct:
 		structure = Some(underlying)
 	case *types.Slice, *types.Array:
-		element := wrapUnion(d.tsType(underlying.(interface{ Elem() types.Type }).Elem()))
+		element := wrapUnion(d.tsType(underlying.(interface{ Elem() types.Type }).Elem())) //nolint:forcetypeassert // Slices and arrays both have Elem.
 		d.line("    readonly length: number;")
 		d.line("    at(index: number): " + element + ";")
 		d.line("    [Symbol.iterator](): Iterator<" + element + ">;")
@@ -167,7 +167,7 @@ func (d *declarer) members(object *types.TypeName, named *types.Named, structure
 		}
 	}
 	for selection := range types.NewMethodSet(types.NewPointer(named)).Methods() {
-		method := selection.Obj().(*types.Func)
+		method := selection.Obj().(*types.Func) //nolint:forcetypeassert // A method set holds only methods.
 		if !method.Exported() || method.Signature().TypeParams().Len() > 0 {
 			continue
 		}
@@ -241,7 +241,7 @@ func (d *declarer) interfaceType(object *types.TypeName, iface *types.Interface)
 func (d *declarer) receiverFunctions(object *types.TypeName, named *types.Named) {
 	var functions []string
 	for selection := range types.NewMethodSet(named).Methods() {
-		method := selection.Obj().(*types.Func)
+		method := selection.Obj().(*types.Func) //nolint:forcetypeassert // A method set holds only methods.
 		if !method.Exported() {
 			continue
 		}

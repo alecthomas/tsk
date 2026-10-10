@@ -320,7 +320,7 @@ func (m *model) methodTuples(object *types.TypeName) []string {
 func tupleMethods(receiver string, methods *types.MethodSet) []string {
 	var keys []string
 	for selection := range methods.Methods() {
-		method := selection.Obj().(*types.Func)
+		method := selection.Obj().(*types.Func) //nolint:forcetypeassert // A method set holds only methods.
 		if method.Exported() && isTuple(method.Signature()) {
 			keys = append(keys, receiver+"."+method.Name())
 		}
