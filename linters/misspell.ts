@@ -99,14 +99,23 @@ function newReplacer(config: Pass<Config>["config"]): Replacer {
   return new Replacer(words);
 }
 
+// parse expands a list of corrections and their misspellings into pairs.
+// Upstream lists pairs longest misspelling first, and earlier pairs win when
+// two match at one position, which only a longer and a shorter can, so
+// sorting by length restores its priority.
 function parse(list: string): [string, string][] {
-  return list
-    .split("\n")
-    .filter((line) => line !== "")
-    .map((line) => {
-      const [typo, correction] = line.split("\t");
-      return [toBytes(typo!), toBytes(correction!)];
-    });
+  const pairs: [string, string][] = [];
+  for (const line of list.split("\n")) {
+    if (line === "") {
+      continue;
+    }
+    const [correction, typos] = line.split("\t");
+    const corrected = toBytes(correction!);
+    for (const typo of typos!.split(",")) {
+      pairs.push([toBytes(typo), corrected]);
+    }
+  }
+  return pairs.sort(([a], [b]) => b.length - a.length);
 }
 
 // splitAfter splits text after each newline, as strings.SplitAfter does.
