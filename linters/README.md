@@ -75,6 +75,7 @@ translation of that code.
 | [`noctx`](https://github.com/sonatard/noctx) | MIT | Detects function and method with missing usage of context.Context. |
 | [`noinlineerr`](https://github.com/AlwxSin/noinlineerr) | MIT | Disallows inline error handling (`if err := ...; err != nil {`). |
 | [`nosprintfhostport`](https://github.com/stbenjam/no-sprintf-host-port) | MIT | Checks for misuse of Sprintf to construct a host with port in a URL. |
+| [`paralleltest`](https://github.com/kunwardeep/paralleltest) | MIT | Checks that tests use t.Parallel. |
 | [`perfsprint`](https://github.com/catenacyber/perfsprint) | MIT | Checks that fmt.Sprintf can be replaced with a faster alternative. |
 | [`prealloc`](https://github.com/alexkohler/prealloc) | MIT | Find slice declarations that could potentially be pre-allocated. |
 | [`predeclared`](https://github.com/nishanths/predeclared) | BSD-3-Clause | Find code that shadows one of Go's predeclared identifiers. |

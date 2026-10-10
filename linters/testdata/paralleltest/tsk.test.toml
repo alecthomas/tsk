@@ -1,0 +1,21 @@
+[[case]]
+name = "default"
+packages = ["t"]
+
+[[case]]
+name = "ignore-missing"
+packages = ["i"]
+[case.config]
+ignore-missing = true
+
+[[case]]
+name = "ignore-missing-subtests"
+packages = ["ignoremissingsubtests"]
+[case.config]
+ignore-missing-subtests = true
+
+[[case]]
+name = "check-cleanup"
+packages = ["cleanup"]
+[case.config]
+check-cleanup = true
