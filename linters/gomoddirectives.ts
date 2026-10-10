@@ -1,8 +1,8 @@
 import type * as modfile from "golang.org/x/mod/modfile";
 import * as parser from "golang.org/x/mod/modfile";
-import * as os from "os";
 import * as filepath from "path/filepath";
 import { defineAnalyzer, type Pass } from "tsk";
+import { findGoMod, type ModuleVersion } from "./internal/gomod";
 
 interface Config {
   /** Modules whose non-local replacements are allowed. */
@@ -81,22 +81,6 @@ package's module.`,
   },
 });
 
-// findGoMod finds the nearest go.mod at or above a directory.
-function findGoMod(dir: string): { path: string; content: string } | null {
-  for (;;) {
-    const path = filepath.join(dir, "go.mod");
-    try {
-      return { path, content: os.readFile(path) };
-    } catch {
-      const parent = filepath.dir(dir);
-      if (parent === dir) {
-        return null;
-      }
-      dir = parent;
-    }
-  }
-}
-
 function analyze(config: Pass<Config>["config"], file: modfile.File): Finding[] {
   const findings: Finding[] = [];
   const add = (line: modfile.Line | null, reason: string) => findings.push({ line: line!, reason });
@@ -168,12 +152,6 @@ function analyze(config: Pass<Config>["config"], file: modfile.File): Finding[] 
     add(go.syntax, `go directive (${go.version}) doesn't match the pattern '${config.goVersionPattern}'`);
   }
   return findings;
-}
-
-// ModuleVersion is golang.org/x/mod/module.Version, which scripts cannot import.
-interface ModuleVersion {
-  path: string;
-  version: string;
 }
 
 function replaceReason(config: Pass<Config>["config"], old: ModuleVersion, replacement: ModuleVersion): string {

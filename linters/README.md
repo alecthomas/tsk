@@ -55,6 +55,8 @@ translation of that code.
 | [`godot`](https://github.com/tetafro/godot) | MIT | Check if comments end in a period. |
 | [`godox`](https://github.com/matoous/godox) | MIT | Detects usage of FIXME, TODO and other keywords inside comments. |
 | [`gomoddirectives`](https://github.com/ldez/gomoddirectives) | Apache-2.0 | Manage the use of replace, retract, exclude, and other directives in go.mod. |
+| [`gomodguard`](https://github.com/ryancurrah/gomodguard) | MIT | Allow and block lists for direct module dependencies. |
+| [`gomodguard_v2`](https://github.com/ryancurrah/gomodguard) | MIT | Allow and block lists for direct module dependencies, matched exactly, by prefix, or by regular expression. |
 | [`goprintffuncname`](https://github.com/golangci/go-printf-func-name) | MIT | Check that printf-like functions are named with f at the end. |
 | [`iface`](https://github.com/uudashr/iface) | Apache-2.0 | Detect the incorrect use of interfaces, helping avoid interface pollution. |
 | [`importas`](https://github.com/julz/importas) | Apache-2.0 | Enforces consistent import aliases. |

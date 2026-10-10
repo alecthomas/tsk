@@ -1,0 +1,19 @@
+[[case]]
+name = "blocked"
+packages = ["app"]
+[case.config]
+local-replace-directives = true
+blocked = [
+  { module = "github.com/blocked/mod", recommendations = ["example.com/a", "example.com/b"], reason = "Deprecated." },
+  { module = "github.com/old", match-type = "prefix", version = "< 1", reason = "Too old" },
+]
+
+[[case]]
+name = "allowed"
+packages = ["allowlist"]
+[case.config]
+allowed = [
+  { module = "example.com/", match-type = "prefix" },
+  { module = 'allowed/mod$', match-type = "regex" },
+  { module = "github.com/old/mod", version = ">= 1" },
+]

@@ -1,0 +1,9 @@
+module example.com/allowlist
+
+go 1.25
+
+require (
+	example.com/local v1.0.0
+	github.com/allowed/mod v1.0.0
+	github.com/blocked/mod v1.2.3
+)
