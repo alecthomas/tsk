@@ -1,0 +1,9 @@
+[[case]]
+name = "default"
+packages = ["defaults"]
+
+[[case]]
+name = "zero"
+packages = ["a", "c"]
+[case.config]
+min-complexity = 0
