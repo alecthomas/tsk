@@ -14,6 +14,7 @@ export default defineAnalyzer<Config>({
 A function's complexity is one, plus one for each if, for, range, case, select
 case, && and ||. A //gocyclo:ignore comment in its doc comment skips it.`,
   config: { minComplexity: 30 },
+  runDespiteErrors: true,
   run(pass) {
     for (const file of pass.files) {
       for (const decl of file.decls) {

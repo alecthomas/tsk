@@ -13,6 +13,7 @@ export default defineAnalyzer<Config>({
 An if statement's complexity grows by each nested if's depth, and by one for
 each else if and else, so deep nesting costs more than a flat chain.`,
   config: { minComplexity: 5 },
+  runDespiteErrors: true,
   run(pass) {
     for (const file of pass.files) {
       for (const decl of file.decls) {

@@ -12,6 +12,7 @@ export default defineAnalyzer<Config>({
 Ignoring most of a call's results, as in x, _, _, _ := f(), suggests the
 function returns too much.`,
   config: { maxBlankIdentifiers: 2 },
+  runDespiteErrors: true,
   run(pass) {
     for (const file of pass.files) {
       for (const decl of file!.decls) {

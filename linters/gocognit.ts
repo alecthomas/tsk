@@ -15,6 +15,7 @@ Branches and loops cost more the deeper they are nested. Sequences of logical
 operators, labelled jumps, and recursion add to the cost too. A
 //gocognit:ignore comment in a function's doc comment skips it.`,
   config: { minComplexity: 30 },
+  runDespiteErrors: true,
   run(pass) {
     for (const file of pass.files) {
       for (const decl of file.decls) {

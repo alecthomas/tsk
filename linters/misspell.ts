@@ -29,6 +29,7 @@ export default defineAnalyzer<Config>({
 Words are checked in comments, strings, and identifiers, or only in comments
 in restricted mode. Words in URLs, paths, emails, and host names are skipped.`,
   config: { locale: "", ignoreRules: [], mode: "", extraWords: [] },
+  runDespiteErrors: true,
   run(pass) {
     const replacer = replacerFor(pass.config);
     const restricted = pass.config.mode === "restricted";

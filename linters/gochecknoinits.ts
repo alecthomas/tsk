@@ -6,6 +6,7 @@ export default defineAnalyzer({
 
 Init functions run implicitly, in an order that is easy to get wrong, and make
 packages harder to test.`,
+  runDespiteErrors: true,
   run(pass) {
     for (const file of pass.files) {
       for (const decl of file!.decls) {
