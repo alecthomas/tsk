@@ -31,6 +31,7 @@ translation of that code.
 | [`copyloopvar`](https://github.com/karamaru-alpha/copyloopvar) | MIT | Detect places where loop variables are copied. |
 | [`cyclop`](https://github.com/bkielbasa/cyclop) | MIT | Checks function and package cyclomatic complexity. |
 | [`decorder`](https://gitlab.com/bosi/decorder) | MIT | Check declaration order and count of types, constants, variables and functions. |
+| [`dogsled`](https://github.com/alexkohler/dogsled) | MIT | Checks assignments with too many blank identifiers. |
 | [`dupl`](https://github.com/golangci/dupl) | MIT | Detect duplicate fragments of code. |
 | [`dupword`](https://github.com/Abirdcfly/dupword) | MIT | Checks for duplicate words in the source code. |
 | [`durationcheck`](https://github.com/charithe/durationcheck) | Apache-2.0 | Check for two durations multiplied together. |
