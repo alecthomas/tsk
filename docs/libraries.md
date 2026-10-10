@@ -105,7 +105,8 @@ project configures its analyzers.
 ## Cache
 
 The cache is `os.UserCacheDir()/tsk`, such as `~/Library/Caches/tsk` on macOS.
-`--cache`, or `TSK_CACHE`, overrides it.
+`--cache`, or `TSK_CACHE`, overrides it. `disable` keeps the default location
+for libraries but does not cache lint results.
 
 ```text
 <cache>/

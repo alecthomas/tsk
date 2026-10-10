@@ -136,7 +136,9 @@ sets the level of script and `tsk` logging, which defaults to `error`.
 
 `tsk lint` caches each package's findings, and analyses a package again only
 when its files, its dependencies, your scripts or config, or a file a script
-read have changed. JSON output and `--fix` are not cached.
+read have changed. JSON output and `--fix` are not cached. `--cache=disable`,
+or `TSK_CACHE=disable`, turns off caching findings, so every package is
+analysed. Libraries are still cached in the default location.
 
 ### Configuration
 
@@ -284,6 +286,7 @@ Calling `defineAnalyzer` registers a linter. Its definition mirrors
 | `facts` | Every fact the linter imports or exports. See [Facts](#facts). |
 | `scope` | `"module"`, the default, runs only on packages of the modules being linted. `"all"` also runs on every dependency. |
 | `runDespiteErrors` | Run on packages that fail to type-check. |
+| `nolint` | `false` stops `//nolint` comments suppressing the linter's findings, for linters that check those comments. |
 | `tests` | `false` drops the linter's findings in `_test.go` files, for rules that do not suit tests. |
 | `run(pass)` | Analyzes one package. Its return value, which must be JSON, is the result other linters read with `pass.resultOf`. |
 
@@ -317,6 +320,8 @@ by key, while arrays replace. `pass.config` holds the result and is read-only.
   `typesSizes`, and `typeErrors`, as in Go.
 - `module`: the package's module path, version, and Go version, if it has a
   module.
+- `dependency`: whether the package is outside the modules being linted, as
+  only a linter with `scope: "all"` sees. Its findings there are discarded.
 - `config`: the linter's options.
 - `report(diagnostic)`: reports a finding. A diagnostic is a plain object with
   `pos` and `message`, and optionally `end`, `category`, `url`,
@@ -402,7 +407,8 @@ options.
 
 By default, a linter runs only on the modules being linted, so it never sees
 facts about dependencies in other modules. Set `scope: "all"` when it needs
-them:
+them. Findings in dependencies are discarded, so once a linter has exported
+its facts it can return early when `pass.dependency` is set:
 
 ```ts
 import { defineAnalyzer, defineFact } from "tsk";
@@ -429,6 +435,9 @@ export default defineAnalyzer({
       if (fn != null && callsPanic) {
         pass.exportObjectFact(fn, panics, { direct: true });
       }
+    }
+    if (pass.dependency) {
+      return;
     }
     for (const cursor of root.preorder(ast.CallExpr)) {
       const call = cursor.node() as ast.CallExpr;
