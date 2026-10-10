@@ -80,6 +80,32 @@ func newCache(t *testing.T) (*library.Cache, string) {
 	return library.NewCache(library.Config{Cache: dir}, slog.New(slog.DiscardHandler)), dir
 }
 
+func TestConfigResolve(t *testing.T) {
+	cwd, err := os.Getwd()
+	assert.NoError(t, err)
+	type resolved struct {
+		Cache   string
+		Results Option[string]
+	}
+	tests := []struct {
+		name  string
+		cache string
+		want  resolved
+	}{
+		{name: "Default", want: resolved{Cache: "/user/tsk", Results: Some("/user/tsk/lint")}},
+		{name: "Absolute", cache: "/elsewhere", want: resolved{Cache: "/elsewhere", Results: Some("/elsewhere/lint")}},
+		{name: "Relative", cache: "here", want: resolved{Cache: filepath.Join(cwd, "here"), Results: Some(filepath.Join(cwd, "here", "lint"))}},
+		{name: "Disable", cache: "disable", want: resolved{Cache: "/user/tsk", Results: None[string]()}},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			c, err := library.Config{Cache: test.cache}.Resolve(Some("/user"))
+			assert.NoError(t, err)
+			assert.Equal(t, test.want, resolved{Cache: c.Cache, Results: c.Results()})
+		})
+	}
+}
+
 func TestResolve(t *testing.T) {
 	root := remotes(t)
 	const repository = "github.com/acme/linters"

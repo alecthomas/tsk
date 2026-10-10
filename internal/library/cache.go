@@ -14,26 +14,50 @@ import (
 	"syscall"
 
 	"github.com/alecthomas/errors"
+	"github.com/alecthomas/kong"
 	. "github.com/alecthomas/types/optional"
 	"golang.org/x/mod/semver"
 )
 
+// disable is the cache location that turns off caching lint results.
+// Libraries cannot be fetched without a cache, so they use the default.
+const disable = "disable"
+
 // Config locates the library cache.
 type Config struct {
-	Cache string `help:"Cache of linter libraries and lint results. Defaults to tsk in the user cache directory." env:"TSK_CACHE" type:"path" placeholder:"DIR"`
+	// Cache is not a Kong path, which would make "disable" absolute; Resolve
+	// expands it instead.
+	Cache string `help:"Cache of linter libraries and lint results, or \"disable\" to not cache lint results. Defaults to tsk in the user cache directory." env:"TSK_CACHE" placeholder:"DIR"`
+	// noResults is set by Resolve when lint results are not cached.
+	noResults bool
 }
 
 // Resolve defaults the cache to tsk in userCache, the user cache directory.
 func (c Config) Resolve(userCache Option[string]) (Config, error) {
-	if c.Cache != "" {
+	switch c.Cache {
+	case "":
+	case disable:
+		c.Cache = ""
+		c.noResults = true
+	default:
+		c.Cache = kong.ExpandPath(c.Cache)
 		return c, nil
 	}
 	dir, ok := userCache.Get()
 	if !ok {
-		return Config{}, errors.New("no user cache directory; set TSK_CACHE or --cache")
+		return c, errors.New("no user cache directory; set TSK_CACHE or --cache")
 	}
 	c.Cache = filepath.Join(dir, "tsk")
 	return c, nil
+}
+
+// Results returns the directory caching lint results, unless they are not
+// cached. The config must be resolved.
+func (c Config) Results() Option[string] {
+	if c.noResults {
+		return None[string]()
+	}
+	return Some(filepath.Join(c.Cache, "lint"))
 }
 
 // Cache holds a bare mirror of each library repository, under git/, and

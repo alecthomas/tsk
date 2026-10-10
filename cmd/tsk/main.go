@@ -8,7 +8,6 @@ import (
 	"log/slog"
 	"os"
 	"os/exec"
-	"path/filepath"
 	"strconv"
 	"strings"
 
@@ -51,7 +50,7 @@ type lintCommand struct {
 	Diff                 bool `help:"With --fix, print a unified diff instead of updating files."`
 }
 
-func (l lintCommand) Run(ctx context.Context, log *slog.Logger, c *project.Config, cache *library.Cache, results *lint.Cache) error {
+func (l lintCommand) Run(ctx context.Context, log *slog.Logger, c *project.Config, cache *library.Cache, results Option[*lint.Cache]) error {
 	dir, err := os.Getwd()
 	if err != nil {
 		return errors.Wrap(err, "find working directory")
@@ -59,8 +58,8 @@ func (l lintCommand) Run(ctx context.Context, log *slog.Logger, c *project.Confi
 	// Looking up cached findings starts first, to overlap loading the
 	// project. JSON output and fixes do not use the cache.
 	lookup := None[*lint.Lookup]()
-	if !l.JSON && !l.Fix {
-		started := lint.StartLookup(ctx, results, l.Config, dir)
+	if store, ok := results.Get(); ok && !l.JSON && !l.Fix {
+		started := lint.StartLookup(ctx, store, l.Config, dir)
 		defer started.Close()
 		lookup = Some(started)
 	}
@@ -218,6 +217,9 @@ func main() {
 	} else {
 		log.Debug("Could not find GOROOT", "error", err)
 	}
-	results := lint.NewCache(filepath.Join(cacheConfig.Cache, "lint"))
+	results := None[*lint.Cache]()
+	if dir, ok := cacheConfig.Results().Get(); ok {
+		results = Some(lint.NewCache(dir))
+	}
 	kctx.FatalIfErrorf(kctx.Run(&resolved, log, library.NewCache(cacheConfig, log), results))
 }
