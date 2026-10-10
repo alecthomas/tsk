@@ -1,7 +1,8 @@
 // testifylint's advanced checkers, which examine a whole package.
 import * as ast from "go/ast";
 import type * as types from "go/types";
-import type { Diagnostic } from "tsk";
+import type { Diagnostic, TypeToken } from "tsk";
+import { inspect } from "tsk/passes";
 import {
   type AnyPass,
   type CallMeta,
@@ -35,39 +36,12 @@ export interface AdvancedChecker {
 // walkNodes visits nodes of the given types like inspector.Nodes: visit is
 // called on entering a node, and again on leaving it unless entering
 // returned false, which also skips its children.
-function walkNodes(pass: AnyPass, kinds: Set<string>, visit: (node: ast.Node, push: boolean) => boolean): void {
-  for (const file of pass.files) {
-    const entered: (ast.Node | null)[] = [];
-    ast.inspect(file, (node) => {
-      if (node === null) {
-        const left = entered.pop();
-        if (left) {
-          visit(left, false);
-        }
-        return true;
-      }
-      if (!kinds.has(node.$type)) {
-        entered.push(null);
-        return true;
-      }
-      if (!visit(node, true)) {
-        return false;
-      }
-      entered.push(node);
-      return true;
-    });
-  }
+function walkNodes(pass: AnyPass, types: TypeToken<ast.Node>[], visit: (node: ast.Node, push: boolean) => boolean): void {
+  pass.resultOf(inspect).nodes(types, (node, push) => visit(node!, push));
 }
 
-function preorder<T extends ast.Node["$type"]>(pass: AnyPass, type: T, visit: (node: Extract<ast.Node, { $type: T }>) => void): void {
-  for (const file of pass.files) {
-    ast.inspect(file, (node) => {
-      if (node?.$type === type) {
-        visit(node as Extract<ast.Node, { $type: T }>);
-      }
-      return true;
-    });
-  }
+function preorder<N extends ast.Node>(pass: AnyPass, type: TypeToken<N>, visit: (node: N) => void): void {
+  pass.resultOf(inspect).preorder([type], (node) => visit(node as N));
 }
 
 export function blankImport(): AdvancedChecker {
@@ -105,7 +79,7 @@ export function goRequire(ignoreHTTPHandlers: boolean): AdvancedChecker {
     check(pass) {
       const diagnostics: Diagnostic[] = [];
       const testsDecls = new Map<types.Func, ast.FuncDecl>();
-      preorder(pass, "FuncDecl", (fd) => {
+      preorder(pass, ast.FuncDecl, (fd) => {
         const fn = isTestingFuncOrMethod(pass, fd) ? pass.typesInfo.objectOf(fd.name!) : null;
         if (fn?.$type === "Func") {
           testsDecls.set(fn, fd);
@@ -179,7 +153,7 @@ export function goRequire(ignoreHTTPHandlers: boolean): AdvancedChecker {
         }
         return true;
       };
-      walkNodes(pass, new Set(["FuncDecl", "FuncType", "GoStmt", "CallExpr"]), (node, push) => {
+      walkNodes(pass, [ast.FuncDecl, ast.FuncType, ast.GoStmt, ast.CallExpr], (node, push) => {
         if (node.$type === "FuncDecl") {
           return isTestingFuncOrMethod(pass, node) && scoped(push, true);
         }
@@ -217,8 +191,8 @@ export function goRequire(ignoreHTTPHandlers: boolean): AdvancedChecker {
         return true;
       });
       if (!ignoreHTTPHandlers) {
-        walkWithStack(pass, (node, stack) => {
-          if (node.$type !== "CallExpr" || stack.length < 3) {
+        walkWithStack(pass, [ast.CallExpr], (node, stack) => {
+          if (stack.length < 3) {
             return true;
           }
           const fn = findSurroundingFunc(pass, stack);
@@ -262,8 +236,8 @@ export function requireError(fnPattern: RegExp | null): AdvancedChecker {
     name,
     check(pass) {
       const callsByFunc = new Map<string, { fn: FuncID; calls: RequireErrorCall[] }>();
-      walkWithStack(pass, (node, stack) => {
-        if (node.$type !== "CallExpr" || stack.length < 3) {
+      walkWithStack(pass, [ast.CallExpr], (node, stack) => {
+        if (stack.length < 3) {
           return true;
         }
         const fn = findSurroundingFunc(pass, stack);
@@ -387,8 +361,8 @@ export function suiteBrokenParallel(): AdvancedChecker {
     name,
     check(pass) {
       const diagnostics: Diagnostic[] = [];
-      walkWithStack(pass, (node, stack) => {
-        if (node.$type !== "CallExpr" || node.fun?.$type !== "SelectorExpr") {
+      walkWithStack(pass, [ast.CallExpr], (node, stack) => {
+        if (node.fun?.$type !== "SelectorExpr") {
           return true;
         }
         const se = node.fun;
@@ -431,7 +405,7 @@ export function suiteMethodSignature(): AdvancedChecker {
     name,
     check(pass) {
       const diagnostics: Diagnostic[] = [];
-      preorder(pass, "FuncDecl", (fd) => {
+      preorder(pass, ast.FuncDecl, (fd) => {
         if (!isSuiteMethod(pass, fd)) {
           return;
         }
@@ -457,7 +431,7 @@ export function suiteSubtestRun(): AdvancedChecker {
     check(pass) {
       const diagnostics: Diagnostic[] = [];
       // s.T().Run
-      preorder(pass, "CallExpr", (ce) => {
+      preorder(pass, ast.CallExpr, (ce) => {
         const se = ce.fun;
         if (se?.$type !== "SelectorExpr" || !isIdentWithName("Run", se.sel) || se.x?.$type !== "CallExpr") {
           return;
@@ -482,7 +456,7 @@ export function suiteTHelper(): AdvancedChecker {
     name,
     check(pass) {
       const diagnostics: Diagnostic[] = [];
-      preorder(pass, "FuncDecl", (fd) => {
+      preorder(pass, ast.FuncDecl, (fd) => {
         const method = fd.name?.name;
         if (!isSuiteMethod(pass, fd) || method === undefined || isSuiteTestMethod(method) || isSuiteServiceMethod(method)) {
           return;

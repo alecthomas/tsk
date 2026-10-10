@@ -3,7 +3,8 @@ import * as ast from "go/ast";
 import * as token from "go/token";
 import * as types from "go/types";
 import * as typeutil from "golang.org/x/tools/go/types/typeutil";
-import { type Diagnostic, formatNode, type Pass, type SuggestedFix, type TextEdit } from "tsk";
+import { type Diagnostic, formatNode, type Pass, type SuggestedFix, type TextEdit, type TypeToken } from "tsk";
+import { inspect } from "tsk/passes";
 import { unquote } from "../internal/strconv";
 
 export type AnyPass = Pass<unknown>;
@@ -517,23 +518,9 @@ export function nearest<T extends ast.Node["$type"]>(stack: ast.Node[], type: T)
   return [null, 0];
 }
 
-// walkWithStack visits each file's nodes in preorder with the stack of
-// nodes enclosing them, like inspector.WithStack. Returning false from
-// visit skips a node's children.
-export function walkWithStack(pass: AnyPass, visit: (node: ast.Node, stack: ast.Node[]) => boolean): void {
-  for (const file of pass.files) {
-    const stack: ast.Node[] = [];
-    ast.inspect(file, (node) => {
-      if (node === null) {
-        stack.pop();
-        return true;
-      }
-      stack.push(node);
-      if (!visit(node, stack)) {
-        stack.pop();
-        return false;
-      }
-      return true;
-    });
-  }
+// walkWithStack visits nodes of the given types in preorder with the stack of
+// nodes enclosing them, ending with the node, as inspector.WithStack does.
+// Returning false from visit skips a node's children.
+export function walkWithStack<N extends ast.Node>(pass: AnyPass, types: TypeToken<N>[], visit: (node: N, stack: ast.Node[]) => boolean): void {
+  pass.resultOf(inspect).withStack(types, (node, push, stack) => !push || visit(node as N, stack as ast.Node[]));
 }

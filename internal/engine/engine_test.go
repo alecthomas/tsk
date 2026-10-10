@@ -196,6 +196,51 @@ func TestGoIterable(t *testing.T) {
 	analysistest.Run(t, dir, analyzers[0], "example")
 }
 
+const visitorScript = `import { defineAnalyzer } from "tsk";
+import { inspect } from "tsk/passes";
+import * as ast from "go/ast";
+
+export default defineAnalyzer({
+  name: "visitor",
+  doc: "report the nodes visitors see",
+  requires: [inspect],
+  run(pass) {
+    const file = pass.files[0];
+    const events: string[] = [];
+    ast.inspect(file, (node) => {
+      events.push(node === null ? "pop" : node.$type);
+      return node?.$type !== "FuncDecl";
+    });
+    const idents: string[] = [];
+    pass.resultOf(inspect).root().inspect([ast.FuncDecl, ast.Ident], (cursor) => {
+      const node = cursor.node()!;
+      if (node.$type === "Ident") {
+        idents.push(node.name);
+      }
+      return node.$type !== "FuncDecl";
+    });
+    pass.report({ pos: file.package, message: events.join(" ") + "; " + idents.join(" ") });
+  },
+});
+`
+
+func TestVisitors(t *testing.T) {
+	e := load(t, map[string]string{"visitor.ts": visitorScript})
+	analyzers, err := e.Analyzers(config.File{}, nil)
+	assert.NoError(t, err)
+	dir, cleanup, err := analysistest.WriteFiles(map[string]string{
+		"example/example.go": `package example // want "File Ident pop GenDecl ValueSpec Ident pop Ident pop pop pop FuncDecl pop; example v int"
+
+var v int
+
+func f() { _ = v }
+`,
+	})
+	assert.NoError(t, err)
+	defer cleanup()
+	analysistest.Run(t, dir, analyzers[0], "example")
+}
+
 func TestDisableAllEnable(t *testing.T) {
 	e := load(t, map[string]string{"nilident.ts": nilScript, "chatty.ts": consoleScript})
 	analyzers, err := e.Analyzers(config.File{DisableAll: true, Enable: []string{"chatty"}}, nil)
