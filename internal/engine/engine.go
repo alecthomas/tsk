@@ -311,6 +311,7 @@ func (e *Engine) analyzer(metadata vm.Metadata, environment *vm.Environment, mai
 		}
 		run := *environment
 		run.Pass = &filtered
+		run.Dependency = !inModules(pass, mainModules)
 		result, err := runtime.Run(metadata.Name, run)
 		if err != nil {
 			logger.Debug("Analyzer failed", "duration", time.Since(start), "error", err)

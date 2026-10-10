@@ -188,6 +188,11 @@ declare module "tsk" {
     readonly typesSizes: types.Sizes | null;
     readonly typeErrors: readonly types.Error[];
     readonly module: Module | undefined;
+    /**
+     * Whether the package is outside the modules being linted. An analyzer
+     * with scope "all" runs there only for its facts: findings are discarded.
+     */
+    readonly dependency: boolean;
     readonly config: DeepReadonly<C>;
     report(diagnostic: Diagnostic): void;
     resultOf<R>(analyzer: HostAnalyzer<R>): R;

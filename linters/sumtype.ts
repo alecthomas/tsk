@@ -42,6 +42,10 @@ for every variant, or a default clause that does more than panic.`,
     for (const cursor of root.preorder(ast.GenDecl)) {
       declare(pass, cursor.node() as ast.GenDecl);
     }
+    // Findings in dependencies are discarded, so only their facts matter.
+    if (pass.dependency) {
+      return;
+    }
     for (const cursor of root.preorder(ast.TypeSwitchStmt)) {
       checkSwitch(pass, cursor.node() as ast.TypeSwitchStmt);
     }

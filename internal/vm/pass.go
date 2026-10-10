@@ -34,6 +34,9 @@ type Environment struct {
 	SkipTests bool
 	// Recorder records what the run reads from the file system.
 	Recorder *inputs.Recorder
+	// Dependency is set for a package outside the modules being linted, whose
+	// findings are discarded.
+	Dependency bool
 }
 
 // passBinding implements the Pass methods for one run.
@@ -79,6 +82,7 @@ func (p *passBinding) bind(handle *sobek.Object) (*sobek.Object, error) {
 		"typesSizes":        b.wrap(reflect.ValueOf(&env.Pass.TypesSizes).Elem()),
 		"typeErrors":        b.wrap(reflect.ValueOf(env.Pass.TypeErrors)),
 		"module":            p.module(),
+		"dependency":        env.Dependency,
 		"config":            config,
 		"report":            p.report,
 		"resultOf":          p.resultOf,

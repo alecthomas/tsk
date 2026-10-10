@@ -241,6 +241,44 @@ func f() { _ = v }
 	analysistest.Run(t, dir, analyzers[0], "example")
 }
 
+const dependencyScript = `import { defineAnalyzer } from "tsk";
+
+export default defineAnalyzer({
+  name: "dependency",
+  doc: "report whether the package is a dependency",
+  scope: "all",
+  run(pass) {
+    pass.report({ pos: pass.files[0].package, message: "dependency: " + pass.dependency });
+  },
+});
+`
+
+func TestDependency(t *testing.T) {
+	// analysistest's packages belong to no module, so they are dependencies
+	// whenever main modules are given.
+	tests := []struct {
+		name        string
+		mainModules []string
+		want        string
+	}{
+		{name: "NoMainModules", want: "false"},
+		{name: "OutsideMainModules", mainModules: []string{"example.com/linted"}, want: "true"},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			e := load(t, map[string]string{"dependency.ts": dependencyScript})
+			analyzers, err := e.Analyzers(config.File{}, test.mainModules)
+			assert.NoError(t, err)
+			dir, cleanup, err := analysistest.WriteFiles(map[string]string{
+				"example/example.go": "package example // want \"dependency: " + test.want + "\"\n",
+			})
+			assert.NoError(t, err)
+			defer cleanup()
+			analysistest.Run(t, dir, analyzers[0], "example")
+		})
+	}
+}
+
 func TestDisableAllEnable(t *testing.T) {
 	e := load(t, map[string]string{"nilident.ts": nilScript, "chatty.ts": consoleScript})
 	analyzers, err := e.Analyzers(config.File{DisableAll: true, Enable: []string{"chatty"}}, nil)

@@ -93,6 +93,10 @@ class Checker {
     for (const [type, members] of this.findEnums()) {
       this.pass.exportObjectFact(type, enumMembers, members);
     }
+    // Findings in dependencies are discarded, so only their facts matter.
+    if (this.pass.dependency) {
+      return;
+    }
     for (const element of this.pass.config.check) {
       if (element === "switch") {
         for (const cursor of this.root.preorder(ast.SwitchStmt)) {
