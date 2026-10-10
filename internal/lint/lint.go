@@ -373,7 +373,7 @@ func printPosition(out *bytes.Buffer, start, end token.Position, message string,
 	if !end.IsValid() {
 		end = start
 	}
-	data, _ := os.ReadFile(filename) //nolint:errcheck,gosec // Context is best effort.
+	data, _ := os.ReadFile(filename) //nolint:errcheck // Context is best effort.
 	lines := strings.Split(string(data), "\n")
 	for i := max(start.Line-contextLines, 1); i <= min(end.Line+contextLines, len(lines)); i++ {
 		fmt.Fprintf(out, "%d\t%s\n", i, lines[i-1])

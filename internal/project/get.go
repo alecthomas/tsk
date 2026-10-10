@@ -76,7 +76,7 @@ func Get(ctx context.Context, logger *slog.Logger, c Config, cache *library.Cach
 		if err := os.MkdirAll(filepath.Dir(c.Config), 0o750); err != nil {
 			return errors.Wrap(err, "create config directory")
 		}
-		if err := os.WriteFile(c.Config, updated, 0o600); err != nil { //nolint:gosec // The config path is the user's own, from --config or discovery.
+		if err := os.WriteFile(c.Config, updated, 0o600); err != nil {
 			return errors.Wrap(err, "write config")
 		}
 	}

@@ -243,7 +243,7 @@ func writeFile(path string, content io.Reader) error {
 	if err := os.MkdirAll(filepath.Dir(path), 0o750); err != nil {
 		return errors.Wrap(err, "create directory")
 	}
-	file, err := os.OpenFile(path, os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0o444) //nolint:gosec // The archive entry was checked to be local.
+	file, err := os.OpenFile(path, os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0o444)
 	if err != nil {
 		return errors.Wrap(err, "create file")
 	}
@@ -293,11 +293,11 @@ func lockFile(path string) (unlock func(), err error) {
 	if err := os.MkdirAll(filepath.Dir(path), 0o750); err != nil {
 		return nil, errors.Wrap(err, "create lock directory")
 	}
-	file, err := os.OpenFile(path, os.O_CREATE|os.O_RDWR, 0o600) //nolint:gosec // The path is built from a checked import path.
+	file, err := os.OpenFile(path, os.O_CREATE|os.O_RDWR, 0o600)
 	if err != nil {
 		return nil, errors.Wrap(err, "open lock")
 	}
-	if err := syscall.Flock(int(file.Fd()), syscall.LOCK_EX); err != nil { //nolint:gosec // File descriptors fit in an int.
+	if err := syscall.Flock(int(file.Fd()), syscall.LOCK_EX); err != nil {
 		_ = file.Close() //nolint:errcheck // The lock error explains the failure.
 		return nil, errors.Wrapf(err, "lock %s", path)
 	}

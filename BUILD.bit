@@ -33,12 +33,6 @@ fmt-check-go[go-module] = go.fmt-l {
   dir = go-module
 }
 
-lint-go[go-module] = go.lint {
-  concurrency = 1 # golangci-lint refuses to run while another instance holds its lock.
-  package = "./..."
-  dir = go-module
-  depends_on = [build-go]
-}
 # Lint this repository with its own linters, which .tsk/config.toml imports
 # from linters/ in the same commit.
 lint-tsk[go-module] = exec.test {
@@ -122,7 +116,7 @@ explicit tsk-bin = go.exe {
 target test = [test-go, test-linters]
 
 # Lint everything
-target lint = [lint-go, lint-tsk, fmt-check-go, lint-ts, lint-actions, lint-action-pins, lint-release]
+target lint = [lint-tsk,fmt-check-go, lint-ts, lint-actions, lint-action-pins, lint-release]
 
 # Format everything
 target fmt = [fix-go, fmt-go, fmt-ts, fmt-action-pins]

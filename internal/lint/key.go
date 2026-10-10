@@ -73,7 +73,7 @@ func executableDigest() (string, error) {
 	if err != nil {
 		return "", errors.Wrap(err, "find executable")
 	}
-	f, err := os.Open(path) //nolint:gosec // The running executable.
+	f, err := os.Open(path)
 	if err != nil {
 		return "", errors.Wrap(err, "read executable")
 	}
@@ -134,7 +134,7 @@ func (k *keyer) fileDigest(file string) (string, bool) {
 	if slices.ContainsFunc(k.immutable, func(dir string) bool { return strings.HasPrefix(file, dir) }) {
 		return "immutable", true
 	}
-	data, err := os.ReadFile(file) //nolint:gosec // A file of a loaded package.
+	data, err := os.ReadFile(file)
 	if err != nil {
 		return "", false
 	}

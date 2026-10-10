@@ -5,8 +5,6 @@ imports = [
 # Lint with the linters in this commit rather than a published version.
 replace = { "github.com/alecthomas/tsk//linters" = "../linters" }
 
-# Settings below mirror .golangci.yml.
-
 disable = ["cyclop", "decorder", "embeddedstructfieldcheck", "exhaustruct", "godox", "inamedparam", "interfacebloat", "ireturn", "noinlineerr", "prealloc", "tagalign", "varnamelen"]
 
 skip-tests = ["bodyclose", "dupl", "errcheck", "funlen", "goconst", "godot", "noctx", "wrapcheck"]
@@ -27,11 +25,11 @@ statements = 50
 [godoclint]
 enable = ["no-unused-link"]
 
-# golangci-lint excludes the one local replacement, of the TypeScript shim.
+# Allow the one local replacement, of the TypeScript shim.
 [gomoddirectives]
 replace-local = true
 
-# golangci-lint excludes godot findings on lines with TODO.
+# TODO comments need not end in a period.
 [godot]
 exclude = ["TODO"]
 
