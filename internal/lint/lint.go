@@ -28,7 +28,7 @@ import (
 type Config struct {
 	Packages []string `arg:"" optional:"" default:"./..." help:"Package patterns to lint."`
 	JSON     bool     `help:"Emit JSON output."`
-	Context  int      `short:"c" default:"-1" help:"Lines of context to show around each finding; -1 shows none."`
+	Context  int      `short:"c" default:"-1" help:"Lines of context to show around each finding; -1 shows none." placeholder:"LINES"`
 	Test     bool     `default:"true" negatable:"" help:"Analyze test files too."`
 }
 

@@ -14,7 +14,7 @@ import (
 type Config struct {
 	// Level is the minimum severity written to the log. Linting output is the
 	// diagnostics, so logs are quiet unless asked for.
-	Level slog.Level `name:"log-level" default:"error" help:"Minimum log level (debug, info, warn, error)."`
+	Level slog.Level `name:"log-level" default:"error" help:"Minimum log level (debug, info, warn, error)." placeholder:"LEVEL"`
 }
 
 // New constructs a logger that writes to output. Colour is used only when

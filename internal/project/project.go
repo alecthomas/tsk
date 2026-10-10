@@ -29,8 +29,8 @@ const ScriptsDir = ".tsk"
 
 // Config locates the scripts directory and config file.
 type Config struct {
-	Dir    string `help:"Scripts directory. Defaults to the nearest .tsk above the working directory, up to the home directory." type:"path"`
-	Config string `help:"Config file. Defaults to config.toml in the scripts directory." type:"path"`
+	Dir    string `help:"Scripts directory. Defaults to the nearest .tsk above the working directory, up to the home directory." type:"path" placeholder:"DIR"`
+	Config string `help:"Config file. Defaults to config.toml in the scripts directory." type:"path" placeholder:"FILE"`
 }
 
 // Resolve finds the nearest .tsk searching up from the working directory to home,

@@ -19,7 +19,7 @@ import (
 
 // Config controls where generated bindings are written.
 type Config struct {
-	Output string `help:"Directory for the generated registry; declarations go in its dts subdirectory." default:"internal/bindings" type:"path"`
+	Output string `help:"Directory for the generated registry; declarations go in its dts subdirectory." default:"internal/bindings" type:"path" placeholder:"DIR"`
 }
 
 // exposedPackage is a Go package scripts can import by its import path.
