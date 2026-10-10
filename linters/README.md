@@ -92,6 +92,7 @@ translation of that code.
 | [`testableexamples`](https://github.com/maratori/testableexamples) | MIT | Linter checks if examples are testable (have an expected output). |
 | [`testifylint`](https://github.com/Antonboom/testifylint) | MIT | Checks usage of github.com/stretchr/testify. |
 | [`testpackage`](https://github.com/maratori/testpackage) | MIT | Linter that makes you use a separate _test package. |
+| [`thelper`](https://github.com/kulti/thelper) | MIT | Detects test helpers which do not start with the t.Helper() method. |
 | [`tparallel`](https://github.com/moricho/tparallel) | MIT | Tparallel detects inappropriate usage of t.Parallel() method in your Go test codes. |
 | [`unconvert`](https://github.com/golangci/unconvert) | BSD-3-Clause | Remove unnecessary type conversions. |
 | [`unparam`](https://github.com/mvdan/unparam) | BSD-3-Clause | Reports unused function parameters. |

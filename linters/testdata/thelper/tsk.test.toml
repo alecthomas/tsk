@@ -1,0 +1,12 @@
+[[case]]
+name = "default"
+packages = ["t", "f", "b", "tb"]
+
+[[case]]
+name = "only-test-first"
+packages = ["t_first"]
+[case.config]
+test = { begin = false, first = true, name = false }
+fuzz = { begin = false, first = false, name = false }
+benchmark = { begin = false, first = false, name = false }
+tb = { begin = false, first = false, name = false }
