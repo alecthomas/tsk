@@ -47,6 +47,7 @@ translation of that code.
 | [`gocheckcompilerdirectives`](https://github.com/leighmcculloch/gocheckcompilerdirectives) | MIT | Check that go compiler directive comments (//go:) are valid. |
 | [`gochecknoglobals`](https://github.com/leighmcculloch/gochecknoglobals) | MIT | Check that no global variables exist. |
 | [`goconst`](https://github.com/jgautheron/goconst) | MIT | Find repeated strings that could be replaced by a constant. |
+| [`gocyclo`](https://github.com/fzipp/gocyclo) | BSD-3-Clause | Computes and checks the cyclomatic complexity of functions. |
 | [`godoclint`](https://github.com/godoc-lint/godoc-lint) | MIT | Check Go documentation practice. |
 | [`godot`](https://github.com/tetafro/godot) | MIT | Check if comments end in a period. |
 | [`godox`](https://github.com/matoous/godox) | MIT | Detects usage of FIXME, TODO and other keywords inside comments. |
