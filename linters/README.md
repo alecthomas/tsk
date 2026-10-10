@@ -116,7 +116,7 @@ These golangci-lint linters are left out on purpose.
 
 | Linter | Reason |
 |---|---|
-| `depguard`, `goheader`, `nonamedreturns` | GPL-3.0. A port would be a derived work, which this MIT-licensed library cannot include. |
+| `depguard`, `goheader`, `grouper`, `nonamedreturns` | GPL-3.0. A port would be a derived work, which this MIT-licensed library cannot include. |
 | `musttag`, `sloglint` | MPL-2.0. A port would have to stay under MPL-2.0, unlike the rest of this MIT-licensed library. |
 | `govet` | Its analyzers ship with Go; run `go vet`. |
 | `modernize` | Its analyzers ship with Go 1.26 and later; run `go fix -diff`. |
