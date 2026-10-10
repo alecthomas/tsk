@@ -55,6 +55,7 @@ translation of that code.
 | [`gomoddirectives`](https://github.com/ldez/gomoddirectives) | Apache-2.0 | Manage the use of replace, retract, exclude, and other directives in go.mod. |
 | [`goprintffuncname`](https://github.com/golangci/go-printf-func-name) | MIT | Check that printf-like functions are named with f at the end. |
 | [`iface`](https://github.com/uudashr/iface) | Apache-2.0 | Detect the incorrect use of interfaces, helping avoid interface pollution. |
+| [`importas`](https://github.com/julz/importas) | Apache-2.0 | Enforces consistent import aliases. |
 | [`inamedparam`](https://github.com/macabu/inamedparam) | MIT | Reports interfaces with unnamed method parameters. |
 | [`ineffassign`](https://github.com/gordonklaus/ineffassign) | MIT | Detect assignments to existing variables that are never used. |
 | [`interfacebloat`](https://github.com/sashamelentyev/interfacebloat) | MIT | A linter that checks the number of methods inside an interface. |

@@ -1,0 +1,18 @@
+[[case]]
+name = "aliases"
+packages = ["aliased"]
+[case.config]
+no-unaliased = true
+alias = [
+  { pkg = "fmt", alias = "fff" },
+  { pkg = "os", alias = "stdos" },
+  { pkg = 'encoding/(\w+)', alias = "enc$1" },
+  { pkg = 'net/(?P<sub>\w+)', alias = "net${sub}" },
+]
+
+[[case]]
+name = "no-extra-aliases"
+packages = ["extra"]
+[case.config]
+no-extra-aliases = true
+alias = [{ pkg = "fmt", alias = "fff" }]
