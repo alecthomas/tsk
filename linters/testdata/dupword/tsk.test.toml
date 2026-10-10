@@ -1,0 +1,21 @@
+[[case]]
+name = "default"
+packages = ["a", "raw_string_dup"]
+
+[[case]]
+name = "ignore"
+packages = ["a_ignore_the"]
+[case.config]
+ignore = ["the"]
+
+[[case]]
+name = "comments-only"
+packages = ["comments_only"]
+[case.config]
+comments-only = true
+
+[[case]]
+name = "skip-raw-strings"
+packages = ["raw_string_sql"]
+[case.config]
+skip-raw-strings = true

@@ -31,6 +31,7 @@ translation of that code.
 | [`cyclop`](https://github.com/bkielbasa/cyclop) | MIT | Checks function and package cyclomatic complexity. |
 | [`decorder`](https://gitlab.com/bosi/decorder) | MIT | Check declaration order and count of types, constants, variables and functions. |
 | [`dupl`](https://github.com/golangci/dupl) | MIT | Detect duplicate fragments of code. |
+| [`dupword`](https://github.com/Abirdcfly/dupword) | MIT | Checks for duplicate words in the source code. |
 | [`durationcheck`](https://github.com/charithe/durationcheck) | Apache-2.0 | Check for two durations multiplied together. |
 | [`embeddedstructfieldcheck`](https://github.com/manuelarte/embeddedstructfieldcheck) | Apache-2.0 | Embedded types should be at the top of the field list of a struct, and there must be an empty line separating embedded fields from regular fields. |
 | [`errcheck`](https://github.com/kisielk/errcheck) | MIT | Check for unchecked errors. |
