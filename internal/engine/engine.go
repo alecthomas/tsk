@@ -293,9 +293,11 @@ func (e *Engine) analyzer(metadata vm.Metadata, environment *vm.Environment, mai
 		}
 		logger := e.logger.With("analyzer", metadata.Name, "package", pass.Pkg.Path())
 		// The driver calls Run for every package at once, so a run only starts
-		// once the pool, which bounds concurrency, lends it a runtime.
+		// once the pool, which bounds concurrency, lends it a runtime. Runs
+		// exporting facts go first: runs on dependent packages wait for them,
+		// and those chains, through dependencies, otherwise bound wall time.
 		queued := time.Now()
-		runtime, err := e.pool.get()
+		runtime, err := e.pool.get(len(analyzer.FactTypes) > 0)
 		if err != nil {
 			return nil, err
 		}

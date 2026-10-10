@@ -23,7 +23,10 @@ type pool struct {
 	logger  *slog.Logger
 	limit   int
 	lock    sync.Mutex
-	ready   *sync.Cond
+	// ready and waiting are indexed by whether runs are urgent. Urgent runs
+	// are served first.
+	ready   [2]*sync.Cond
+	waiting [2]int
 	idle    []*vm.Runtime
 	// created counts runtimes that exist or are being created; creating
 	// counts those being created in the background.
@@ -33,19 +36,31 @@ type pool struct {
 
 func newPool(modules *vm.Modules, logger *slog.Logger) *pool {
 	p := &pool{modules: modules, logger: logger, limit: runtime.GOMAXPROCS(0)}
-	p.ready = sync.NewCond(&p.lock)
+	p.ready = [2]*sync.Cond{sync.NewCond(&p.lock), sync.NewCond(&p.lock)}
 	return p
 }
 
-func (p *pool) get() (*vm.Runtime, error) {
+// get lends a runtime. Urgent runs, whose results other runs wait on, take
+// returned runtimes before other runs.
+func (p *pool) get(urgent bool) (*vm.Runtime, error) {
+	priority := 0
+	if urgent {
+		priority = 1
+	}
 	p.lock.Lock()
 	// A run waits for a runtime being created rather than creating another.
+	p.waiting[priority]++
 	for len(p.idle) == 0 && (p.creating > 0 || p.created >= p.limit) {
-		p.ready.Wait()
+		p.ready[priority].Wait()
 	}
+	p.waiting[priority]--
 	if n := len(p.idle); n > 0 {
 		runtime := p.idle[n-1]
 		p.idle = p.idle[:n-1]
+		// Several runtimes may have been returned while this run woke.
+		if len(p.idle) > 0 {
+			p.signal()
+		}
 		p.refill()
 		p.lock.Unlock()
 		return runtime, nil
@@ -57,7 +72,7 @@ func (p *pool) get() (*vm.Runtime, error) {
 	if err != nil {
 		p.lock.Lock()
 		p.created--
-		p.ready.Broadcast()
+		p.broadcast()
 		p.lock.Unlock()
 		return nil, errors.Wrap(err, "create runtime")
 	}
@@ -73,7 +88,22 @@ func (p *pool) put(runtime *vm.Runtime) {
 	if p.created < len(p.idle) {
 		p.created = len(p.idle)
 	}
-	p.ready.Signal()
+	p.signal()
+}
+
+// signal wakes one waiting run, urgent first. The caller holds the lock.
+func (p *pool) signal() {
+	if p.waiting[1] > 0 {
+		p.ready[1].Signal()
+	} else {
+		p.ready[0].Signal()
+	}
+}
+
+// broadcast wakes every waiting run. The caller holds the lock.
+func (p *pool) broadcast() {
+	p.ready[0].Broadcast()
+	p.ready[1].Broadcast()
 }
 
 // warm fills the buffer in the background, overlapping package loading.
@@ -113,5 +143,5 @@ func (p *pool) createInBackground() {
 		p.logger.Debug("Created runtime", "duration", time.Since(start), "background", true)
 	}
 	// Waiters may be waiting on this creation, so all re-check.
-	p.ready.Broadcast()
+	p.broadcast()
 }
