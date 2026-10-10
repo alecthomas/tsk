@@ -1,0 +1,17 @@
+[[case]]
+name = "default"
+packages = ["defaults"]
+
+[[case]]
+name = "restricted"
+packages = ["restricted"]
+[case.config]
+mode = "restricted"
+
+[[case]]
+name = "locale"
+packages = ["locale"]
+[case.config]
+locale = "UK"
+ignore-rules = ["definately"]
+extra-words = [{ typo = "wrong", correction = "right" }]

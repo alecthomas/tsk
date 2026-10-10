@@ -70,6 +70,7 @@ translation of that code.
 | [`loggercheck`](https://github.com/timonwong/loggercheck) | MIT | Checks key value pairs for common logger libraries (kitlog,klog,logr,slog,zap). |
 | [`makezero`](https://github.com/ashanbrown/makezero) | Apache-2.0 | Find slice declarations with non-zero initial length. |
 | [`mirror`](https://github.com/butuzov/mirror) | MIT | Reports wrong mirror patterns of bytes/strings usage. |
+| [`misspell`](https://github.com/golangci/misspell) | MIT | Finds commonly misspelled English words. |
 | [`nakedret`](https://github.com/alexkohler/nakedret) | MIT | Checks that functions with naked returns are not longer than a maximum size (can be zero). |
 | [`nestif`](https://github.com/nakabonne/nestif) | BSD-2-Clause | Reports deeply nested if statements. |
 | [`nilerr`](https://github.com/gostaticanalysis/nilerr) | MIT | Find the code that returns nil even if it checks that the error is not nil. |
