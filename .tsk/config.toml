@@ -5,7 +5,7 @@ imports = [
 # Lint with the linters in this commit rather than a published version.
 replace = { "github.com/alecthomas/tsk//linters" = "../linters" }
 
-disable = ["contextcheck", "cyclop", "decorder", "dogsled", "dupword", "embeddedstructfieldcheck", "errchkjson", "exhaustruct", "gochecknoinits", "godox", "gomodguard", "gomodguard_v2", "inamedparam", "interfacebloat", "ireturn", "lll", "misspell", "noinlineerr", "paralleltest", "prealloc", "tagalign", "thelper", "varnamelen"]
+disable = ["contextcheck", "cyclop", "decorder", "dogsled", "dupword", "embeddedstructfieldcheck", "errchkjson", "exhaustruct", "gochecknoinits", "godox", "gomodguard", "gomodguard_v2", "inamedparam", "interfacebloat", "ireturn", "lll", "misspell", "noinlineerr", "nolintlint", "paralleltest", "prealloc", "tagalign", "thelper", "varnamelen"]
 
 skip-tests = ["bodyclose", "dupl", "errcheck", "funlen", "goconst", "godot", "noctx", "wrapcheck"]
 

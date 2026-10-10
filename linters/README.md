@@ -11,6 +11,7 @@ linter's options.
 | Linter | Reports |
 |---|---|
 | `encapsulation` | Private-field access and construction outside a struct's API. |
+| `nolintlint` | Ill-formed or insufficient `//nolint` directives. An original implementation of golangci-lint's nolintlint, which is GPL-3.0, with its options and messages, except that unused directives are not reported. |
 | `optionalnil` | `nil` used to mean "no value" where an option type could be used. |
 | `sumtype` | Type switches on sealed interfaces that miss a variant. |
 

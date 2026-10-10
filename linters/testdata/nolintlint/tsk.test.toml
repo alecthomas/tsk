@@ -1,0 +1,11 @@
+[[case]]
+name = "default"
+packages = ["directives"]
+
+[[case]]
+name = "strict"
+packages = ["strict"]
+[case.config]
+require-specific = true
+require-explanation = true
+allow-no-explanation = ["funlen", "lll"]
