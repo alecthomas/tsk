@@ -1,0 +1,15 @@
+[[case]]
+name = "default"
+packages = ["nosafe"]
+
+[[case]]
+name = "check-error-free-encoding"
+packages = ["standard", "loop"]
+[case.config]
+check-error-free-encoding = true
+
+[[case]]
+name = "report-no-exported"
+packages = ["noexport"]
+[case.config]
+report-no-exported = true

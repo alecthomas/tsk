@@ -34,6 +34,7 @@ translation of that code.
 | [`durationcheck`](https://github.com/charithe/durationcheck) | Apache-2.0 | Check for two durations multiplied together. |
 | [`embeddedstructfieldcheck`](https://github.com/manuelarte/embeddedstructfieldcheck) | Apache-2.0 | Embedded types should be at the top of the field list of a struct, and there must be an empty line separating embedded fields from regular fields. |
 | [`errcheck`](https://github.com/kisielk/errcheck) | MIT | Check for unchecked errors. |
+| [`errchkjson`](https://github.com/breml/errchkjson) | MIT | Checks types passed to the json encoding functions. |
 | [`errname`](https://github.com/Antonboom/errname) | MIT | Check that sentinel errors are prefixed with Err and error types are suffixed with Error. |
 | [`errorlint`](https://codeberg.org/polyfloyd/go-errorlint) | MIT | Find code that will fail on errors wrapped as Go 1.13 introduced. |
 | [`exhaustive`](https://github.com/nishanths/exhaustive) | BSD-2-Clause | Check exhaustiveness of enum switch statements and map literals. |
