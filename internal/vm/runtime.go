@@ -444,6 +444,9 @@ type Metadata struct {
 	Requires         []Requirement
 	Facts            []string
 	RunDespiteErrors bool
+	// IgnoresNolint is set when the analyzer declares nolint: false, so
+	// //nolint comments do not suppress its findings.
+	IgnoresNolint bool
 	// SkipTests is set when the analyzer declares tests: false, so it reports
 	// nothing in _test.go files.
 	SkipTests bool
@@ -478,6 +481,7 @@ func (r *Runtime) Metadata(name string) (Metadata, error) {
 		return Metadata{}, errors.Errorf("analyzer %s: run must be a function", name)
 	}
 	metadata.RunDespiteErrors = !isAbsent(object.Get("runDespiteErrors")) && object.Get("runDespiteErrors").ToBoolean()
+	metadata.IgnoresNolint = !isAbsent(object.Get("nolint")) && !object.Get("nolint").ToBoolean()
 	metadata.SkipTests = !isAbsent(object.Get("tests")) && !object.Get("tests").ToBoolean()
 	scope, err := r.stringProperty(object, "scope", false)
 	if err != nil {

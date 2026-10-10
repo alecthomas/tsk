@@ -430,6 +430,29 @@ export default defineAnalyzer({
 `
 }
 
+// An analyzer that checks //nolint comments opts out of their suppression.
+func TestNolintOption(t *testing.T) {
+	tests := []struct {
+		Name       string
+		Definition string
+		Source     string
+	}{
+		{Name: "Suppressed", Source: "package example //nolint\n"},
+		{Name: "OptedOut", Definition: "nolint: false,", Source: "package example /* want \"file\" */ //nolint\n"},
+	}
+	for _, test := range tests {
+		t.Run(test.Name, func(t *testing.T) {
+			e := load(t, map[string]string{"files.ts": filesScript(test.Definition)})
+			analyzers, err := e.Analyzers(config.File{}, nil)
+			assert.NoError(t, err)
+			dir, cleanup, err := analysistest.WriteFiles(map[string]string{"example/example.go": test.Source})
+			assert.NoError(t, err)
+			defer cleanup()
+			analysistest.Run(t, dir, analyzers[0], "example")
+		})
+	}
+}
+
 func TestReportFilters(t *testing.T) {
 	const reported = `package example // want "file"` + "\n"
 	const silent = "package example\n"

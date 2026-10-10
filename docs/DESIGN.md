@@ -134,6 +134,8 @@ needed. The definition mirrors `analysis.Analyzer`:
   config type.
 - `runDespiteErrors`
 - `tests`: `false` drops the analyzer's findings in `_test.go` files.
+- `nolint`: `false` stops `//nolint` comments suppressing the analyzer's
+  findings, for an analyzer that checks the comments themselves.
 - `scope`: `"module"`, the default, or `"all"`; see
   [Pass binding and runtime pool](#pass-binding-and-runtime-pool).
 - `run(pass)`, whose return value is the analyzer's JSON result.

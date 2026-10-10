@@ -304,7 +304,9 @@ func (e *Engine) analyzer(metadata vm.Metadata, environment *vm.Environment, mai
 		logger.Debug("Analyzer started", "wait", start.Sub(queued))
 		// A copy, so the driver's pass keeps its own Report.
 		filtered := *pass
-		filtered.Report = nolint.Reporter(pass, metadata.Name)
+		if !metadata.IgnoresNolint {
+			filtered.Report = nolint.Reporter(pass, metadata.Name)
+		}
 		run := *environment
 		run.Pass = &filtered
 		result, err := runtime.Run(metadata.Name, run)

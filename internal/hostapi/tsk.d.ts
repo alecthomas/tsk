@@ -90,6 +90,12 @@ declare module "tsk" {
     readonly facts?: readonly Fact<unknown>[];
     readonly runDespiteErrors?: boolean;
     /**
+     * Whether //nolint comments suppress the analyzer's findings, as they do
+     * by default. Set false for an analyzer that checks the comments
+     * themselves, whose findings about a comment it must not hide.
+     */
+    readonly nolint?: boolean;
+    /**
      * Where the analyzer runs. "module", the default, runs it only on packages
      * of the module being linted. "all" also runs it on every dependency, as
      * go/analysis does, for analyzers that need facts about dependencies.
