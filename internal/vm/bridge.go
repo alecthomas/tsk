@@ -171,6 +171,8 @@ func (b *bridge) goError(err error) *sobek.Object {
 }
 
 // thrownError returns the Go error an exception was thrown for.
+//
+//nolint:revive // A lookup returning (value, ok), where the value is an error.
 func (b *bridge) thrownError(object *sobek.Object) (error, bool) {
 	if err, ok := b.current.thrown[object]; ok {
 		return err, true
@@ -181,6 +183,8 @@ func (b *bridge) thrownError(object *sobek.Object) (error, bool) {
 
 // errorOf returns the Go error a value holds: a thrown exception's error, or a
 // wrapped Go value implementing error.
+//
+//nolint:revive // A lookup returning (value, ok), where the value is an error.
 func (b *bridge) errorOf(value sobek.Value) (error, bool) {
 	object, isObject := value.(*sobek.Object)
 	if !isObject {

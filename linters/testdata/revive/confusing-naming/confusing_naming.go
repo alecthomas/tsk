@@ -1,0 +1,99 @@
+// Adapted from github.com/mgechev/revive's tests, MIT License.
+
+// Test of confusing-naming rule.
+// Package pkg ...
+package pkg
+
+type foo struct{}
+
+func (t foo) aFoo() {
+	return
+}
+
+func (t *foo) AFoo() { // want "^confusing-naming: Method 'AFoo' differs only by capitalization to method 'aFoo' in the same source file$"
+	return
+}
+
+type bar struct{}
+
+func (t *bar) aBar() {
+	return
+}
+
+func (t *bar) aFoo() { // Should not warn
+	return
+}
+
+func aGlobal() {
+
+}
+
+func AGlobal() { // want "^confusing-naming: Method 'AGlobal' differs only by capitalization to function 'aGlobal' in the same source file$"
+}
+
+func ABar() { // Should not warn
+
+}
+
+func aFoo() { // Should not warn
+
+}
+
+func (t foo) ABar() { // Should not warn
+	return
+}
+
+func (t bar) ABar() { // want "^confusing-naming: Method 'ABar' differs only by capitalization to method 'aBar' in the same source file$"
+	return
+}
+
+func x() {}
+
+type tFoo struct {
+	asd      string
+	aSd      int // want "^confusing-naming: Field 'aSd' differs only by capitalization to other field in the struct type tFoo$"
+	qwe, asD bool // want "^confusing-naming: Field 'asD' differs only by capitalization to other field in the struct type tFoo$"
+	zxc      float32
+}
+
+type tBar struct {
+	asd string
+	qwe bool
+	zxc float32
+}
+
+// issue #864
+type x[T any] struct{}
+
+func (x[T]) method() {
+}
+
+type y[T any] struct{}
+
+func (y[T]) method() {
+}
+
+// issue #982
+type a[T any] struct{}
+
+func (x *a[T]) method() {
+}
+
+type b[T any] struct{}
+
+func (x *b[T]) method() {
+}
+
+// Multiple blank identifiers should be allowed (for padding/alignment)
+type siginfoChild struct {
+	signo    int32
+	errno    int32
+	exitCode int32
+	_        int32
+
+	pid    int32
+	uid    uint32
+	status int32
+
+	_ [25]uint32
+}

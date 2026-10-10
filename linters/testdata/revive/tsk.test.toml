@@ -1,0 +1,1289 @@
+[[case]]
+name = "blank-imports"
+packages = ["example.com/revive/blank-imports"]
+[case.config]
+enable = ["blank-imports"]
+
+[[case]]
+name = "line-length-limit"
+packages = ["example.com/revive/line-length-limit"]
+[case.config]
+enable = ["line-length-limit"]
+line-length-limit = { max = 60, excludes = ["https://"] }
+
+[[case]]
+name = "time-date"
+packages = ["example.com/revive/time-date"]
+[case.config]
+enable = ["time-date"]
+confidence = 0.0
+
+[[case]]
+name = "string-format"
+packages = ["example.com/revive/string-format"]
+[case.config]
+enable = ["string-format"]
+[[case.config.string-format.checks]]
+scope = "stringFormatMethod1"
+regex = '/^[A-Z]/'
+message = "must start with a capital letter"
+[[case.config.string-format.checks]]
+scope = "stringFormatMethod2[2].d"
+regex = '/[^\.]$/'
+[[case.config.string-format.checks]]
+scope = "s.Method3[2]"
+regex = '!/^[Tt][Hh]/'
+message = "must not start with 'th'"
+[[case.config.string-format.checks]]
+scope = "s.Method4"
+regex = '!/^[Ot][Tt]/'
+message = "must not start with 'ot'"
+
+[[case]]
+name = "string-format-duplicated-strings"
+packages = ["example.com/revive/string-format/issue1063"]
+[case.config]
+enable = ["string-format"]
+[[case.config.string-format.checks]]
+scope = "fmt.Errorf[0],errors.New[0]"
+regex = '/^([^A-Z]|$)/'
+message = "must not start with a capital letter"
+
+[[case]]
+name = "superfluous-else"
+packages = ["example.com/revive/superfluous-else"]
+[case.config]
+enable = ["superfluous-else"]
+
+[[case]]
+name = "superfluous-else-scope"
+packages = ["example.com/revive/superfluous-else/scope"]
+[case.config]
+enable = ["superfluous-else"]
+superfluous-else = { preserve-scope = true }
+
+[[case]]
+name = "early-return"
+packages = ["example.com/revive/early-return"]
+[case.config]
+enable = ["early-return"]
+
+[[case]]
+name = "early-return-scope"
+packages = ["example.com/revive/early-return/scope"]
+[case.config]
+enable = ["early-return"]
+early-return = { preserve-scope = true }
+
+[[case]]
+name = "early-return-jump"
+packages = ["example.com/revive/early-return/jump"]
+[case.config]
+enable = ["early-return"]
+early-return = { allow-jump = true }
+
+[[case]]
+name = "early-return-jump-scope"
+packages = ["example.com/revive/early-return/jumpscope"]
+[case.config]
+enable = ["early-return"]
+early-return = { allow-jump = true, preserve-scope = true }
+
+[[case]]
+name = "indent-error-flow"
+packages = ["example.com/revive/indent-error-flow"]
+[case.config]
+enable = ["indent-error-flow"]
+
+[[case]]
+name = "indent-error-flow-scope"
+packages = ["example.com/revive/indent-error-flow/scope"]
+[case.config]
+enable = ["indent-error-flow"]
+indent-error-flow = { preserve-scope = true }
+
+[[case]]
+name = "if-return"
+packages = ["example.com/revive/if-return"]
+[case.config]
+enable = ["if-return"]
+
+[[case]]
+name = "unnecessary-if"
+packages = ["example.com/revive/unnecessary-if"]
+[case.config]
+enable = ["unnecessary-if"]
+
+[[case]]
+name = "useless-break"
+packages = ["example.com/revive/useless-break"]
+[case.config]
+enable = ["useless-break"]
+
+[[case]]
+name = "useless-fallthrough"
+packages = ["example.com/revive/useless-fallthrough"]
+[case.config]
+enable = ["useless-fallthrough"]
+
+[[case]]
+name = "multiline-if-init"
+packages = ["example.com/revive/multiline-if-init"]
+[case.config]
+enable = ["multiline-if-init"]
+
+[[case]]
+name = "bare-return"
+packages = ["example.com/revive/bare-return"]
+[case.config]
+enable = ["bare-return"]
+
+[[case]]
+name = "unreachable-code"
+packages = ["example.com/revive/unreachable-code"]
+[case.config]
+enable = ["unreachable-code"]
+
+[[case]]
+name = "unconditional-recursion"
+packages = ["example.com/revive/unconditional-recursion"]
+[case.config]
+enable = ["unconditional-recursion"]
+
+[[case]]
+name = "struct-tag"
+packages = ["example.com/revive/struct-tag"]
+[case.config]
+enable = ["struct-tag"]
+
+[[case]]
+name = "struct-tag-before-go1.24"
+dir = "struct-tag/go1.23"
+packages = ["example.com/revive-go123"]
+[case.config]
+enable = ["struct-tag"]
+
+[[case]]
+name = "struct-tag-user-options"
+packages = ["example.com/revive/struct-tag/useroptions"]
+[case.config]
+enable = ["struct-tag"]
+[case.config.struct-tag.user-defined-options]
+json = ["inline", "outline"]
+bson = ["gnu"]
+url = ["myURLOption"]
+datastore = ["myDatastoreOption"]
+mapstructure = ["myMapstructureOption"]
+validate = ["displayName"]
+toml = ["unknown"]
+spanner = ["mySpannerOption"]
+codec = ["myCodecOption"]
+cbor = ["myCborOption"]
+
+[[case]]
+name = "struct-tag-omitted-tags"
+packages = ["example.com/revive/struct-tag/omit"]
+[case.config]
+enable = ["struct-tag"]
+[case.config.struct-tag]
+omitted-tags = ["validate", "toml"]
+[case.config.struct-tag.user-defined-options]
+json = ["inline", "outline"]
+bson = ["gnu"]
+url = ["myURLOption"]
+datastore = ["myDatastoreOption"]
+mapstructure = ["myMapstructureOption"]
+spanner = ["mySpannerOption"]
+
+[[case]]
+name = "bool-literal-in-expr"
+packages = ["example.com/revive/bool-literal-in-expr"]
+[case.config]
+enable = ["bool-literal-in-expr"]
+
+[[case]]
+name = "constant-logical-expr"
+packages = ["example.com/revive/constant-logical-expr"]
+[case.config]
+enable = ["constant-logical-expr"]
+
+[[case]]
+name = "empty-block"
+packages = ["example.com/revive/empty-block"]
+[case.config]
+enable = ["empty-block"]
+
+[[case]]
+name = "enforce-map-style-any"
+packages = ["example.com/revive/enforce-map-style/any"]
+[case.config]
+enable = ["enforce-map-style"]
+
+[[case]]
+name = "enforce-map-style-literal"
+packages = ["example.com/revive/enforce-map-style/literal"]
+[case.config]
+enable = ["enforce-map-style"]
+enforce-map-style = { style = "literal" }
+
+[[case]]
+name = "enforce-map-style-make"
+packages = ["example.com/revive/enforce-map-style/make"]
+[case.config]
+enable = ["enforce-map-style"]
+enforce-map-style = { style = "make" }
+
+[[case]]
+name = "enforce-repeated-arg-type-style-default"
+packages = ["example.com/revive/enforce-repeated-arg-type-style/default"]
+[case.config]
+enable = ["enforce-repeated-arg-type-style"]
+
+[[case]]
+name = "enforce-repeated-arg-type-style-full-args"
+packages = ["example.com/revive/enforce-repeated-arg-type-style/full-args"]
+[case.config]
+enable = ["enforce-repeated-arg-type-style"]
+enforce-repeated-arg-type-style = { func-arg-style = "full", func-ret-val-style = "full" }
+
+[[case]]
+name = "enforce-repeated-arg-type-style-full-return"
+packages = ["example.com/revive/enforce-repeated-arg-type-style/full-return"]
+[case.config]
+enable = ["enforce-repeated-arg-type-style"]
+enforce-repeated-arg-type-style = { func-arg-style = "full", func-ret-val-style = "full" }
+
+[[case]]
+name = "enforce-repeated-arg-type-style-short-args"
+packages = ["example.com/revive/enforce-repeated-arg-type-style/short-args"]
+[case.config]
+enable = ["enforce-repeated-arg-type-style"]
+enforce-repeated-arg-type-style = { func-arg-style = "short", func-ret-val-style = "short" }
+
+[[case]]
+name = "enforce-repeated-arg-type-style-short-return"
+packages = ["example.com/revive/enforce-repeated-arg-type-style/short-return"]
+[case.config]
+enable = ["enforce-repeated-arg-type-style"]
+enforce-repeated-arg-type-style = { func-arg-style = "short", func-ret-val-style = "short" }
+
+[[case]]
+name = "enforce-repeated-arg-type-style-mixed-full-short"
+packages = ["example.com/revive/enforce-repeated-arg-type-style/mixed-full-short"]
+[case.config]
+enable = ["enforce-repeated-arg-type-style"]
+enforce-repeated-arg-type-style = { func-arg-style = "full", func-ret-val-style = "short" }
+
+[[case]]
+name = "enforce-repeated-arg-type-style-mixed-short-full"
+packages = ["example.com/revive/enforce-repeated-arg-type-style/mixed-short-full"]
+[case.config]
+enable = ["enforce-repeated-arg-type-style"]
+enforce-repeated-arg-type-style = { func-arg-style = "short", func-ret-val-style = "full" }
+
+[[case]]
+name = "enforce-slice-style-any"
+packages = ["example.com/revive/enforce-slice-style/any"]
+[case.config]
+enable = ["enforce-slice-style"]
+
+[[case]]
+name = "enforce-slice-style-literal"
+packages = ["example.com/revive/enforce-slice-style/literal"]
+[case.config]
+enable = ["enforce-slice-style"]
+enforce-slice-style = { style = "literal" }
+
+[[case]]
+name = "enforce-slice-style-make"
+packages = ["example.com/revive/enforce-slice-style/make"]
+[case.config]
+enable = ["enforce-slice-style"]
+enforce-slice-style = { style = "make" }
+
+[[case]]
+name = "enforce-slice-style-nil"
+packages = ["example.com/revive/enforce-slice-style/nil"]
+[case.config]
+enable = ["enforce-slice-style"]
+enforce-slice-style = { style = "nil" }
+
+[[case]]
+name = "enforce-switch-style"
+packages = ["example.com/revive/enforce-switch-style/default"]
+[case.config]
+enable = ["enforce-switch-style"]
+
+[[case]]
+name = "enforce-switch-style-allow-no-default"
+packages = ["example.com/revive/enforce-switch-style/allow-no-default"]
+[case.config]
+enable = ["enforce-switch-style"]
+enforce-switch-style = { allow-no-default = true }
+
+[[case]]
+name = "enforce-switch-style-allow-not-last"
+packages = ["example.com/revive/enforce-switch-style/allow-not-last"]
+[case.config]
+enable = ["enforce-switch-style"]
+enforce-switch-style = { allow-default-not-last = true }
+
+[[case]]
+name = "enforce-switch-style-allow-no-default-allow-not-last"
+packages = ["example.com/revive/enforce-switch-style/allow-no-default-allow-not-last"]
+[case.config]
+enable = ["enforce-switch-style"]
+enforce-switch-style = { allow-no-default = true, allow-default-not-last = true }
+
+[[case]]
+name = "get-return"
+packages = ["example.com/revive/get-return"]
+[case.config]
+enable = ["get-return"]
+
+[[case]]
+name = "identical-branches"
+packages = ["example.com/revive/identical-branches"]
+[case.config]
+enable = ["identical-branches"]
+
+[[case]]
+name = "identical-ifelseif-branches"
+packages = ["example.com/revive/identical-ifelseif-branches"]
+[case.config]
+enable = ["identical-ifelseif-branches"]
+
+[[case]]
+name = "identical-ifelseif-conditions"
+packages = ["example.com/revive/identical-ifelseif-conditions"]
+[case.config]
+enable = ["identical-ifelseif-conditions"]
+
+[[case]]
+name = "identical-switch-branches"
+packages = ["example.com/revive/identical-switch-branches/default"]
+[case.config]
+enable = ["identical-switch-branches"]
+
+[[case]]
+name = "identical-switch-branches-allow-identical-default"
+packages = ["example.com/revive/identical-switch-branches/allow-identical-default"]
+[case.config]
+enable = ["identical-switch-branches"]
+identical-switch-branches = { allow-identical-default = true }
+
+[[case]]
+name = "identical-switch-conditions"
+packages = ["example.com/revive/identical-switch-conditions"]
+[case.config]
+enable = ["identical-switch-conditions"]
+
+[[case]]
+name = "optimize-operands-order"
+packages = ["example.com/revive/optimize-operands-order"]
+[case.config]
+enable = ["optimize-operands-order"]
+confidence = 0.0
+
+[[case]]
+name = "unnecessary-stmt"
+packages = ["example.com/revive/unnecessary-stmt"]
+[case.config]
+enable = ["unnecessary-stmt"]
+
+[[case]]
+name = "cyclomatic"
+packages = ["example.com/revive/cyclomatic/default"]
+[case.config]
+enable = ["cyclomatic"]
+
+[[case]]
+name = "cyclomatic-max1"
+packages = ["example.com/revive/cyclomatic/max1"]
+[case.config]
+enable = ["cyclomatic"]
+cyclomatic = { max = 1 }
+
+[[case]]
+name = "cyclomatic-max3"
+packages = ["example.com/revive/cyclomatic/max3"]
+[case.config]
+enable = ["cyclomatic"]
+cyclomatic = { max = 3 }
+
+[[case]]
+name = "cognitive-complexity"
+packages = ["example.com/revive/cognitive-complexity/default"]
+[case.config]
+enable = ["cognitive-complexity"]
+
+[[case]]
+name = "cognitive-complexity-max0"
+packages = ["example.com/revive/cognitive-complexity/max0"]
+[case.config]
+enable = ["cognitive-complexity"]
+cognitive-complexity = { max = 0 }
+
+[[case]]
+name = "function-length"
+packages = ["example.com/revive/function-length/default"]
+[case.config]
+enable = ["function-length"]
+
+[[case]]
+name = "function-length-statements"
+packages = ["example.com/revive/function-length/statements"]
+[case.config]
+enable = ["function-length"]
+function-length = { max-statements = 2, max-lines = 100 }
+
+[[case]]
+name = "function-length-lines"
+packages = ["example.com/revive/function-length/lines"]
+[case.config]
+enable = ["function-length"]
+function-length = { max-statements = 100, max-lines = 5 }
+
+[[case]]
+name = "function-length-disabled"
+packages = ["example.com/revive/function-length/disabled"]
+[case.config]
+enable = ["function-length"]
+function-length = { max-statements = 0, max-lines = 0 }
+
+[[case]]
+name = "argument-limit"
+packages = ["example.com/revive/argument-limit/default"]
+[case.config]
+enable = ["argument-limit"]
+
+[[case]]
+name = "argument-limit-max3"
+packages = ["example.com/revive/argument-limit/max3"]
+[case.config]
+enable = ["argument-limit"]
+argument-limit = { max = 3 }
+
+[[case]]
+name = "function-result-limit"
+packages = ["example.com/revive/function-result-limit"]
+[case.config]
+enable = ["function-result-limit"]
+
+[[case]]
+name = "max-control-nesting"
+packages = ["example.com/revive/max-control-nesting/default"]
+[case.config]
+enable = ["max-control-nesting"]
+
+[[case]]
+name = "max-control-nesting-max2"
+packages = ["example.com/revive/max-control-nesting/max2"]
+[case.config]
+enable = ["max-control-nesting"]
+max-control-nesting = { max = 2 }
+
+[[case]]
+name = "max-public-structs"
+packages = ["example.com/revive/max-public-structs/default"]
+[case.config]
+enable = ["max-public-structs"]
+
+[[case]]
+name = "max-public-structs-max1"
+packages = ["example.com/revive/max-public-structs/max1"]
+[case.config]
+enable = ["max-public-structs"]
+max-public-structs = { max = 1 }
+
+[[case]]
+name = "nested-structs"
+packages = ["example.com/revive/nested-structs"]
+[case.config]
+enable = ["nested-structs"]
+
+[[case]]
+name = "add-constant"
+packages = ["example.com/revive/add-constant/default"]
+[case.config]
+enable = ["add-constant"]
+
+[[case]]
+name = "add-constant-options"
+packages = ["example.com/revive/add-constant/options"]
+[case.config]
+enable = ["add-constant"]
+add-constant = { max-lit-count = 2, allow-strs = ['""'], allow-ints = ["0", "1", "2"], allow-floats = ["0.0", "1.0"], ignore-funcs = ['os\.(CreateFile|WriteFile|Chmod|FindProcess)', '\.Println', "ignoredFunc", '\.Info'] }
+
+[[case]]
+name = "confusing-results"
+packages = ["example.com/revive/confusing-results"]
+[case.config]
+enable = ["confusing-results"]
+
+[[case]]
+name = "flag-parameter"
+packages = ["example.com/revive/flag-parameter"]
+[case.config]
+enable = ["flag-parameter"]
+
+[[case]]
+name = "deep-exit"
+packages = ["example.com/revive/deep-exit/nontest", "example.com/revive/deep-exit/test"]
+[case.config]
+enable = ["deep-exit"]
+
+[[case]]
+name = "var-naming"
+packages = ["example.com/revive/var-naming"]
+[case.config]
+enable = ["var-naming"]
+
+[[case]]
+name = "var-naming-lists"
+packages = ["example.com/revive/var-naming/lists"]
+[case.config]
+enable = ["var-naming"]
+var-naming = { allowlist = ["ID"], blocklist = ["VM"] }
+
+[[case]]
+name = "var-naming-skip"
+packages = ["example.com/revive/var-naming/skip"]
+[case.config]
+enable = ["var-naming"]
+var-naming = { allowlist = ["ID"], blocklist = ["VM"], skip-initialism-name-checks = true, upper-case-const = true }
+
+[[case]]
+name = "error-naming"
+packages = ["example.com/revive/error-naming"]
+[case.config]
+enable = ["error-naming"]
+
+[[case]]
+name = "time-naming"
+packages = ["example.com/revive/time-naming"]
+[case.config]
+enable = ["time-naming"]
+
+[[case]]
+name = "epoch-naming"
+packages = ["example.com/revive/epoch-naming"]
+[case.config]
+enable = ["epoch-naming"]
+
+[[case]]
+name = "receiver-naming"
+packages = ["example.com/revive/receiver-naming"]
+[case.config]
+enable = ["receiver-naming"]
+
+[[case]]
+name = "receiver-naming-max-length"
+packages = ["example.com/revive/receiver-naming/maxlength"]
+[case.config]
+enable = ["receiver-naming"]
+receiver-naming = { max-length = 2 }
+
+[[case]]
+name = "unexported-naming"
+packages = ["example.com/revive/unexported-naming"]
+[case.config]
+enable = ["unexported-naming"]
+
+[[case]]
+name = "confusing-naming"
+packages = ["example.com/revive/confusing-naming"]
+[case.config]
+enable = ["confusing-naming"]
+
+[[case]]
+name = "import-shadowing"
+packages = ["example.com/revive/import-shadowing", "example.com/revive/import-shadowing/versions", "example.com/revive/import-shadowing/k8s"]
+[case.config]
+enable = ["import-shadowing"]
+
+[[case]]
+name = "redefines-builtin-id"
+packages = ["example.com/revive/redefines-builtin-id"]
+[case.config]
+enable = ["redefines-builtin-id"]
+
+[[case]]
+name = "redefines-builtin-id-before-go1.21"
+dir = "go1.20"
+packages = ["example.com/revive-go120/redefines-builtin-id"]
+[case.config]
+enable = ["redefines-builtin-id"]
+
+[[case]]
+name = "import-alias-naming"
+packages = ["example.com/revive/import-alias-naming/default"]
+[case.config]
+enable = ["import-alias-naming"]
+
+[[case]]
+name = "import-alias-naming-allow"
+packages = ["example.com/revive/import-alias-naming/custom"]
+[case.config]
+enable = ["import-alias-naming"]
+import-alias-naming = { allow-regex = "^[a-z]+$" }
+
+[[case]]
+name = "import-alias-naming-allow-deny"
+packages = ["example.com/revive/import-alias-naming/multiple"]
+[case.config]
+enable = ["import-alias-naming"]
+import-alias-naming = { allow-regex = "^[a-z][a-z0-9]*$", deny-regex = '^((v\d+)|(v\d+alpha\d+))$' }
+
+[[case]]
+name = "import-alias-naming-deny"
+packages = ["example.com/revive/import-alias-naming/deny"]
+[case.config]
+enable = ["import-alias-naming"]
+import-alias-naming = { deny-regex = '^((v\d+)|(v\d+alpha\d+))$' }
+
+[[case]]
+name = "redundant-import-alias"
+packages = ["example.com/revive/redundant-import-alias"]
+[case.config]
+enable = ["redundant-import-alias"]
+
+[[case]]
+name = "filename-format"
+packages = ["example.com/revive/filename-format/default"]
+[case.config]
+enable = ["filename-format"]
+
+[[case]]
+name = "filename-format-custom"
+packages = ["example.com/revive/filename-format/custom"]
+[case.config]
+enable = ["filename-format"]
+filename-format = { format = "^[A-Za-z][A-Za-z0-9]*.go$" }
+
+[[case]]
+name = "package-naming"
+packages = [
+  "example.com/revive/package-naming/mixedcaps",
+  "example.com/revive/package-naming/underscore",
+  "example.com/revive/package-naming/toplevel",
+  "example.com/revive/package-naming/pkg",
+  "example.com/revive/package-naming/util",
+  "example.com/revive/package-naming/commonstd",
+]
+[case.config]
+enable = ["package-naming"]
+
+[[case]]
+name = "package-naming-regex"
+packages = ["example.com/revive/package-naming/regex", "example.com/revive/package-naming/regexok"]
+[case.config]
+enable = ["package-naming"]
+package-naming = { convention-name-check-regex = "^[a-z][a-zA-Z0-9]*$" }
+
+[[case]]
+name = "package-naming-bad-names"
+packages = ["example.com/revive/package-naming/extra", "example.com/revive/package-naming/userdefined"]
+[case.config]
+enable = ["package-naming"]
+package-naming = { check-extra-bad-name = true, user-defined-bad-names = ["Data"] }
+
+[[case]]
+name = "package-naming-all-std"
+packages = ["example.com/revive/package-naming/allstd", "example.com/revive/package-naming/allstdcommon"]
+[case.config]
+enable = ["package-naming"]
+package-naming = { check-collision-with-all-std = true }
+
+[[case]]
+name = "package-naming-skipped"
+packages = [
+  "example.com/revive/package-naming/skipped/mixedcaps",
+  "example.com/revive/package-naming/skipped/toplevel",
+  "example.com/revive/package-naming/skipped/util",
+  "example.com/revive/package-naming/skipped/http",
+]
+[case.config]
+enable = ["package-naming"]
+package-naming = { skip-convention-name-check = true, skip-top-level-check = true, skip-default-bad-name-check = true, skip-collision-with-common-std = true }
+
+[[case]]
+name = "package-directory-mismatch"
+packages = [
+  "example.com/revive/package-directory-mismatch/api/V1",
+  "example.com/revive/package-directory-mismatch/api/v1v",
+  "example.com/revive/package-directory-mismatch/api/v2",
+  "example.com/revive/package-directory-mismatch/bad",
+  "example.com/revive/package-directory-mismatch/go-good",
+  "example.com/revive/package-directory-mismatch/good",
+  "example.com/revive/package-directory-mismatch/internal",
+  "example.com/revive/package-directory-mismatch/internal/api/v1",
+  "example.com/revive/package-directory-mismatch/internal/api/v2",
+  "example.com/revive/package-directory-mismatch/internal/bad",
+  "example.com/revive/package-directory-mismatch/internal/good",
+  "example.com/revive/package-directory-mismatch/internal/v1",
+  "example.com/revive/package-directory-mismatch/maincmd",
+  "example.com/revive/package-directory-mismatch/normalization/fo-ob_ar",
+  "example.com/revive/package-directory-mismatch/normalization/foo.b_ar",
+  "example.com/revive/package-directory-mismatch/normalization/go-foo-bar",
+  "example.com/revive/package-directory-mismatch/test",
+  "example.com/revive/package-directory-mismatch/wrongtest",
+  "example.com/revive/package-directory-mismatch/rootdir/bad",
+]
+[case.config]
+enable = ["package-directory-mismatch"]
+package-directory-mismatch = { ignore-directories = [] }
+
+[[case]]
+name = "package-directory-mismatch-root"
+dir = "package-directory-mismatch/rootdir/good"
+packages = ["example.com/client"]
+[case.config]
+enable = ["package-directory-mismatch"]
+package-directory-mismatch = { ignore-directories = [] }
+
+[[case]]
+name = "package-directory-mismatch-ignored"
+packages = ["example.com/revive/package-directory-mismatch/testinfo", "example.com/revive/package-directory-mismatch/testutils"]
+[case.config]
+enable = ["package-directory-mismatch"]
+package-directory-mismatch = { ignore-directories = ["testinfo", "testutils"] }
+
+[[case]]
+name = "package-directory-mismatch-default"
+packages = ["example.com/revive/package-directory-mismatch/testinfo"]
+[case.config]
+enable = ["package-directory-mismatch"]
+
+[[case]]
+name = "atomic"
+packages = ["example.com/revive/atomic"]
+[case.config]
+enable = ["atomic"]
+
+[[case]]
+name = "datarace"
+packages = ["example.com/revive/datarace"]
+[case.config]
+enable = ["datarace"]
+
+[[case]]
+name = "datarace-before-go1.22"
+dir = "go1.21"
+packages = ["example.com/revive-go121/datarace"]
+[case.config]
+enable = ["datarace"]
+
+[[case]]
+name = "waitgroup-by-value"
+packages = ["example.com/revive/waitgroup-by-value"]
+[case.config]
+enable = ["waitgroup-by-value"]
+
+[[case]]
+name = "use-waitgroup-go"
+packages = ["example.com/revive/use-waitgroup-go"]
+[case.config]
+enable = ["use-waitgroup-go"]
+
+[[case]]
+name = "forbidden-call-in-wg-go"
+packages = ["example.com/revive/forbidden-call-in-wg-go"]
+[case.config]
+enable = ["forbidden-call-in-wg-go"]
+
+[[case]]
+name = "call-to-gc"
+packages = ["example.com/revive/call-to-gc"]
+[case.config]
+enable = ["call-to-gc"]
+
+[[case]]
+name = "defer"
+packages = ["example.com/revive/defer"]
+[case.config]
+enable = ["defer"]
+
+[[case]]
+name = "defer-loop-disabled"
+packages = ["example.com/revive/defer/loopdisabled"]
+[case.config]
+enable = ["defer"]
+defer = { allow = ["return", "recover", "call-chain", "method-call"] }
+
+[[case]]
+name = "defer-only-loop"
+packages = ["example.com/revive/defer/onlyloop"]
+[case.config]
+enable = ["defer"]
+defer = { allow = ["loop"] }
+
+[[case]]
+name = "range-val-in-closure"
+dir = "go1.21"
+packages = ["example.com/revive-go121/range-val-in-closure"]
+[case.config]
+enable = ["range-val-in-closure"]
+
+[[case]]
+name = "range-val-address"
+dir = "go1.21"
+packages = ["example.com/revive-go121/range-val-address"]
+[case.config]
+enable = ["range-val-address"]
+
+[[case]]
+name = "modifies-parameter"
+packages = ["example.com/revive/modifies-parameter"]
+[case.config]
+enable = ["modifies-parameter"]
+confidence = 0.5
+
+[[case]]
+name = "modifies-value-receiver"
+packages = ["example.com/revive/modifies-value-receiver"]
+[case.config]
+enable = ["modifies-value-receiver"]
+
+[[case]]
+name = "unused-parameter"
+packages = ["example.com/revive/unused-parameter"]
+[case.config]
+enable = ["unused-parameter"]
+
+[[case]]
+name = "unused-parameter-custom-regex"
+packages = ["example.com/revive/unused-parameter/customregex"]
+[case.config]
+enable = ["unused-parameter"]
+unused-parameter = { allow-regex = "^xxx" }
+
+[[case]]
+name = "unused-receiver"
+packages = ["example.com/revive/unused-receiver"]
+[case.config]
+enable = ["unused-receiver"]
+
+[[case]]
+name = "unused-receiver-custom-regex"
+packages = ["example.com/revive/unused-receiver/customregex"]
+[case.config]
+enable = ["unused-receiver"]
+unused-receiver = { allow-regex = "^xxx" }
+
+[[case]]
+name = "unchecked-type-assertion"
+packages = ["example.com/revive/unchecked-type-assertion"]
+[case.config]
+enable = ["unchecked-type-assertion"]
+
+[[case]]
+name = "unchecked-type-assertion-accept-ignored"
+packages = ["example.com/revive/unchecked-type-assertion/acceptignored"]
+[case.config]
+enable = ["unchecked-type-assertion"]
+unchecked-type-assertion = { accept-ignored-assertion-result = true }
+
+[[case]]
+name = "time-equal"
+packages = ["example.com/revive/time-equal"]
+[case.config]
+enable = ["time-equal"]
+
+[[case]]
+name = "inefficient-map-lookup"
+packages = ["example.com/revive/inefficient-map-lookup"]
+[case.config]
+enable = ["inefficient-map-lookup"]
+
+[[case]]
+name = "use-slices-sort"
+packages = ["example.com/revive/use-slices-sort"]
+[case.config]
+enable = ["use-slices-sort"]
+
+[[case]]
+name = "use-slices-concat"
+packages = ["example.com/revive/use-slices-concat"]
+[case.config]
+enable = ["use-slices-concat"]
+
+[[case]]
+name = "marshal-receiver"
+packages = ["example.com/revive/marshal-receiver"]
+[case.config]
+enable = ["marshal-receiver"]
+
+[[case]]
+name = "errorf"
+packages = ["example.com/revive/errorf"]
+[case.config]
+enable = ["errorf"]
+
+[[case]]
+name = "error-strings"
+packages = ["example.com/revive/error-strings"]
+[case.config]
+enable = ["error-strings"]
+confidence = 0.5
+
+[[case]]
+name = "error-strings-custom-functions"
+packages = ["example.com/revive/error-strings/custom"]
+[case.config]
+enable = ["error-strings"]
+confidence = 0.5
+error-strings = { custom-functions = ["pkgErrors.Wrap", " errors.Wrap "] }
+
+[[case]]
+name = "error-return"
+packages = ["example.com/revive/error-return"]
+[case.config]
+enable = ["error-return"]
+
+[[case]]
+name = "unhandled-error"
+packages = ["example.com/revive/unhandled-error/default"]
+[case.config]
+enable = ["unhandled-error"]
+
+[[case]]
+name = "unhandled-error-ignore-list"
+packages = ["example.com/revive/unhandled-error/ignorelist"]
+[case.config]
+enable = ["unhandled-error"]
+unhandled-error = { ignore-list = ["unhandledError1", 'fmt\.Print', 'os\.(Create|WriteFile|Chmod)', 'net\..*', 'bytes\.Buffer\.Write', ' fixtures\.unhandledErrorStruct2\.reterr '] }
+
+[[case]]
+name = "use-errors-new"
+packages = ["example.com/revive/use-errors-new"]
+[case.config]
+enable = ["use-errors-new"]
+
+[[case]]
+name = "use-errors-new-go1.25"
+dir = "use-errors-new/go125"
+packages = ["example.com/useerrorsnew"]
+[case.config]
+enable = ["use-errors-new"]
+
+[[case]]
+name = "use-fmt-print"
+packages = ["example.com/revive/use-fmt-print/default", "example.com/revive/use-fmt-print/redefined"]
+[case.config]
+enable = ["use-fmt-print"]
+
+[[case]]
+name = "unnecessary-format"
+packages = ["example.com/revive/unnecessary-format"]
+[case.config]
+enable = ["unnecessary-format"]
+
+[[case]]
+name = "string-of-int"
+packages = ["example.com/revive/string-of-int"]
+[case.config]
+enable = ["string-of-int"]
+
+[[case]]
+name = "unsecure-url-scheme"
+packages = ["example.com/revive/unsecure-url-scheme"]
+[case.config]
+enable = ["unsecure-url-scheme"]
+
+[[case]]
+name = "context-as-argument"
+packages = ["example.com/revive/context-as-argument/default"]
+[case.config]
+enable = ["context-as-argument"]
+
+[[case]]
+name = "context-as-argument-allow-types-before"
+packages = ["example.com/revive/context-as-argument/allowed"]
+[case.config]
+enable = ["context-as-argument"]
+context-as-argument = { allow-types-before = ["AllowedBeforeType", "AllowedBeforeStruct", "*AllowedBeforePtrStruct", "*testing.T"] }
+
+[[case]]
+name = "context-keys-type"
+packages = ["example.com/revive/context-keys-type"]
+[case.config]
+enable = ["context-keys-type"]
+
+[[case]]
+name = "unexported-return"
+packages = ["example.com/revive/unexported-return/golint", "example.com/revive/unexported-return/foo", "example.com/revive/unexported-return/main"]
+[case.config]
+enable = ["unexported-return"]
+
+[[case]]
+name = "use-any"
+packages = ["example.com/revive/use-any"]
+[case.config]
+enable = ["use-any"]
+
+[[case]]
+name = "use-any-go1.17"
+dir = "use-any/go117"
+packages = ["example.com/useany"]
+[case.config]
+enable = ["use-any"]
+
+[[case]]
+name = "dot-imports"
+packages = ["example.com/revive/dot-imports/default"]
+[case.config]
+enable = ["dot-imports"]
+
+[[case]]
+name = "dot-imports-allowed-packages"
+packages = ["example.com/revive/dot-imports/allowed"]
+[case.config]
+enable = ["dot-imports"]
+dot-imports = { allowed-packages = ["errors", "context", "example.com/revive/dot-imports/lib"] }
+
+[[case]]
+name = "duplicated-imports"
+packages = ["example.com/revive/duplicated-imports"]
+[case.config]
+enable = ["duplicated-imports"]
+
+[[case]]
+name = "imports-blocklist"
+packages = ["example.com/revive/imports-blocklist/wildcards"]
+[case.config]
+enable = ["imports-blocklist"]
+imports-blocklist = { packages = ["github.com/full/match", "wildcard/**/between", "wildcard/backward/**", "**/wildcard/forward", "full"] }
+
+[[case]]
+name = "imports-blacklist"
+packages = ["example.com/revive/imports-blocklist/original"]
+[case.config]
+enable = ["imports-blacklist"]
+imports-blocklist = { packages = ["crypto/md5", "crypto/sha1"] }
+
+[[case]]
+name = "var-declaration"
+packages = ["example.com/revive/var-declaration"]
+[case.config]
+enable = ["var-declaration"]
+
+[[case]]
+name = "increment-decrement"
+packages = ["example.com/revive/increment-decrement"]
+[case.config]
+enable = ["increment-decrement"]
+
+[[case]]
+name = "range"
+packages = ["example.com/revive/range"]
+[case.config]
+enable = ["range"]
+
+[[case]]
+name = "exported"
+packages = [
+  "example.com/revive/exported/golint",
+  "example.com/revive/exported/constblock",
+  "example.com/revive/exported/stutter",
+  "example.com/revive/exported/sort",
+  "example.com/revive/exported/valuespec",
+  "example.com/revive/exported/issue1202",
+  "example.com/revive/exported/issue1231",
+  "example.com/revive/exported/issue1235",
+  "example.com/revive/exported/main",
+]
+[case.config]
+enable = ["exported"]
+
+[[case]]
+name = "exported-check-public-interface"
+packages = ["example.com/revive/exported/issue1002"]
+[case.config]
+enable = ["exported"]
+exported = { check-public-interface = true }
+
+[[case]]
+name = "exported-disable-checks"
+packages = ["example.com/revive/exported/issue1045"]
+[case.config]
+enable = ["exported"]
+exported = { disable-checks-on-constants = true, disable-checks-on-functions = true, disable-checks-on-methods = true, disable-checks-on-types = true, disable-checks-on-variables = true }
+
+[[case]]
+name = "exported-say-repetitive"
+packages = ["example.com/revive/exported/issue519"]
+[case.config]
+enable = ["exported"]
+exported = { say-repetitive-instead-of-stutters = true }
+
+[[case]]
+name = "exported-check-private-receivers"
+packages = ["example.com/revive/exported/issue552"]
+[case.config]
+enable = ["exported"]
+exported = { check-private-receivers = true }
+
+[[case]]
+name = "exported-disable-stuttering-check"
+packages = ["example.com/revive/exported/issue555"]
+[case.config]
+enable = ["exported"]
+exported = { disable-stuttering-check = true }
+
+[[case]]
+name = "package-comments"
+packages = [
+  "example.com/revive/package-comments/crlf",
+  "example.com/revive/package-comments/missing",
+  "example.com/revive/package-comments/wrongform",
+  "example.com/revive/package-comments/block",
+  "example.com/revive/package-comments/directives",
+  "example.com/revive/package-comments/nolint",
+  "example.com/revive/package-comments/main",
+  "example.com/revive/package-comments/multifile",
+  "example.com/revive/package-comments/named",
+  "example.com/revive/package-comments/first",
+]
+[case.config]
+enable = ["package-comments"]
+
+[[case]]
+name = "comment-spacings"
+packages = ["example.com/revive/comment-spacings/default"]
+[case.config]
+enable = ["comment-spacings"]
+
+[[case]]
+name = "comment-spacings-allow-list"
+packages = ["example.com/revive/comment-spacings/custom"]
+[case.config]
+enable = ["comment-spacings"]
+comment-spacings = { allow-list = ["myOwnDirective:", "+optional"] }
+
+[[case]]
+name = "comments-density"
+packages = ["example.com/revive/comments-density/default"]
+[case.config]
+enable = ["comments-density"]
+
+[[case]]
+name = "comments-density-70"
+packages = ["example.com/revive/comments-density/low"]
+[case.config]
+enable = ["comments-density"]
+comments-density = { minimum = 70 }
+
+[[case]]
+name = "comments-density-90"
+packages = ["example.com/revive/comments-density/high"]
+[case.config]
+enable = ["comments-density"]
+comments-density = { minimum = 90 }
+
+[[case]]
+name = "file-header-default"
+packages = ["example.com/revive/file-header/default"]
+[case.config]
+enable = ["file-header"]
+
+[[case]]
+name = "file-header"
+packages = ["example.com/revive/file-header/foobar"]
+[case.config]
+enable = ["file-header"]
+file-header = { header = "foobar" }
+
+[[case]]
+name = "file-header-exact"
+packages = ["example.com/revive/file-header/exact"]
+[case.config]
+enable = ["file-header"]
+file-header = { header = '^\sfoobar$' }
+
+[[case]]
+name = "file-header-pattern"
+packages = ["example.com/revive/file-header/pattern"]
+[case.config]
+enable = ["file-header"]
+file-header = { header = '^\sfoo.*bar$' }
+
+[[case]]
+name = "empty-lines"
+packages = ["example.com/revive/empty-lines"]
+[case.config]
+enable = ["empty-lines"]
+
+[[case]]
+name = "banned-characters-default"
+packages = ["example.com/revive/banned-characters/default"]
+[case.config]
+enable = ["banned-characters"]
+
+[[case]]
+name = "banned-characters"
+packages = ["example.com/revive/banned-characters/banned"]
+[case.config]
+enable = ["banned-characters"]
+banned-characters = { characters = ["Ω", "Σ", "σ", "1"] }
+
+[[case]]
+name = "file-length-limit-default"
+packages = ["example.com/revive/file-length-limit/disabled"]
+[case.config]
+enable = ["file-length-limit"]
+
+[[case]]
+name = "file-length-limit-max0"
+packages = ["example.com/revive/file-length-limit/disabled"]
+[case.config]
+enable = ["file-length-limit"]
+file-length-limit = { max = 0, skip-comments = true, skip-blank-lines = true }
+
+[[case]]
+name = "file-length-limit-max11"
+packages = ["example.com/revive/file-length-limit/max9"]
+[case.config]
+enable = ["file-length-limit"]
+file-length-limit = { max = 11 }
+
+[[case]]
+name = "file-length-limit-skip-comments"
+packages = ["example.com/revive/file-length-limit/skipcomments"]
+[case.config]
+enable = ["file-length-limit"]
+file-length-limit = { max = 8, skip-comments = true }
+
+[[case]]
+name = "file-length-limit-skip-blank-lines"
+packages = ["example.com/revive/file-length-limit/skipblank"]
+[case.config]
+enable = ["file-length-limit"]
+file-length-limit = { max = 7, skip-blank-lines = true }
+
+[[case]]
+name = "file-length-limit-skip-both"
+packages = ["example.com/revive/file-length-limit/skipboth"]
+[case.config]
+enable = ["file-length-limit"]
+file-length-limit = { max = 4, skip-comments = true, skip-blank-lines = true }
+
+[[case]]
+name = "redundant-build-tag"
+packages = ["example.com/revive/redundant-build-tag"]
+[case.config]
+enable = ["redundant-build-tag"]
+
+[[case]]
+name = "redundant-build-tag-go1.20"
+dir = "redundant-build-tag/go1.20"
+packages = ["example.com/revive-go120"]
+[case.config]
+enable = ["redundant-build-tag"]
+
+[[case]]
+name = "redundant-build-tag-go1.21"
+dir = "redundant-build-tag/go1.21"
+packages = ["example.com/revive-go121rbt"]
+[case.config]
+enable = ["redundant-build-tag"]

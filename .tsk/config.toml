@@ -47,6 +47,9 @@ strconcat = false
 [reassign]
 patterns = [".*"]
 
+[revive.dot-imports]
+allowed-packages = ["github.com/alecthomas/types/optional"]
+
 [rowserrcheck]
 packages = ["github.com/jmoiron/sqlx"]
 

@@ -1,0 +1,106 @@
+// Adapted from github.com/mgechev/revive's tests, MIT License.
+
+// Test of redundant if err != nil
+
+// Package fixtures ...
+package ifreturn
+
+func f() error {
+	if err := f(); err != nil {
+		g()
+		return err
+	}
+	return nil
+}
+
+func g() error {
+	/* want `^if-return: redundant if \.\.\.; err != nil check, just return error instead\.$` */ if err := f(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func h() error {
+	if err, x := f(), 1; err != nil {
+		_ = x
+		return err
+	}
+	return nil
+}
+
+func i() error {
+	a := 1
+	if err := f(); err != nil {
+		a++
+		return err
+	}
+	return nil
+}
+
+func j() error {
+	var a error
+	if err := f(); err != nil {
+		return err
+	}
+	return a
+}
+
+func k() error {
+	if err := f(); err != nil {
+		// TODO: handle error better
+		return err
+	}
+	return nil
+}
+
+func l() (interface{}, error) {
+	if err := f(); err != nil {
+		return nil, err
+	}
+	if err := f(); err != nil {
+		return nil, err
+	}
+	if err := f(); err != nil {
+		return nil, err
+	}
+	// Phew, it worked
+	return nil, nil
+}
+
+func m() error {
+	if err := f(); err != nil {
+		return err
+	}
+	if err := f(); err != nil {
+		return err
+	}
+	if err := f(); err != nil {
+		return err
+	}
+	// Phew, it worked again.
+	return nil
+}
+
+func multi() error {
+	a := 0
+	var err error
+	// unreachable code after return statements is intentional to check that it
+	// doesn't confuse the linter.
+	if true {
+		a++
+		/* want `^if-return: redundant if \.\.\.; err != nil check, just return error instead\.$` */ if err := f(); err != nil {
+			return err
+		}
+		return nil
+		a++
+	} else {
+		a++
+		/* want `^if-return: redundant if \.\.\.; err != nil check, just return error instead\.$` */ if err = f(); err != nil {
+			return err
+		}
+		return nil
+		a++
+	}
+	_ = a
+	return nil
+}

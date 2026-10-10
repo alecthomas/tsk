@@ -91,6 +91,7 @@ translation of that code.
 | [`protogetter`](https://github.com/ghostiam/protogetter) | MIT | Reports direct reads from proto message fields when getters should be used. |
 | [`reassign`](https://github.com/curioswitch/go-reassign) | MIT | Checks that package variables are not reassigned. |
 | [`recvcheck`](https://github.com/raeperd/recvcheck) | MIT | Checks for receiver type consistency. |
+| [`revive`](https://github.com/mgechev/revive) | MIT | Fast, configurable, extensible, flexible, and beautiful linter for Go. Drop-in replacement of golint. Rule arguments are typed tables named after their rule, such as `[revive.line-length-limit]`. `struct-tag` includes a port of [`fatih/structtag`](https://github.com/fatih/structtag) v1.2.0, BSD-3-Clause. |
 | [`rowserrcheck`](https://github.com/golangci/rowserrcheck) | MIT | Checks whether Rows.Err of rows is checked successfully. |
 | [`spancheck`](https://github.com/jjti/go-spancheck) | MIT | Checks for mistakes with OpenTelemetry/Census spans. |
 | [`sqlclosecheck`](https://github.com/ryanrolds/sqlclosecheck) | MIT | Checks that sql.Rows, sql.Stmt, sqlx.NamedStmt, pgx.Query are closed. |
@@ -121,7 +122,7 @@ These golangci-lint linters are left out on purpose.
 | `govet` | Its analyzers ship with Go; run `go vet`. |
 | `modernize` | Its analyzers ship with Go 1.26 and later; run `go fix -diff`. |
 | `gofmt`, `goimports` | Formatters rather than linters; run the tools themselves. |
-| `staticcheck`, `revive`, `gocritic`, `gosec` | Large suites of many checks, too big to port; run the tools themselves. |
+| `staticcheck`, `gocritic`, `gosec` | Large suites of many checks, too big to port; run the tools themselves. |
 | `gochecksumtype` | `sumtype` covers the same check. |
 | `arangolint`, `ginkgolinter`, `zerologlint` | Specific to one library. |
 | `unqueryvet` | About 12,000 lines of code, too big to port for one check. |
