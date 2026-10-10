@@ -111,11 +111,20 @@ function parse(list: string): [string, string][] {
     }
     const [correction, typos] = line.split("\t");
     const corrected = toBytes(correction!);
-    for (const typo of typos!.split(",")) {
-      pairs.push([toBytes(typo), corrected]);
+    for (const edit of typos!.split(",")) {
+      pairs.push([toBytes(decodeEdit(edit, correction!)), corrected]);
     }
   }
   return pairs.sort(([a], [b]) => b.length - a.length);
+}
+
+// decodeEdit rebuilds a misspelling from its edit of the correction: a
+// base-36 digit for the prefix they share, the characters that differ, and a
+// base-36 digit for the suffix they share.
+function decodeEdit(edit: string, correction: string): string {
+  const prefix = Number.parseInt(edit[0]!, 36);
+  const suffix = Number.parseInt(edit[edit.length - 1]!, 36);
+  return correction.slice(0, prefix) + edit.slice(1, -1) + correction.slice(correction.length - suffix);
 }
 
 // splitAfter splits text after each newline, as strings.SplitAfter does.
