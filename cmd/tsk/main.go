@@ -52,6 +52,18 @@ type lintCommand struct {
 }
 
 func (l lintCommand) Run(ctx context.Context, log *slog.Logger, c *project.Config, cache *library.Cache, results *lint.Cache) error {
+	dir, err := os.Getwd()
+	if err != nil {
+		return errors.Wrap(err, "find working directory")
+	}
+	// Looking up cached findings starts first, to overlap loading the
+	// project. JSON output and fixes do not use the cache.
+	lookup := None[*lint.Lookup]()
+	if !l.JSON && !l.Fix {
+		started := lint.StartLookup(ctx, results, l.Config, dir)
+		defer started.Close()
+		lookup = Some(started)
+	}
 	p, err := project.Load(ctx, log, *c, cache)
 	if err != nil {
 		return errors.WithStack(err)
@@ -70,12 +82,8 @@ func (l lintCommand) Run(ctx context.Context, log *slog.Logger, c *project.Confi
 		os.Args = append([]string{os.Args[0]}, l.flagArgs()...) //nolint:reassign // multichecker only reads os.Args.
 		multichecker.Main(analyzers...)
 	}
-	dir, err := os.Getwd()
-	if err != nil {
-		return errors.Wrap(err, "find working directory")
-	}
 	analysis := lint.Analysis{Analyzers: analyzers, Recorder: p.Engine().Recorder(), Fingerprint: p.Fingerprint()}
-	code, err := lint.Run(ctx, log, analysis, Some(results), l.Config, dir, os.Stdout, os.Stderr)
+	code, err := lint.Run(ctx, log, analysis, lookup, l.Config, dir, os.Stdout, os.Stderr)
 	if err != nil {
 		return errors.WithStack(err)
 	}

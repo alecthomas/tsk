@@ -18,12 +18,13 @@ import (
 	"golang.org/x/tools/go/packages"
 )
 
-// keyer computes cache keys. A package's key covers the run's scope, its own
-// files, and its dependencies' keys, so a change to any file changes the keys
-// of every package depending on it.
+// keyer computes packages' content keys. A package's content key covers the
+// run's scope, its own files, and its dependencies' content keys, so a change
+// to any file changes the keys of every package depending on it. The scripts
+// are left to cacheKey, so keys can be computed while scripts compile.
 type keyer struct {
-	// scope covers what every package's findings depend on: tsk, the Go
-	// toolchain and environment, and the scripts and their settings.
+	// scope covers what every package's findings depend on besides the
+	// scripts: tsk, and the Go toolchain and environment.
 	scope string
 	// immutable holds directories whose files never change under the same Go
 	// toolchain: GOROOT and the module cache.
@@ -34,7 +35,7 @@ type keyer struct {
 }
 
 // newKeyer reads the Go environment that dir resolves.
-func newKeyer(ctx context.Context, fingerprint string, test bool, dir string) (*keyer, error) {
+func newKeyer(ctx context.Context, test bool, dir string) (*keyer, error) {
 	command := exec.CommandContext(ctx, "go", "env", "-json")
 	command.Dir = dir
 	goEnv, err := command.Output()
@@ -50,7 +51,7 @@ func newKeyer(ctx context.Context, fingerprint string, test bool, dir string) (*
 		return nil, err
 	}
 	h := sha256.New()
-	h.Write(fmt.Appendf(nil, "tsk %s\nscripts %s\ntest %t\n", executable, fingerprint, test))
+	h.Write(fmt.Appendf(nil, "tsk %s\ntest %t\n", executable, test))
 	// GOGCCFLAGS names a fresh temporary directory each time, so it would make
 	// every key unique; its other flags follow from GOOS and GOARCH.
 	delete(env, "GOGCCFLAGS")
@@ -85,8 +86,8 @@ func executableDigest() (string, error) {
 	return hex.EncodeToString(h.Sum(nil)), nil
 }
 
-// key returns a package's key, or false if it cannot be cached, as when it
-// or a dependency failed to load or a file cannot be read.
+// key returns a package's content key, or false if it cannot be cached, as
+// when it or a dependency failed to load or a file cannot be read.
 func (k *keyer) key(pkg *packages.Package) (string, bool) {
 	if key, done := k.keys[pkg.ID]; done {
 		return key, key != ""
@@ -96,11 +97,11 @@ func (k *keyer) key(pkg *packages.Package) (string, bool) {
 	return key, key != ""
 }
 
-// computed returns the key computed for the package with an ID, if it
-// can be cached. Packages loaded again have the same IDs but new values.
-func (k *keyer) computed(id string) (string, bool) {
-	key := k.keys[id]
-	return key, key != ""
+// cacheKey is the key of a package's findings: its content key with the
+// fingerprint of the scripts and their settings.
+func cacheKey(fingerprint, contentKey string) string {
+	sum := sha256.Sum256(fmt.Appendf(nil, "scripts %s\ncontent %s\n", fingerprint, contentKey))
+	return hex.EncodeToString(sum[:])
 }
 
 func (k *keyer) compute(pkg *packages.Package) string {

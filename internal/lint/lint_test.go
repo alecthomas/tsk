@@ -87,15 +87,18 @@ func TestRunCache(t *testing.T) {
 	assert.NoError(t, os.WriteFile(note, []byte("one"), 0o600))
 	cache := lint.NewCache(t.TempDir())
 	config := lint.Config{Packages: []string{"./..."}, Context: -1, Test: true}
+	fingerprint := "one"
 	// run lints as a fresh tsk would, with nothing recorded yet, and returns
 	// its output and how many packages it analysed.
 	run := func(t *testing.T) (string, int32) {
 		t.Helper()
 		var runs atomic.Int32
 		recorder := inputs.NewRecorder()
-		analysis := lint.Analysis{Analyzers: []*analysis.Analyzer{notesAnalyzer(recorder, note, &runs)}, Recorder: recorder, Fingerprint: "test"}
+		analysis := lint.Analysis{Analyzers: []*analysis.Analyzer{notesAnalyzer(recorder, note, &runs)}, Recorder: recorder, Fingerprint: fingerprint}
 		var stdout, stderr bytes.Buffer
-		code, err := lint.Run(t.Context(), slog.New(slog.DiscardHandler), analysis, Some(cache), config, dir, &stdout, &stderr)
+		lookup := lint.StartLookup(t.Context(), cache, config, dir)
+		defer lookup.Close()
+		code, err := lint.Run(t.Context(), slog.New(slog.DiscardHandler), analysis, Some(lookup), config, dir, &stdout, &stderr)
 		assert.NoError(t, err)
 		assert.Equal(t, 3, code)
 		return stderr.String(), runs.Load()
@@ -119,6 +122,10 @@ func TestRunCache(t *testing.T) {
 	output, runs = run(t)
 	assert.Equal(t, "sub/sub.go:3:6: A two (notes)\nsub/sub_test.go:5:6: TestC two (notes)\n", output, "read changed")
 	assert.Equal(t, 1, runs)
+
+	fingerprint = "two"
+	_, runs = run(t)
+	assert.Equal(t, 1, runs, "scripts changed")
 }
 
 func TestRunLintsOnlyTestVariant(t *testing.T) {
@@ -126,7 +133,7 @@ func TestRunLintsOnlyTestVariant(t *testing.T) {
 	assert.NoError(t, err)
 	var stdout, stderr bytes.Buffer
 	config := lint.Config{Packages: []string{"./..."}, Context: -1, Test: true}
-	_, err = lint.Run(t.Context(), slog.New(slog.DiscardHandler), analyzers(filesAnalyzer()), None[*lint.Cache](), config, dir, &stdout, &stderr)
+	_, err = lint.Run(t.Context(), slog.New(slog.DiscardHandler), analyzers(filesAnalyzer()), None[*lint.Lookup](), config, dir, &stdout, &stderr)
 	assert.NoError(t, err)
 	assert.Equal(t, "sub/sub.go:1:9: files=2 (files)\nsub/sub_test.go:1:9: files=2 (files)\n", stderr.String())
 }
@@ -151,7 +158,7 @@ func TestRunText(t *testing.T) {
 		t.Run(test.Name, func(t *testing.T) {
 			var stdout, stderr bytes.Buffer
 			config := lint.Config{Packages: []string{"./..."}, Context: test.Context, Test: true}
-			code, err := lint.Run(t.Context(), slog.New(slog.DiscardHandler), analyzers(funcsAnalyzer()), None[*lint.Cache](), config, dir, &stdout, &stderr)
+			code, err := lint.Run(t.Context(), slog.New(slog.DiscardHandler), analyzers(funcsAnalyzer()), None[*lint.Lookup](), config, dir, &stdout, &stderr)
 			assert.NoError(t, err)
 			assert.Equal(t, 3, code)
 			assert.Equal(t, test.Want, stderr.String())

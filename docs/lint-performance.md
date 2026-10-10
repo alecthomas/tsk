@@ -205,3 +205,39 @@ same-valued members. That order varies between identical runs of either
 version: like upstream, exhaustive orders members by `token.Pos`, and file
 positions depend on the order in which files are parsed.
 
+### 6. Parallel startup
+
+Startup ran one step after another, measured from process start:
+
+| Time | Step |
+|---|---|
+| 0–0.03 s | Process start, `go env GOROOT`, config |
+| 0.03–0.40 s | Compiling and evaluating scripts |
+| 0.40–0.42 s | `go list -m` for the main modules |
+| 0.42–0.61 s | Looking up cached findings: `go env -json`, a metadata `go list`, hashing files |
+| 0.61–1.48 s | Loading packages with syntax |
+
+Only the full load needs the scripts, to know whether any analyzer needs
+facts. The cache lookup needed them only for the fingerprint in each key.
+Keys are now a package's content key, computed without the scripts, hashed
+with the fingerprint.
+
+- Listing the main modules overlaps compiling the scripts.
+- The cache lookup starts before the project loads, so its `go` commands
+  and hashing overlap compiling the scripts too.
+
+The lookup finishes 15 ms after the scripts instead of 0.2 s after them,
+and the first analyzer run starts at 1.15 s instead of 1.48 s.
+
+Starting the full load alongside the lookup, and cancelling it when every
+package hit, was tried first. It hid the lookup on cold runs but made warm
+runs 70 ms slower, so it was dropped.
+
+| | Cold wall | Cold CPU | Warm wall |
+|---|---|---|---|
+| Before | 3.15 s | 18.0 s | 0.47 s |
+| Parallel startup | 2.80 s | 17.5 s | 0.31 s |
+
+Cold runs alternate between binaries and idle 30 s before each. The full
+load, about 0.84 s, is now the only startup step on the critical path.
+

@@ -14,6 +14,7 @@ import (
 
 	"github.com/alecthomas/errors"
 	. "github.com/alecthomas/types/optional"
+	"golang.org/x/sync/errgroup"
 	"golang.org/x/tools/go/analysis"
 
 	"github.com/alecthomas/tsk/internal/compile"
@@ -109,13 +110,21 @@ func Load(ctx context.Context, logger *slog.Logger, c Config, cache *library.Cac
 	if info, err := os.Stat(c.Dir); err == nil && info.IsDir() {
 		sources = append(sources, compile.Source{Name: "project", FS: os.DirFS(c.Dir)})
 	}
-	e, err := engine.Load(ctx, logger, sources)
-	if err != nil {
+	// Listing the main modules runs the go command, so it overlaps compiling
+	// the scripts.
+	var e *engine.Engine
+	var mainModules []string
+	var group errgroup.Group
+	group.Go(func() (err error) {
+		e, err = engine.Load(ctx, logger, sources)
+		return errors.WithStack(err)
+	})
+	group.Go(func() (err error) {
+		mainModules, err = listMainModules(ctx)
+		return err
+	})
+	if err := group.Wait(); err != nil {
 		return nil, errors.WithStack(err)
-	}
-	mainModules, err := listMainModules(ctx)
-	if err != nil {
-		return nil, err
 	}
 	return &Project{config: c, engine: e, file: file, libraries: libraries, mainModules: mainModules}, nil
 }

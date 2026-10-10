@@ -14,7 +14,6 @@ import (
 	"path/filepath"
 	"slices"
 	"strings"
-	"time"
 
 	"github.com/alecthomas/errors"
 	. "github.com/alecthomas/types/optional"
@@ -59,16 +58,16 @@ type related struct {
 
 // Run lints c.Packages in dir, printing text to stderr or JSON to stdout. Exit
 // codes follow multichecker: 1 for errors, 3 for findings in text mode. With
-// a cache, text mode reuses the findings of packages whose inputs are
-// unchanged and analyses only the rest.
-func Run(ctx context.Context, logger *slog.Logger, a Analysis, cache Option[*Cache], c Config, dir string, stdout, stderr io.Writer) (exitCode int, err error) {
+// a lookup of cached findings, text mode reuses the findings of packages
+// whose inputs are unchanged and analyses only the rest.
+func Run(ctx context.Context, logger *slog.Logger, a Analysis, lookup Option[*Lookup], c Config, dir string, stdout, stderr io.Writer) (exitCode int, err error) {
 	if c.JSON {
 		return runJSON(ctx, a, c, dir, stdout, stderr)
 	}
 	findings := map[string][]finding{}
 	var cached cachedRun
-	if store, ok := cache.Get(); ok {
-		cached, err = lookup(ctx, logger, a, store, c, dir)
+	if l, ok := lookup.Get(); ok {
+		cached, err = l.results(ctx, logger, a)
 		if err != nil {
 			return 1, err
 		}
@@ -105,11 +104,8 @@ func Run(ctx context.Context, logger *slog.Logger, a Analysis, cache Option[*Cac
 	if _, err := stderr.Write(failures.Bytes()); err != nil {
 		return 1, errors.Wrap(err, "print failures")
 	}
-	if store, ok := cache.Get(); ok {
-		for _, pkg := range roots {
-			cached.store(store, a.Recorder, pkg, findings[pkg.ID], failed[pkg.ID])
-		}
-		store.trim(time.Now())
+	if l, ok := lookup.Get(); ok {
+		l.save(cached, a.Recorder, roots, findings, failed)
 	}
 	return printFindings(stderr, findings, exitCode, len(failed) > 0, c.Context, dir)
 }
@@ -148,11 +144,38 @@ func load(ctx context.Context, analyzers []*analysis.Analyzer, c Config, dir str
 
 // cachedRun is what the cache held for a run's packages.
 type cachedRun struct {
-	keyer *keyer
+	// keys maps the IDs of cacheable packages to their cache keys.
+	keys map[string]string
 	// hits maps package IDs to their still-valid entries.
 	hits map[string]entry
 	// allHit is set when every package hit.
 	allHit bool
+}
+
+// newCachedRun finds the entries cache holds for linted packages, with the
+// content keys keyer computed and the scripts and settings a uses.
+func newCachedRun(ctx context.Context, logger *slog.Logger, a Analysis, cache *Cache, keyer *keyer, linted []*packages.Package) cachedRun {
+	run := cachedRun{keys: map[string]string{}, hits: map[string]entry{}}
+	for _, pkg := range linted {
+		contentKey, cacheable := keyer.key(pkg)
+		if !cacheable {
+			logger.DebugContext(ctx, "Cache miss", "package", pkg.ID, "reason", "not cacheable")
+			continue
+		}
+		key := cacheKey(a.Fingerprint, contentKey)
+		run.keys[pkg.ID] = key
+		e, stored := cache.load(key)
+		switch {
+		case !stored:
+			logger.DebugContext(ctx, "Cache miss", "package", pkg.ID, "reason", "not stored")
+		case !a.Recorder.Valid(e.Observations):
+			logger.DebugContext(ctx, "Cache miss", "package", pkg.ID, "reason", "files read changed")
+		default:
+			run.hits[pkg.ID] = e
+		}
+	}
+	run.allHit = len(linted) > 0 && len(run.hits) == len(linted)
+	return run
 }
 
 // findings returns the cached findings by package ID.
@@ -174,48 +197,12 @@ func (r cachedRun) complete() bool {
 	return r.allHit
 }
 
-// lookup lists c.Packages without syntax, which is cheap, and finds each
-// one's cached entry.
-func lookup(ctx context.Context, logger *slog.Logger, a Analysis, cache *Cache, c Config, dir string) (cachedRun, error) {
-	start := time.Now()
-	k, err := newKeyer(ctx, a.Fingerprint, c.Test, dir)
-	if err != nil {
-		return cachedRun{}, err
-	}
-	mode := packages.NeedName | packages.NeedFiles | packages.NeedEmbedFiles | packages.NeedImports | packages.NeedDeps | packages.NeedModule
-	initial, err := packages.Load(&packages.Config{Context: ctx, Mode: mode, Dir: dir, Tests: c.Test}, c.Packages...)
-	if err != nil {
-		return cachedRun{}, errors.Wrap(err, "list packages")
-	}
-	run := cachedRun{keyer: k, hits: map[string]entry{}}
-	linted := lintedPackages(initial)
-	for _, pkg := range linted {
-		key, cacheable := k.key(pkg)
-		if !cacheable {
-			logger.DebugContext(ctx, "Cache miss", "package", pkg.ID, "reason", "not cacheable")
-			continue
-		}
-		e, stored := cache.load(key)
-		switch {
-		case !stored:
-			logger.DebugContext(ctx, "Cache miss", "package", pkg.ID, "reason", "not stored")
-		case !a.Recorder.Valid(e.Observations):
-			logger.DebugContext(ctx, "Cache miss", "package", pkg.ID, "reason", "files read changed")
-		default:
-			run.hits[pkg.ID] = e
-		}
-	}
-	run.allHit = len(linted) > 0 && len(run.hits) == len(linted)
-	logger.InfoContext(ctx, "Looked up cached findings", "hits", len(run.hits), "packages", len(linted), "duration", time.Since(start))
-	return run, nil
-}
-
 // store caches a package's findings, unless analysing it failed or it or a
 // dependency has errors, which only a fresh load reports. The entry holds
 // what analysing it and its dependencies read, which feeds its findings
 // directly or through facts.
 func (r cachedRun) store(cache *Cache, recorder *inputs.Recorder, pkg *packages.Package, findings []finding, failed bool) {
-	key, ok := r.keyer.computed(pkg.ID)
+	key, ok := r.keys[pkg.ID]
 	if !ok || failed {
 		return
 	}
