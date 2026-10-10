@@ -27,6 +27,7 @@ translation of that code.
 | [`bidichk`](https://github.com/breml/bidichk) | MIT | Check for dangerous unicode character sequences. |
 | [`bodyclose`](https://github.com/timakin/bodyclose) | MIT | Check whether HTTP response bodies are closed. |
 | [`canonicalheader`](https://github.com/golangci/canonicalheader) | MIT | Check that net/http.Header keys are canonical. |
+| [`contextcheck`](https://github.com/kkHAIKE/contextcheck) | Apache-2.0 | Check whether the function uses a non-inherited context. |
 | [`copyloopvar`](https://github.com/karamaru-alpha/copyloopvar) | MIT | Detect places where loop variables are copied. |
 | [`cyclop`](https://github.com/bkielbasa/cyclop) | MIT | Checks function and package cyclomatic complexity. |
 | [`decorder`](https://gitlab.com/bosi/decorder) | MIT | Check declaration order and count of types, constants, variables and functions. |
