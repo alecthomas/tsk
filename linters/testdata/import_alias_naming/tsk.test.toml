@@ -1,0 +1,22 @@
+[[case]]
+name = "default"
+packages = ["example.com/revive/import-alias-naming/default"]
+
+[[case]]
+name = "allow"
+packages = ["example.com/revive/import-alias-naming/custom"]
+[case.config]
+allow-regex = "^[a-z]+$"
+
+[[case]]
+name = "allow-deny"
+packages = ["example.com/revive/import-alias-naming/multiple"]
+[case.config]
+allow-regex = "^[a-z][a-z0-9]*$"
+deny-regex = "^((v\\d+)|(v\\d+alpha\\d+))$"
+
+[[case]]
+name = "deny"
+packages = ["example.com/revive/import-alias-naming/deny"]
+[case.config]
+deny-regex = "^((v\\d+)|(v\\d+alpha\\d+))$"

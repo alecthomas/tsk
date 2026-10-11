@@ -1,3 +1,5 @@
+import { defineAnalyzer } from "tsk";
+import { runRule } from "../lint";
 import type * as ast from "go/ast";
 import type * as token from "go/token";
 import { type Visitor, walk } from "../astutils";
@@ -66,3 +68,14 @@ function apply(file: File): Failure[] {
   walk(visitor, file.ast);
   return failures;
 }
+
+export default defineAnalyzer({
+  name: "empty_block",
+  doc: "Warns on empty code blocks",
+  url: "https://github.com/mgechev/revive/blob/v1.17.0/RULES_DESCRIPTIONS.md#empty-block",
+  group: "revive",
+  runDespiteErrors: true,
+  run(pass) {
+    runRule(pass, create());
+  },
+});

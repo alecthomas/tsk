@@ -1,3 +1,5 @@
+import { defineAnalyzer } from "tsk";
+import { runRule } from "../lint";
 import type * as ast from "go/ast";
 import * as token from "go/token";
 import { type Visitor, walk } from "../astutils";
@@ -67,3 +69,15 @@ function apply(file: File): Failure[] {
   walk(visitor, file.ast);
   return failures;
 }
+
+export default defineAnalyzer({
+  name: "unexported_naming",
+  doc: "Warns on wrongly named un-exported symbols",
+  url: "https://github.com/mgechev/revive/blob/v1.17.0/RULES_DESCRIPTIONS.md#unexported-naming",
+  group: "revive",
+  enabledByDefault: false,
+  runDespiteErrors: true,
+  run(pass) {
+    runRule(pass, create());
+  },
+});

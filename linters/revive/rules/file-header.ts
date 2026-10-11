@@ -1,3 +1,5 @@
+import { defineAnalyzer } from "tsk";
+import { runRule } from "../lint";
 import type { DeepReadonly, Failure, File, Rule } from "../lint";
 
 export const name = "file-header";
@@ -41,3 +43,16 @@ export function create(options: DeepReadonly<Options>): Rule {
     },
   };
 }
+
+export default defineAnalyzer<Options>({
+  name: "file_header",
+  doc: "Header which each file should have.",
+  url: "https://github.com/mgechev/revive/blob/v1.17.0/RULES_DESCRIPTIONS.md#file-header",
+  group: "revive",
+  enabledByDefault: false,
+  runDespiteErrors: true,
+  config: defaults,
+  run(pass) {
+    runRule(pass, create(pass.config));
+  },
+});

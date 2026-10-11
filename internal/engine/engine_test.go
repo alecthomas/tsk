@@ -7,6 +7,7 @@ import (
 	"log/slog"
 	"path/filepath"
 	"regexp"
+	"slices"
 	"strconv"
 	"strings"
 	"sync"
@@ -291,7 +292,7 @@ func TestDisableAllEnable(t *testing.T) {
 	}
 	assert.Equal(t, []string{"chatty"}, names)
 	_, err = e.Analyzers(config.File{DisableAll: true, Enable: []string{"missing"}}, nil)
-	assert.EqualError(t, err, "enable names unknown analyzer missing")
+	assert.EqualError(t, err, "enable names unknown analyzer or group missing")
 }
 
 const ssaScript = `import { defineAnalyzer } from "tsk";
@@ -551,6 +552,9 @@ func TestNolintOption(t *testing.T) {
 	}{
 		{Name: "Suppressed", Source: "package example //nolint\n"},
 		{Name: "OptedOut", Definition: "nolint: false,", Source: "package example /* want \"file\" */ //nolint\n"},
+		{Name: "Named", Source: "package example //nolint:other,files\n"},
+		{Name: "OtherNamed", Source: "package example /* want \"file\" */ //nolint:other\n"},
+		{Name: "Group", Definition: `group: "grp",`, Source: "package example //nolint:grp\n"},
 	}
 	for _, test := range tests {
 		t.Run(test.Name, func(t *testing.T) {
@@ -584,6 +588,7 @@ func TestReportFilters(t *testing.T) {
 		{Name: "LintGenerated", File: config.File{LintGenerated: true}, Generated: generatedHeader + reported},
 		{Name: "NoTests", File: config.File{NoTests: true}, Generated: generatedHeader + silent, Test: silent},
 		{Name: "SkipTests", File: config.File{SkipTests: []string{"files"}}, Generated: generatedHeader + silent, Test: silent},
+		{Name: "SkipTestsGroup", Definition: `group: "grp",`, File: config.File{SkipTests: []string{"grp"}}, Generated: generatedHeader + silent, Test: silent},
 		{Name: "AnalyzerSkipsTests", Definition: "tests: false,", Generated: generatedHeader + silent, Test: silent},
 	}
 	for _, test := range tests {
@@ -635,16 +640,88 @@ func TestExclusions(t *testing.T) {
 	analysistest.Run(t, dir, analyzers[0], "example")
 }
 
+// An exclusion naming an analyzer's group applies to the analyzer.
+func TestExclusionNamesGroup(t *testing.T) {
+	e := load(t, map[string]string{"files.ts": filesScript(`group: "grp",`)})
+	dir, cleanup, err := analysistest.WriteFiles(map[string]string{
+		"example/plain.go":  `package example // want "file"` + "\n",
+		"example/bypath.go": "package example\n",
+	})
+	assert.NoError(t, err)
+	defer cleanup()
+	file := config.File{Root: filepath.Join(dir, "src"), Exclude: []config.Exclusion{{Linters: []string{"grp"}, Path: `bypath`}}}
+	analyzers, err := e.Analyzers(file, nil)
+	assert.NoError(t, err)
+	analysistest.Run(t, dir, analyzers[0], "example")
+}
+
+// groupScript defines an analyzer, with the given extra properties, that
+// reports nothing.
+func groupScript(name, definition string) string {
+	return `import { defineAnalyzer } from "tsk";
+export default defineAnalyzer({ name: "` + name + `", doc: "member", ` + definition + ` run() {} });
+`
+}
+
+// An analyzer off by default runs only when the config names it or its group.
+func TestGroupsAndDefaults(t *testing.T) {
+	e := load(t, map[string]string{
+		"a.ts": groupScript("a", `group: "g",`),
+		"b.ts": groupScript("b", ""),
+		"c.ts": groupScript("c", `group: "g", enabledByDefault: false,`),
+	})
+	assert.Equal(t, []string{"g"}, e.Groups())
+	tests := []struct {
+		Name    string
+		File    config.File
+		Enabled []string
+	}{
+		{Name: "Default", Enabled: []string{"a", "b"}},
+		{Name: "EnableGroup", File: config.File{Enable: []string{"g"}}, Enabled: []string{"a", "b", "c"}},
+		{Name: "DisableGroup", File: config.File{Disable: []string{"g"}}, Enabled: []string{"b"}},
+		{Name: "EnableAll", File: config.File{EnableAll: true}, Enabled: []string{"a", "b", "c"}},
+	}
+	for _, test := range tests {
+		t.Run(test.Name, func(t *testing.T) {
+			analyzers, err := e.Analyzers(test.File, nil)
+			assert.NoError(t, err)
+			var names []string
+			for _, analyzer := range analyzers {
+				names = append(names, analyzer.Name)
+			}
+			slices.Sort(names)
+			assert.Equal(t, test.Enabled, names)
+		})
+	}
+}
+
+func TestInvalidGroups(t *testing.T) {
+	tests := []struct {
+		Name    string
+		Scripts map[string]string
+		Error   string
+	}{
+		{Name: "NotIdentifier", Scripts: map[string]string{"a.ts": groupScript("a", `group: "bad-name",`)}, Error: `group "bad-name" is not an identifier`},
+		{Name: "AnalyzerName", Scripts: map[string]string{"a.ts": groupScript("a", `group: "b",`), "b.ts": groupScript("b", "")}, Error: "group b has the name of an analyzer"},
+	}
+	for _, test := range tests {
+		t.Run(test.Name, func(t *testing.T) {
+			_, err := engine.Load(context.Background(), slog.New(slog.DiscardHandler), []compile.Source{{Name: "project", FS: mapFS(test.Scripts)}})
+			assert.EqualError(t, err, test.Error)
+		})
+	}
+}
+
 func TestExclusionNamesUnknownAnalyzer(t *testing.T) {
 	e := load(t, map[string]string{"files.ts": filesScript("")})
 	_, err := e.Analyzers(config.File{Exclude: []config.Exclusion{{Linters: []string{"missing"}, Text: "x"}}}, nil)
-	assert.EqualError(t, err, "exclude[0].linters names unknown analyzer missing")
+	assert.EqualError(t, err, "exclude[0].linters names unknown analyzer or group missing")
 }
 
 func TestSkipTestsNamesUnknownAnalyzer(t *testing.T) {
 	e := load(t, map[string]string{"files.ts": filesScript("")})
 	_, err := e.Analyzers(config.File{SkipTests: []string{"missing"}}, nil)
-	assert.EqualError(t, err, "skip-tests names unknown analyzer missing")
+	assert.EqualError(t, err, "skip-tests names unknown analyzer or group missing")
 }
 
 const documentedScript = `import { defineAnalyzer } from "tsk";

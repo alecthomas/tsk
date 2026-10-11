@@ -1,0 +1,24 @@
+[[case]]
+name = "default"
+packages = ["example.com/revive/function-length/default"]
+
+[[case]]
+name = "statements"
+packages = ["example.com/revive/function-length/statements"]
+[case.config]
+max-statements = 2
+max-lines = 100
+
+[[case]]
+name = "lines"
+packages = ["example.com/revive/function-length/lines"]
+[case.config]
+max-statements = 100
+max-lines = 5
+
+[[case]]
+name = "disabled"
+packages = ["example.com/revive/function-length/disabled"]
+[case.config]
+max-statements = 0
+max-lines = 0

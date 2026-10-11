@@ -1,3 +1,5 @@
+import { defineAnalyzer } from "tsk";
+import { runRule } from "../lint";
 import type * as ast from "go/ast";
 import * as token from "go/token";
 import * as types from "go/types";
@@ -94,3 +96,14 @@ function isZeroValue(value: string, typ: ast.Expr): boolean {
   }
   return zeroLiterals.has(value);
 }
+
+export default defineAnalyzer({
+  name: "var_declaration",
+  doc: "Reduces redundancies around variable declaration.",
+  url: "https://github.com/mgechev/revive/blob/v1.17.0/RULES_DESCRIPTIONS.md#var-declaration",
+  group: "revive",
+  runDespiteErrors: true,
+  run(pass) {
+    runRule(pass, create());
+  },
+});

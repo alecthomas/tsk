@@ -1,3 +1,5 @@
+import { defineAnalyzer } from "tsk";
+import { runRule } from "../lint";
 import * as ast from "go/ast";
 import * as token from "go/token";
 import { unquote } from "../../internal/strconv";
@@ -109,3 +111,15 @@ function lintErrorString(s: string): number | undefined {
   }
   return capConfidence;
 }
+
+export default defineAnalyzer<Options>({
+  name: "error_strings",
+  doc: "Conventions around error strings.",
+  url: "https://github.com/mgechev/revive/blob/v1.17.0/RULES_DESCRIPTIONS.md#error-strings",
+  group: "revive",
+  runDespiteErrors: true,
+  config: defaults,
+  run(pass) {
+    runRule(pass, create(pass.config));
+  },
+});

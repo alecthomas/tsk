@@ -1,0 +1,22 @@
+[[case]]
+name = "default"
+packages = ["example.com/revive/enforce-switch-style/default"]
+
+[[case]]
+name = "allow-no-default"
+packages = ["example.com/revive/enforce-switch-style/allow-no-default"]
+[case.config]
+allow-no-default = true
+
+[[case]]
+name = "allow-not-last"
+packages = ["example.com/revive/enforce-switch-style/allow-not-last"]
+[case.config]
+allow-default-not-last = true
+
+[[case]]
+name = "allow-no-default-allow-not-last"
+packages = ["example.com/revive/enforce-switch-style/allow-no-default-allow-not-last"]
+[case.config]
+allow-no-default = true
+allow-default-not-last = true

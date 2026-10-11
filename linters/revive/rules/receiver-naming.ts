@@ -1,3 +1,5 @@
+import { defineAnalyzer } from "tsk";
+import { runRule } from "../lint";
 import type * as ast from "go/ast";
 import { receiverType } from "../astutils";
 import type { DeepReadonly, Failure, File, Rule } from "../lint";
@@ -60,3 +62,15 @@ export function create(options: DeepReadonly<Options>): Rule {
     },
   };
 }
+
+export default defineAnalyzer<Options>({
+  name: "receiver_naming",
+  doc: "Conventions around the naming of receivers.",
+  url: "https://github.com/mgechev/revive/blob/v1.17.0/RULES_DESCRIPTIONS.md#receiver-naming",
+  group: "revive",
+  runDespiteErrors: true,
+  config: defaults,
+  run(pass) {
+    runRule(pass, create(pass.config));
+  },
+});

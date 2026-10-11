@@ -1,3 +1,5 @@
+import { defineAnalyzer } from "tsk";
+import { runRule } from "../lint";
 import type * as ast from "go/ast";
 import * as constant from "go/constant";
 import * as token from "go/token";
@@ -233,3 +235,15 @@ function parseDecimalInteger(bl: ast.BasicLit): [bigint, string | null] {
   }
   return [value, null];
 }
+
+export default defineAnalyzer({
+  name: "time_date",
+  doc: "Reports bad usage of `time.Date`.",
+  url: "https://github.com/mgechev/revive/blob/v1.17.0/RULES_DESCRIPTIONS.md#time-date",
+  group: "revive",
+  enabledByDefault: false,
+  runDespiteErrors: true,
+  run(pass) {
+    runRule(pass, create());
+  },
+});

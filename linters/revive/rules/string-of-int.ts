@@ -1,3 +1,5 @@
+import { defineAnalyzer } from "tsk";
+import { runRule } from "../lint";
 import * as ast from "go/ast";
 import * as types from "go/types";
 import type { Failure, File, Rule } from "../lint";
@@ -42,3 +44,15 @@ function isIntExpression(file: File, es: readonly (ast.Expr | null)[]): boolean 
   const kind = ut.kind();
   return kind !== types.Byte && kind !== types.Rune && kind !== types.UntypedRune;
 }
+
+export default defineAnalyzer({
+  name: "string_of_int",
+  doc: "Warns on suspicious casts from int to string",
+  url: "https://github.com/mgechev/revive/blob/v1.17.0/RULES_DESCRIPTIONS.md#string-of-int",
+  group: "revive",
+  enabledByDefault: false,
+  runDespiteErrors: true,
+  run(pass) {
+    runRule(pass, create());
+  },
+});

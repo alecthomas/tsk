@@ -7,6 +7,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"go/token"
 	"log/slog"
 	"maps"
 	"reflect"
@@ -75,6 +76,9 @@ func Load(ctx context.Context, logger *slog.Logger, sources []compile.Source) (*
 		}
 		engine.metadata = append(engine.metadata, metadata)
 	}
+	if err := engine.checkGroups(); err != nil {
+		return nil, err
+	}
 	engine.pool.put(bootstrap)
 	engine.pool.warm()
 	logger.InfoContext(ctx, "Loaded analyzers", "analyzers", engine.Names(), "duration", time.Since(start))
@@ -90,13 +94,63 @@ func (e *Engine) Names() []string {
 	return names
 }
 
+// Linters returns what selecting each script analyzer depends on, in
+// registration order.
+func (e *Engine) Linters() []config.Linter {
+	linters := make([]config.Linter, len(e.metadata))
+	for i, metadata := range e.metadata {
+		linters[i] = linter(metadata)
+	}
+	return linters
+}
+
+func linter(metadata vm.Metadata) config.Linter {
+	return config.Linter{Name: metadata.Name, Group: metadata.Group, Default: metadata.EnabledByDefault}
+}
+
+// Groups returns the analyzers' groups, sorted.
+func (e *Engine) Groups() []string {
+	var groups []string
+	for _, metadata := range e.metadata {
+		if metadata.Group != "" && !slices.Contains(groups, metadata.Group) {
+			groups = append(groups, metadata.Group)
+		}
+	}
+	slices.Sort(groups)
+	return groups
+}
+
+// Selectable returns every name the config may select by: the analyzers'
+// and their groups'.
+func (e *Engine) Selectable() []string {
+	return slices.Concat(e.Names(), e.Groups())
+}
+
+// checkGroups requires group names to be identifiers, like analyzer names,
+// and distinct from them, since lists and //nolint comments mix the two.
+func (e *Engine) checkGroups() error {
+	names := e.Names()
+	for _, group := range e.Groups() {
+		if !token.IsIdentifier(group) {
+			return errors.Errorf("group %q is not an identifier", group)
+		}
+		if slices.Contains(names, group) {
+			return errors.Errorf("group %s has the name of an analyzer", group)
+		}
+	}
+	return nil
+}
+
 // Describe documents every analyzer in registration order. Source holds the
 // defining module, such as "project/nopanic.ts", and Enabled is unset:
 // both depend on the project.
 func (e *Engine) Describe() ([]docs.Analyzer, error) {
 	described := make([]docs.Analyzer, 0, len(e.metadata))
 	for _, metadata := range e.metadata {
-		analyzer := docs.Analyzer{Name: metadata.Name, Doc: metadata.Doc, URL: metadata.URL, Source: metadata.Module}
+		analyzer := docs.Analyzer{
+			Name: metadata.Name, Doc: metadata.Doc, URL: metadata.URL, Source: metadata.Module,
+			Group: metadata.Group, EnabledByDefault: metadata.EnabledByDefault,
+		}
 		if metadata.Schema >= 0 {
 			var defaults any
 			if err := json.Unmarshal(metadata.Defaults, &defaults); err != nil {
@@ -167,8 +221,9 @@ func (e *Engine) Analyzers(file config.File, mainModules []string) ([]*analysis.
 			Analyzers: map[string]*analysis.Analyzer{},
 			Recorder:  e.recorder,
 		}
-		skipTests := metadata.SkipTests || file.NoTests || slices.Contains(file.SkipTests, metadata.Name)
-		filter := newFilter(metadata.Name, skipTests, !file.LintGenerated, excluder, file.Root)
+		skipTests := metadata.SkipTests || file.NoTests || slices.Contains(file.SkipTests, metadata.Name) ||
+			(metadata.Group != "" && slices.Contains(file.SkipTests, metadata.Group))
+		filter := newFilter(metadata.Name, metadata.Group, skipTests, !file.LintGenerated, excluder, file.Root)
 		environments[metadata.Name] = environment
 		analyzers[metadata.Name] = e.analyzer(metadata, environment, filter, mainModules, timer)
 	}
@@ -188,7 +243,7 @@ func (e *Engine) Analyzers(file config.File, mainModules []string) ([]*analysis.
 	}
 	var enabled []*analysis.Analyzer
 	for _, metadata := range e.metadata {
-		if file.Enabled(metadata.Name) {
+		if file.Enabled(linter(metadata)) {
 			enabled = append(enabled, analyzers[metadata.Name])
 		}
 	}
@@ -199,12 +254,12 @@ func (e *Engine) Analyzers(file config.File, mainModules []string) ([]*analysis.
 }
 
 func (e *Engine) checkNames(file config.File) error {
-	known := e.Names()
 	for _, name := range slices.Sorted(maps.Keys(file.Tables)) {
-		if !slices.Contains(known, name) {
+		if !slices.Contains(e.Names(), name) {
 			return errors.Errorf("table %s names an unknown analyzer", name)
 		}
 	}
+	known := e.Selectable()
 	lists := map[string][]string{"disable": file.Disable, "enable": file.Enable, "skip-tests": file.SkipTests}
 	for i, exclusion := range file.Exclude {
 		lists[fmt.Sprintf("exclude[%d].linters", i)] = exclusion.Linters
@@ -212,7 +267,7 @@ func (e *Engine) checkNames(file config.File) error {
 	for key, names := range lists {
 		for _, name := range names {
 			if !slices.Contains(known, name) {
-				return errors.Errorf("%s names unknown analyzer %s", key, name)
+				return errors.Errorf("%s names unknown analyzer or group %s", key, name)
 			}
 		}
 	}
@@ -322,7 +377,11 @@ func (e *Engine) analyzer(metadata vm.Metadata, environment *vm.Environment, fil
 		filtered := *pass
 		report := pass.Report
 		if !metadata.IgnoresNolint {
-			report = nolint.Reporter(pass, metadata.Name)
+			names := []string{metadata.Name}
+			if metadata.Group != "" {
+				names = append(names, metadata.Group)
+			}
+			report = nolint.Reporter(pass, names...)
 		}
 		filtered.Report = filter.reporter(pass, report)
 		run := *environment

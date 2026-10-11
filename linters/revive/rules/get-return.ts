@@ -1,3 +1,5 @@
+import { defineAnalyzer } from "tsk";
+import { runRule } from "../lint";
 import type * as ast from "go/ast";
 import { getTypeNames } from "../astutils";
 import type { Failure, File, Rule } from "../lint";
@@ -46,3 +48,15 @@ function isHTTPHandler(params: ast.FieldList | null): boolean {
   const typeNames = getTypeNames(params) ?? [];
   return typeNames.length >= 2 && typeNames[0] === "http.ResponseWriter" && typeNames[1] === "*http.Request";
 }
+
+export default defineAnalyzer({
+  name: "get_return",
+  doc: "Warns on getters that do not yield any result",
+  url: "https://github.com/mgechev/revive/blob/v1.17.0/RULES_DESCRIPTIONS.md#get-return",
+  group: "revive",
+  enabledByDefault: false,
+  runDespiteErrors: true,
+  run(pass) {
+    runRule(pass, create());
+  },
+});

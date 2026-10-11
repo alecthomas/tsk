@@ -1,0 +1,21 @@
+[[case]]
+name = "default"
+packages = ["example.com/revive/struct-tag"]
+
+[[case]]
+name = "before-go1.24"
+dir = "go1.23"
+packages = ["example.com/revive-go123"]
+
+[[case]]
+name = "user-options"
+packages = ["example.com/revive/struct-tag/useroptions"]
+[case.config]
+user-defined-options = { json = ["inline", "outline"], bson = ["gnu"], url = ["myURLOption"], datastore = ["myDatastoreOption"], mapstructure = ["myMapstructureOption"], validate = ["displayName"], toml = ["unknown"], spanner = ["mySpannerOption"], codec = ["myCodecOption"], cbor = ["myCborOption"] }
+
+[[case]]
+name = "omitted-tags"
+packages = ["example.com/revive/struct-tag/omit"]
+[case.config]
+omitted-tags = ["validate", "toml"]
+user-defined-options = { json = ["inline", "outline"], bson = ["gnu"], url = ["myURLOption"], datastore = ["myDatastoreOption"], mapstructure = ["myMapstructureOption"], spanner = ["mySpannerOption"] }

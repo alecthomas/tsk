@@ -1,3 +1,5 @@
+import { defineAnalyzer } from "tsk";
+import { runRule } from "../lint";
 import type * as ast from "go/ast";
 import * as token from "go/token";
 import { goFmt, type Visitor, walk } from "../astutils";
@@ -68,3 +70,16 @@ function doesFallthrough(stmts: readonly (ast.Stmt | null)[]): boolean {
   const last = stmts[stmts.length - 1];
   return last?.$type === "BranchStmt" && (last as ast.BranchStmt).tok === token.FALLTHROUGH;
 }
+
+export default defineAnalyzer<Options>({
+  name: "identical_switch_branches",
+  doc: "Spots `switch` with identical branches.",
+  url: "https://github.com/mgechev/revive/blob/v1.17.0/RULES_DESCRIPTIONS.md#identical-switch-branches",
+  group: "revive",
+  enabledByDefault: false,
+  runDespiteErrors: true,
+  config: defaults,
+  run(pass) {
+    runRule(pass, create(pass.config));
+  },
+});

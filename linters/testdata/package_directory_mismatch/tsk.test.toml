@@ -1,0 +1,22 @@
+[[case]]
+name = "default"
+packages = ["example.com/revive/package-directory-mismatch/api/V1", "example.com/revive/package-directory-mismatch/api/v1v", "example.com/revive/package-directory-mismatch/api/v2", "example.com/revive/package-directory-mismatch/bad", "example.com/revive/package-directory-mismatch/go-good", "example.com/revive/package-directory-mismatch/good", "example.com/revive/package-directory-mismatch/internal", "example.com/revive/package-directory-mismatch/internal/api/v1", "example.com/revive/package-directory-mismatch/internal/api/v2", "example.com/revive/package-directory-mismatch/internal/bad", "example.com/revive/package-directory-mismatch/internal/good", "example.com/revive/package-directory-mismatch/internal/v1", "example.com/revive/package-directory-mismatch/maincmd", "example.com/revive/package-directory-mismatch/normalization/fo-ob_ar", "example.com/revive/package-directory-mismatch/normalization/foo.b_ar", "example.com/revive/package-directory-mismatch/normalization/go-foo-bar", "example.com/revive/package-directory-mismatch/test", "example.com/revive/package-directory-mismatch/wrongtest", "example.com/revive/package-directory-mismatch/rootdir/bad"]
+[case.config]
+ignore-directories = []
+
+[[case]]
+name = "root"
+dir = "rootdir/good"
+packages = ["example.com/client"]
+[case.config]
+ignore-directories = []
+
+[[case]]
+name = "ignored"
+packages = ["example.com/revive/package-directory-mismatch/testinfo", "example.com/revive/package-directory-mismatch/testutils"]
+[case.config]
+ignore-directories = ["testinfo", "testutils"]
+
+[[case]]
+name = "default"
+packages = ["example.com/revive/package-directory-mismatch/testinfo"]

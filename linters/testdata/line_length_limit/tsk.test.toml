@@ -1,0 +1,6 @@
+[[case]]
+name = "default"
+packages = ["example.com/revive/line-length-limit"]
+[case.config]
+max = 60
+excludes = ["https://"]

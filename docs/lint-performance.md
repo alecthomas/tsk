@@ -241,3 +241,61 @@ runs 70 ms slower, so it was dropped.
 Cold runs alternate between binaries and idle 30 s before each. The full
 load, about 0.84 s, is now the only startup step on the critical path.
 
+### 7. Wrapping per pass
+
+The ported vet analyzers took the library from 59 to 104 linters. A cold
+run of this repository now takes 4.4–5.1 s wall and 28–29 s CPU, from three
+runs into fresh caches.
+
+Each analyzer pass wraps Go values in a scope of its own, discarded when
+the pass ends. Splitting revive's 23 default rules into one analyzer each
+cost 37% more CPU, which pointed at wrapping repeated across passes.
+Temporary counters in the bridge's `object`, and a CPU and allocation
+profile, measured how much a cold run spends on it. All three runs gave the
+same counts:
+
+| Wrapper requests | Count |
+|---|---|
+| All | 10.2 million |
+| Hits in the pass's scope | 6.76 million (66%) |
+| New wrappers for values with identity | 2.63 million |
+| …of values an earlier pass had wrapped | 2.02 million (77%) |
+| Values without identity, always new | 0.82 million |
+
+| | CPU | Allocated |
+|---|---|---|
+| Creating and caching wrappers (`object`) | 1.5 s (6%) | 0.69 GB (10%) |
+| …of which recording them in the scope's maps | 0.56 s | 0.34 GB |
+| All wrapping, including arrays and primitives | 2.0 s (8%) | 1.1 GB (17%) |
+| Heap growth (`madvise`) | 8.7 s (35%) | |
+| GC marking | 3.6 s (14%) | |
+
+The figures exclude the counters' own 0.3 s and 45 MB.
+
+- Wrappers are about a tenth of allocation, so in proportion they drive
+  about 1.2 s of the GC and heap-growth time, for about 2.7 s in all.
+- Sharing wrappers across passes would at best avoid the 77% of new
+  wrappers that repeat an earlier pass's, roughly 2 s of CPU. Wrappers
+  belong to one runtime, so only passes on the same runtime could share
+  them, and the real saving would be smaller.
+- Heap growth is still the largest single cost, as in iteration 2.
+
+### 8. Revive's rules as separate linters
+
+Revive's rules became 104 linters in a group, of which revive's 23 default
+rules run by default. Cold runs of this repository, alternating with the
+previous commit's binary and linters and idle 30 s before each, show no
+difference:
+
+| | Wall | CPU | Peak memory |
+|---|---|---|---|
+| One revive linter | 6.1–6.3 s | 31.0–31.4 s | 3.9–4.1 GB |
+| A linter per rule | 6.0–6.1 s | 31.2–31.6 s | 4.0–4.1 GB |
+
+Run alone, the 23 default rules as separate linters had cost about 1 s more
+CPU than one linter running them, mostly from wrapping per pass. Within a
+full run that is lost in run-to-run variation. Recognising generated files
+from the syntax tree, rather than by reading each file, also removed revive's
+source reads. The machine was slower than in iteration 7, so compare only
+within this table.
+

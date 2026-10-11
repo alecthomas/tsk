@@ -21,6 +21,7 @@ export default defineAnalyzer({
 
 Also report certain struct tags (json, xml) used with unexported fields.`,
   url: "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/structtag",
+  group: "govet",
   requires: [inspect],
   runDespiteErrors: true,
   run(pass) {

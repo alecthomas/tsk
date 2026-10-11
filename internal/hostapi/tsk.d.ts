@@ -96,6 +96,16 @@ declare module "tsk" {
     readonly facts?: readonly Fact<unknown>[];
     readonly runDespiteErrors?: boolean;
     /**
+     * A group of related analyzers, such as "revive". The config's lists,
+     * exclusions, and //nolint comments may name a group for all its members.
+     */
+    readonly group?: string;
+    /**
+     * Whether the analyzer runs when the config names neither it nor its
+     * group. Defaults to true; enabling it, or its group, runs it regardless.
+     */
+    readonly enabledByDefault?: boolean;
+    /**
      * Whether //nolint comments suppress the analyzer's findings, as they do
      * by default. Set false for an analyzer that checks the comments
      * themselves, whose findings about a comment it must not hide.

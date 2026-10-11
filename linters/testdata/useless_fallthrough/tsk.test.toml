@@ -1,0 +1,3 @@
+[[case]]
+name = "default"
+packages = ["example.com/revive/useless-fallthrough"]

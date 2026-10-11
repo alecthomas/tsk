@@ -1,0 +1,8 @@
+[[case]]
+name = "default"
+packages = ["example.com/revive/use-any"]
+
+[[case]]
+name = "go1.17"
+dir = "go117"
+packages = ["example.com/useany"]

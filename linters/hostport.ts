@@ -27,6 +27,7 @@ net.JoinHostPort:
 
 A similar diagnostic and fix are produced for a format string of "%s:%s".`,
   url: "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/hostport",
+  group: "govet",
   // Upstream finds calls and declarations with the typeindex pass, which tsk does not provide.
   requires: [inspect],
   run(pass) {

@@ -16,7 +16,9 @@ import (
 // filter drops the diagnostics an analyzer's config excludes: in test files,
 // in generated files, or matching an exclusion.
 type filter struct {
-	analyzer      string
+	analyzer string
+	// group is the analyzer's group, or empty.
+	group         string
 	skipTests     bool
 	skipGenerated bool
 	excluder      config.Excluder
@@ -24,8 +26,8 @@ type filter struct {
 	root string
 }
 
-func newFilter(analyzer string, skipTests, skipGenerated bool, excluder config.Excluder, root string) filter {
-	return filter{analyzer: analyzer, skipTests: skipTests, skipGenerated: skipGenerated, excluder: excluder, root: root}
+func newFilter(analyzer, group string, skipTests, skipGenerated bool, excluder config.Excluder, root string) filter {
+	return filter{analyzer: analyzer, group: group, skipTests: skipTests, skipGenerated: skipGenerated, excluder: excluder, root: root}
 }
 
 // reporter returns a Report for pass that passes on to report only the
@@ -49,6 +51,7 @@ func (f filter) dropped(pass *analysis.Pass, cache *generatedFiles, diagnostic a
 	}
 	return !f.excluder.Empty() && f.excluder.Excluded(config.Finding{
 		Analyzer: f.analyzer,
+		Group:    f.group,
 		Path:     f.relative(position.Filename),
 		Message:  diagnostic.Message,
 		Source:   func() string { return sourceLine(position) },

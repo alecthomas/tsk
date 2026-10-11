@@ -1,3 +1,5 @@
+import { defineAnalyzer } from "tsk";
+import { runRule } from "../lint";
 import * as ast from "go/ast";
 import type { Failure, File, Rule } from "../lint";
 
@@ -21,3 +23,15 @@ function apply(file: File): Failure[] {
   });
   return failures;
 }
+
+export default defineAnalyzer({
+  name: "use_any",
+  doc: "Proposes to replace `interface{}` with its alias `any`",
+  url: "https://github.com/mgechev/revive/blob/v1.17.0/RULES_DESCRIPTIONS.md#use-any",
+  group: "revive",
+  enabledByDefault: false,
+  runDespiteErrors: true,
+  run(pass) {
+    runRule(pass, create());
+  },
+});

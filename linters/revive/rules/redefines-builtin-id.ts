@@ -1,3 +1,5 @@
+import { defineAnalyzer } from "tsk";
+import { runRule } from "../lint";
 import * as ast from "go/ast";
 import * as token from "go/token";
 import type { Failure, File, Rule } from "../lint";
@@ -159,3 +161,14 @@ function apply(file: File): Failure[] {
   });
   return failures;
 }
+
+export default defineAnalyzer({
+  name: "redefines_builtin_id",
+  doc: "Warns on redefinitions of builtin identifiers",
+  url: "https://github.com/mgechev/revive/blob/v1.17.0/RULES_DESCRIPTIONS.md#redefines-builtin-id",
+  group: "revive",
+  runDespiteErrors: true,
+  run(pass) {
+    runRule(pass, create());
+  },
+});

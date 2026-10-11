@@ -1,3 +1,5 @@
+import { defineAnalyzer } from "tsk";
+import { runRule } from "../lint";
 import type * as ast from "go/ast";
 import * as token from "go/token";
 import { isVersionPath, type Visitor, walk } from "../astutils";
@@ -72,3 +74,15 @@ function importName(imp: ast.ImportSpec): string {
   }
   return last;
 }
+
+export default defineAnalyzer({
+  name: "import_shadowing",
+  doc: "Spots identifiers that shadow an import",
+  url: "https://github.com/mgechev/revive/blob/v1.17.0/RULES_DESCRIPTIONS.md#import-shadowing",
+  group: "revive",
+  enabledByDefault: false,
+  runDespiteErrors: true,
+  run(pass) {
+    runRule(pass, create());
+  },
+});

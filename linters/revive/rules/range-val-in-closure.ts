@@ -1,3 +1,5 @@
+import { defineAnalyzer } from "tsk";
+import { runRule } from "../lint";
 import * as ast from "go/ast";
 import { walk, type Visitor } from "../astutils";
 import type { Failure, File, Rule } from "../lint";
@@ -83,3 +85,15 @@ function check(node: ast.Node, failures: Failure[]): void {
   };
   ast.inspect(lit.body!, inspector);
 }
+
+export default defineAnalyzer({
+  name: "range_val_in_closure",
+  doc: "Warns if range value is used in a closure dispatched as goroutine",
+  url: "https://github.com/mgechev/revive/blob/v1.17.0/RULES_DESCRIPTIONS.md#range-val-in-closure",
+  group: "revive",
+  enabledByDefault: false,
+  runDespiteErrors: true,
+  run(pass) {
+    runRule(pass, create());
+  },
+});

@@ -101,21 +101,30 @@ func TestEnabled(t *testing.T) {
 	}{
 		{Name: "SelectEnableAll", Text: "disable-all = true\nenable = [\"b\"]", EnableAll: true, Selection: config.Selection{Disable: []string{"c"}}, Enabled: []string{"a", "b"}},
 		{Name: "SelectEnableAllOverridesDisable", Text: `disable = ["a"]`, EnableAll: true, Enabled: []string{"a", "b", "c"}},
-		{Name: "Default", Text: ``, Enabled: []string{"a", "b", "c"}},
-		{Name: "Disable", Text: `disable = ["a"]`, Enabled: []string{"b", "c"}},
+		{Name: "Default", Text: ``, Enabled: []string{"a", "b"}},
+		{Name: "Disable", Text: `disable = ["a"]`, Enabled: []string{"b"}},
 		{Name: "DisableAll", Text: `disable-all = true`},
 		{Name: "DisableAllEnable", Text: "disable-all = true\nenable = [\"b\"]", Enabled: []string{"b"}},
-		{Name: "SelectDisable", Text: `disable = ["a"]`, Selection: config.Selection{Disable: []string{"b"}}, Enabled: []string{"c"}},
-		{Name: "SelectEnableOverridesDisable", Text: `disable = ["a", "b"]`, Selection: config.Selection{Enable: []string{"a"}}, Enabled: []string{"a", "c"}},
+		{Name: "EnableOffByDefault", Text: `enable = ["c"]`, Enabled: []string{"a", "b", "c"}},
+		{Name: "EnableAll", Text: "enable-all = true\ndisable = [\"b\"]", Enabled: []string{"a", "c"}},
+		{Name: "EnableGroup", Text: `enable = ["g"]`, Enabled: []string{"a", "b", "c"}},
+		{Name: "DisableGroup", Text: `disable = ["g"]`, Enabled: []string{"b"}},
+		{Name: "NameWinsOverGroup", Text: "disable = [\"g\"]\nenable = [\"c\"]", Enabled: []string{"b", "c"}},
+		{Name: "DisableAllEnableGroup", Text: "disable-all = true\nenable = [\"g\"]\ndisable = [\"a\"]", Enabled: []string{"c"}},
+		{Name: "SelectDisable", Text: `disable = ["a"]`, Selection: config.Selection{Disable: []string{"b"}}},
+		{Name: "SelectEnableOverridesDisable", Text: `disable = ["a", "b"]`, Selection: config.Selection{Enable: []string{"a"}}, Enabled: []string{"a"}},
+		{Name: "SelectEnableGroup", Text: `disable = ["g"]`, Selection: config.Selection{Enable: []string{"g"}}, Enabled: []string{"a", "b", "c"}},
 		{Name: "SelectEnableWithDisableAll", Text: "disable-all = true\nenable = [\"b\"]", Selection: config.Selection{Enable: []string{"c"}}, Enabled: []string{"b", "c"}},
 		{Name: "SelectDisableWithDisableAll", Text: "disable-all = true\nenable = [\"b\", \"c\"]", Selection: config.Selection{Disable: []string{"b"}}, Enabled: []string{"c"}},
 		{Name: "SelectDisableAllIgnoresConfig", Text: "disable-all = true\nenable = [\"b\"]", Selection: config.Selection{DisableAll: true, Enable: []string{"a"}}, Enabled: []string{"a"}},
-		{Name: "SelectDisableWinsOverEnable", Selection: config.Selection{Enable: []string{"a"}, Disable: []string{"a"}}, Enabled: []string{"b", "c"}},
+		{Name: "SelectDisableWinsOverEnable", Selection: config.Selection{Enable: []string{"a"}, Disable: []string{"a"}}, Enabled: []string{"b"}},
 		{Name: "SelectDisableAllDisableWinsOverEnable", Selection: config.Selection{DisableAll: true, Enable: []string{"a", "b"}, Disable: []string{"a"}}, Enabled: []string{"b"}},
-		{Name: "EnableWithoutDisableAll", Text: `enable = ["b"]`, Error: "test.toml: enable needs disable-all = true; every analyzer already runs"},
-		{Name: "DisableWithDisableAll", Text: "disable-all = true\ndisable = [\"a\"]", Error: "test.toml: disable has no effect with disable-all = true; list analyzers to run in enable"},
+		{Name: "EnableAllWithDisableAll", Text: "enable-all = true\ndisable-all = true", Error: "test.toml: enable-all and disable-all cannot both be true"},
+		{Name: "EnableAndDisable", Text: "enable = [\"a\"]\ndisable = [\"a\"]", Error: "test.toml: a is in both enable and disable"},
 		{Name: "DisableAllNotBool", Text: `disable-all = "yes"`, Error: "test.toml:1:15: toml: cannot decode TOML string"},
 	}
+	// a and c are in group g; c is off by default.
+	linters := []config.Linter{{Name: "a", Group: "g", Default: true}, {Name: "b", Default: true}, {Name: "c", Group: "g"}}
 	for _, test := range tests {
 		t.Run(test.Name, func(t *testing.T) {
 			file, err := config.Parse("test.toml", test.Text)
@@ -127,9 +136,9 @@ func TestEnabled(t *testing.T) {
 			assert.NoError(t, err)
 			file = file.SelectLint(config.LintSelection{Selection: test.Selection, EnableAll: test.EnableAll})
 			var enabled []string
-			for _, name := range []string{"a", "b", "c"} {
-				if file.Enabled(name) {
-					enabled = append(enabled, name)
+			for _, linter := range linters {
+				if file.Enabled(linter) {
+					enabled = append(enabled, linter.Name)
 				}
 			}
 			assert.Equal(t, test.Enabled, enabled)

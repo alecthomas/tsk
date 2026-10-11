@@ -1,3 +1,5 @@
+import { defineAnalyzer } from "tsk";
+import { runRule } from "../lint";
 import type * as ast from "go/ast";
 import type { File, Failure, Rule } from "../lint";
 
@@ -45,3 +47,14 @@ function hasEmbedComment(file: ast.File): boolean {
 function isBlank(id: ast.Ident | null): boolean {
   return id !== null && id.name === "_";
 }
+
+export default defineAnalyzer({
+  name: "blank_imports",
+  doc: "Disallows blank imports",
+  url: "https://github.com/mgechev/revive/blob/v1.17.0/RULES_DESCRIPTIONS.md#blank-imports",
+  group: "revive",
+  runDespiteErrors: true,
+  run(pass) {
+    runRule(pass, create());
+  },
+});

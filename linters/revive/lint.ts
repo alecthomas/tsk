@@ -1,5 +1,5 @@
 // Ports github.com/mgechev/revive's lint package (v1.17.0, MIT license): the
-// file and package views rules see, failures, and //revive: directives.
+// file and package views rules see, and failures.
 
 import * as ast from "go/ast";
 import type * as token from "go/token";
@@ -19,8 +19,6 @@ export interface Failure {
   /** The failure's span, when it has no node. */
   readonly pos?: token.Pos;
   readonly end?: token.Pos;
-  /** Overrides the reporting rule's name, as directive failures do. */
-  readonly ruleName?: string;
 }
 
 /** A rule, configured and created for one package. */
@@ -28,10 +26,6 @@ export interface Rule {
   readonly name: string;
   apply(file: File): Failure[];
 }
-
-// Revive skips generated files entirely, not only their findings, and
-// recognises them by any line of the file, not only the header.
-const generated = /^\/\/ Code generated .* DO NOT EDIT\.$/m;
 
 /** The files of the package being linted, as a revive lint.Package. */
 export class Package {
@@ -46,12 +40,13 @@ export class Package {
     readonly goVersion: string,
   ) {
     this.parsedGoVersion = parseVersion(goVersion);
+    // Revive skips generated files entirely, so package-wide rules do not see
+    // them. Unlike revive, which matches the marker on any line, they are
+    // recognised by Go's convention, as tsk recognises them, without reading.
     this.files = [];
     for (const astFile of pass.files) {
-      const name = pass.fset.file(astFile!.fileStart)!.name();
-      const file = new File(this, astFile!, name);
-      if (!generated.test(file.content())) {
-        this.files.push(file);
+      if (!ast.isGenerated(astFile)) {
+        this.files.push(new File(this, astFile!, pass.fset.file(astFile!.fileStart)!.name()));
       }
     }
   }
@@ -205,125 +200,23 @@ function sortableFlag(fn: ast.FuncDecl): number {
   return 0;
 }
 
-/** Which //revive: directives must say why or what they disable. */
-export interface Directives {
-  readonly specifyDisableReason: boolean;
-  readonly specifyDisableRule: boolean;
-}
-
-interface Interval {
-  from: number;
-  to: number;
-}
-
-const directiveRegexp = /^\/\/[\s]*revive:(enable|disable)(?:-(line|next-line))?(?::([^\s]+))?[\s]*(?: (.+))?$/;
-
-/** A failure ready to report, with its rule and lines. */
-export interface Reported {
-  readonly ruleName: string;
-  readonly failure: string;
-  readonly pos: token.Pos;
-  readonly end: token.Pos;
-}
+// Revive reports failures at least this confident, by default.
+const confidence = 0.8;
 
 /**
- * Applies rules to file, dropping failures below confidence or in lines a
- * //revive: directive disables, and returns the rest with directive failures.
+ * Runs one rule over the package's files and reports its failures. Unlike
+ * revive, //revive: directives are not applied; //nolint comments are.
  */
-export function lintFile(file: File, rules: Rule[], confidence: number, directives: Directives): Reported[] {
-  const result: Reported[] = [];
-  const intervals = disabledIntervals(file, rules, directives, result);
-  for (const rule of rules) {
+export function runRule(pass: Pass<unknown>, rule: Rule): void {
+  // Without a go.mod, revive assumes Go 1.0.
+  const pkg = new Package(pass, pass.module?.goVersion || "1.0");
+  for (const file of pkg.files) {
     for (const failure of rule.apply(file)) {
-      const ruleName = failure.ruleName ?? rule.name;
+      if (failure.confidence < confidence) {
+        continue;
+      }
       const pos = failure.node?.pos() ?? failure.pos!;
-      const end = failure.node?.end() ?? failure.end ?? pos;
-      if (failure.confidence >= confidence && !disabled(file, intervals.get(ruleName), pos, end)) {
-        result.push({ ruleName, failure: failure.failure, pos, end });
-      }
+      pass.report({ pos, end: failure.node?.end() ?? failure.end ?? pos, message: failure.failure });
     }
   }
-  return result;
-}
-
-function disabled(file: File, intervals: Interval[] | undefined, pos: token.Pos, end: token.Pos): boolean {
-  if (intervals === undefined) {
-    return false;
-  }
-  const start = file.toPosition(pos).line;
-  const last = file.toPosition(end).line;
-  return intervals.some((i) => (start >= i.from && start <= i.to) || (last >= i.from && last <= i.to));
-}
-
-function disabledIntervals(file: File, rules: Rule[], directives: Directives, failures: Reported[]): Map<string, Interval[]> {
-  // Each rule's state changes, alternately disabling and enabling it.
-  const changes = new Map<string, { enabled: boolean; line: number }[]>();
-  // change records a state change for the rule and reports whether it changed
-  // anything: a directive repeating the current state is a no-op.
-  const change = (enabled: boolean, line: number, name: string): boolean => {
-    const existing = changes.get(name) ?? [];
-    changes.set(name, existing);
-    const current = existing.length === 0 || existing[existing.length - 1].enabled;
-    if (current === enabled) {
-      return false;
-    }
-    existing.push({ enabled, line });
-    return true;
-  };
-  for (const group of file.ast.comments) {
-    const line = file.toPosition(group!.end()).line;
-    for (const c of group!.list) {
-      const match = directiveRegexp.exec(c!.text);
-      if (match === null) {
-        continue;
-      }
-      const [, directive, modifier, ruleList = "", reason = ""] = match;
-      let names = ruleList
-        .split(",")
-        .map((name) => name.replace(/^\n+|\n+$/g, ""))
-        .filter((name) => name !== "");
-      const disabling = directive === "disable";
-      if (disabling && directives.specifyDisableReason && reason.replace(/^ +| +$/g, "") === "") {
-        failures.push({ ruleName: "specify-disable-reason", failure: "reason of lint disabling not found", pos: c!.pos(), end: c!.end() });
-        continue;
-      }
-      if (disabling && directives.specifyDisableRule && names.length === 0) {
-        failures.push({ ruleName: "specify-disable-rule", failure: "rule name for lint disabling not found", pos: c!.pos(), end: c!.end() });
-        continue;
-      }
-      if (names.length === 0) {
-        names = rules.map((r) => r.name);
-      }
-      const enabled = directive === "enable";
-      for (const name of names) {
-        switch (modifier) {
-          case "line":
-            if (change(enabled, line, name)) {
-              change(!enabled, line, name);
-            }
-            break;
-          case "next-line":
-            if (change(enabled, line + 1, name)) {
-              change(!enabled, line + 1, name);
-            }
-            break;
-          default:
-            change(enabled, line, name);
-        }
-      }
-    }
-  }
-  const result = new Map<string, Interval[]>();
-  for (const [name, list] of changes) {
-    const intervals: Interval[] = [];
-    list.forEach(({ line }, i) => {
-      if (i % 2 === 0) {
-        intervals.push({ from: line, to: 2 ** 31 - 1 });
-      } else {
-        intervals[intervals.length - 1].to = line;
-      }
-    });
-    result.set(name, intervals);
-  }
-  return result;
 }

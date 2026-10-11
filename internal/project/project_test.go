@@ -146,7 +146,7 @@ func TestSelect(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, []string{"one", "three"}, selected)
 	_, err = p.Selected(config.Selection{Enable: []string{"four"}})
-	assert.EqualError(t, err, "--enable names unknown analyzer four")
+	assert.EqualError(t, err, "--enable names unknown analyzer or group four")
 
 	assert.NoError(t, p.Select(config.LintSelection{Enable: []string{"one"}, Disable: []string{"three"}}))
 	analyzers, err := p.Analyzers()
@@ -156,5 +156,5 @@ func TestSelect(t *testing.T) {
 		names = append(names, analyzer.Name)
 	}
 	assert.Equal(t, []string{"one", "two"}, names)
-	assert.EqualError(t, p.Select(config.LintSelection{Disable: []string{"four"}}), "--disable names unknown analyzer four")
+	assert.EqualError(t, p.Select(config.LintSelection{Disable: []string{"four"}}), "--disable names unknown analyzer or group four")
 }

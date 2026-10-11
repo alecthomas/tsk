@@ -1,3 +1,5 @@
+import { defineAnalyzer } from "tsk";
+import { runRule } from "../lint";
 import * as ast from "go/ast";
 import type { Failure, File, Rule } from "../lint";
 
@@ -44,3 +46,15 @@ function checkFields(fields: ast.FieldList | null, failures: Failure[]): void {
     }
   });
 }
+
+export default defineAnalyzer({
+  name: "nested_structs",
+  doc: "Warns on structs within structs",
+  url: "https://github.com/mgechev/revive/blob/v1.17.0/RULES_DESCRIPTIONS.md#nested-structs",
+  group: "revive",
+  enabledByDefault: false,
+  runDespiteErrors: true,
+  run(pass) {
+    runRule(pass, create());
+  },
+});

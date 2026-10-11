@@ -1,3 +1,5 @@
+import { defineAnalyzer } from "tsk";
+import { runRule } from "../lint";
 import { isPkgDotName, walk, type Visitor } from "../astutils";
 import type { Failure, File, Rule } from "../lint";
 
@@ -24,3 +26,15 @@ function apply(file: File): Failure[] {
   walk(visitor, file.ast);
   return failures;
 }
+
+export default defineAnalyzer({
+  name: "call_to_gc",
+  doc: "Warns on explicit call to the garbage collector",
+  url: "https://github.com/mgechev/revive/blob/v1.17.0/RULES_DESCRIPTIONS.md#call-to-gc",
+  group: "revive",
+  enabledByDefault: false,
+  runDespiteErrors: true,
+  run(pass) {
+    runRule(pass, create());
+  },
+});

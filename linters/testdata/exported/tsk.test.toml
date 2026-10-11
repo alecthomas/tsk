@@ -1,0 +1,37 @@
+[[case]]
+name = "default"
+packages = ["example.com/revive/exported/golint", "example.com/revive/exported/constblock", "example.com/revive/exported/stutter", "example.com/revive/exported/sort", "example.com/revive/exported/valuespec", "example.com/revive/exported/issue1202", "example.com/revive/exported/issue1231", "example.com/revive/exported/issue1235", "example.com/revive/exported/main"]
+
+[[case]]
+name = "check-public-interface"
+packages = ["example.com/revive/exported/issue1002"]
+[case.config]
+check-public-interface = true
+
+[[case]]
+name = "disable-checks"
+packages = ["example.com/revive/exported/issue1045"]
+[case.config]
+disable-checks-on-constants = true
+disable-checks-on-functions = true
+disable-checks-on-methods = true
+disable-checks-on-types = true
+disable-checks-on-variables = true
+
+[[case]]
+name = "say-repetitive"
+packages = ["example.com/revive/exported/issue519"]
+[case.config]
+say-repetitive-instead-of-stutters = true
+
+[[case]]
+name = "check-private-receivers"
+packages = ["example.com/revive/exported/issue552"]
+[case.config]
+check-private-receivers = true
+
+[[case]]
+name = "disable-stuttering-check"
+packages = ["example.com/revive/exported/issue555"]
+[case.config]
+disable-stuttering-check = true

@@ -1,3 +1,5 @@
+import { defineAnalyzer } from "tsk";
+import { runRule } from "../lint";
 import * as ast from "go/ast";
 import { isCgoExported } from "../astutils";
 import type { Failure, File, Rule } from "../lint";
@@ -96,3 +98,15 @@ function checkStructFields(fields: ast.FieldList, structName: string): Failure[]
   }
   return failures;
 }
+
+export default defineAnalyzer({
+  name: "confusing_naming",
+  doc: "Warns on methods with names that differ only by capitalization",
+  url: "https://github.com/mgechev/revive/blob/v1.17.0/RULES_DESCRIPTIONS.md#confusing-naming",
+  group: "revive",
+  enabledByDefault: false,
+  runDespiteErrors: true,
+  run(pass) {
+    runRule(pass, create());
+  },
+});

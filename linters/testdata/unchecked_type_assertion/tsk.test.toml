@@ -1,0 +1,9 @@
+[[case]]
+name = "default"
+packages = ["example.com/revive/unchecked-type-assertion"]
+
+[[case]]
+name = "accept-ignored"
+packages = ["example.com/revive/unchecked-type-assertion/acceptignored"]
+[case.config]
+accept-ignored-assertion-result = true

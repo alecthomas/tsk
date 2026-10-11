@@ -1,0 +1,21 @@
+[[case]]
+name = "default"
+packages = ["example.com/revive/file-header/default"]
+
+[[case]]
+name = "default"
+packages = ["example.com/revive/file-header/foobar"]
+[case.config]
+header = "foobar"
+
+[[case]]
+name = "exact"
+packages = ["example.com/revive/file-header/exact"]
+[case.config]
+header = "^\\sfoobar$"
+
+[[case]]
+name = "pattern"
+packages = ["example.com/revive/file-header/pattern"]
+[case.config]
+header = "^\\sfoo.*bar$"

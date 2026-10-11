@@ -133,6 +133,10 @@ needed. The definition mirrors `analysis.Analyzer`:
   `defineAnalyzer`, which TypeScript could not infer alongside an explicit
   config type.
 - `runDespiteErrors`
+- `group`: a group the config and `//nolint` comments can name for all its
+  analyzers; see [Config](#config).
+- `enabledByDefault`: `false` runs the analyzer only when the config enables
+  it or its group.
 - `tests`: `false` drops the analyzer's findings in `_test.go` files.
 - `nolint`: `false` stops `//nolint` comments suppressing the analyzer's
   findings, for an analyzer that checks the comments themselves.
@@ -172,10 +176,21 @@ type, and the host populates it from `.tsk/config.toml`.
 **File.** `config.toml` sits inside `.tsk/`. The global
 `-config <path>` flag overrides discovery. The file holds one table per
 analyzer, named after it, plus top-level settings choosing which analyzers
-run: `disable` lists analyzers not to run, or `disable-all = true` with
-`enable` lists the only ones that do. Combinations that would ignore a setting
-are errors. Disabled analyzers still run when another requires them. The file
-is parsed with go-toml, so decoding errors give a line and column.
+run. Each analyzer runs by default unless it declares `enabledByDefault:
+false`; `disable` turns analyzers off and `enable` turns them on, while
+`disable-all = true` or `enable-all = true` changes the default for every
+analyzer. Both lists accept group names, which stand for every analyzer in
+the group. Naming an analyzer wins over naming its group, and at each level
+`disable` wins over `enable`, so a broad setting can carry exceptions.
+Combinations that would ignore a setting are errors. Disabled analyzers still
+run when another requires them. The file is parsed with go-toml, so decoding
+errors give a line and column.
+
+Groups exist because some ported linters, such as revive and golangci-lint's
+govet, bundle many checks. Each check is its own analyzer, which needs no
+shared pass and has its own options, and the group keeps them selectable
+together. Group names must be identifiers distinct from every analyzer's, as
+the lists and `//nolint` comments mix the two.
 
 **Filtered findings.** As golangci-lint does by default, findings in generated
 files are dropped, recognised by Go's convention as `ast.IsGenerated` checks.
@@ -374,7 +389,8 @@ expectations match.
 
 The engine drops a script analyzer's findings that a `//nolint` comment
 covers, following golangci-lint, so no script implements its own directive.
-`//nolint:a,b` names analyzers, and a bare `//nolint` covers all of them; a
+`//nolint:a,b` names analyzers or their groups, and a bare `//nolint` covers
+all of them; a
 reason may follow after a space. The comment covers its own line, and on the
 line above a node in the same column it covers the whole node. `internal/nolint`
 scans a package's comments only once it reports a finding.

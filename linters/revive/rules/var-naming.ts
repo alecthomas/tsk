@@ -1,3 +1,5 @@
+import { defineAnalyzer } from "tsk";
+import { runRule } from "../lint";
 import * as ast from "go/ast";
 import * as token from "go/token";
 import { isCgoExported } from "../astutils";
@@ -134,3 +136,15 @@ export function create(options: DeepReadonly<Options>): Rule {
     },
   };
 }
+
+export default defineAnalyzer<Options>({
+  name: "var_naming",
+  doc: "Naming rules.",
+  url: "https://github.com/mgechev/revive/blob/v1.17.0/RULES_DESCRIPTIONS.md#var-naming",
+  group: "revive",
+  runDespiteErrors: true,
+  config: defaults,
+  run(pass) {
+    runRule(pass, create(pass.config));
+  },
+});

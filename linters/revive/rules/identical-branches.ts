@@ -1,3 +1,5 @@
+import { defineAnalyzer } from "tsk";
+import { runRule } from "../lint";
 import type * as ast from "go/ast";
 import { goFmt, type Visitor, walk } from "../astutils";
 import type { Failure, File, Rule } from "../lint";
@@ -37,3 +39,15 @@ function apply(file: File): Failure[] {
   }
   return failures;
 }
+
+export default defineAnalyzer({
+  name: "identical_branches",
+  doc: "Spots if-then-else statements with identical `then` and `else` branches",
+  url: "https://github.com/mgechev/revive/blob/v1.17.0/RULES_DESCRIPTIONS.md#identical-branches",
+  group: "revive",
+  enabledByDefault: false,
+  runDespiteErrors: true,
+  run(pass) {
+    runRule(pass, create());
+  },
+});

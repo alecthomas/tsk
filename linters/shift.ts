@@ -11,6 +11,7 @@ export default defineAnalyzer({
   name: "shift",
   doc: "check for shifts that equal or exceed the width of the integer",
   url: "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/shift",
+  group: "govet",
   requires: [inspect],
   run(pass) {
     const root = pass.resultOf(inspect).root();

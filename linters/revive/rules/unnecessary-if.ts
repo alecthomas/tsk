@@ -1,3 +1,5 @@
+import { defineAnalyzer } from "tsk";
+import { runRule } from "../lint";
 import type * as ast from "go/ast";
 import { parseExpr } from "go/parser";
 import * as token from "go/token";
@@ -128,3 +130,15 @@ function singleBooleanLiteral(exprs: readonly (ast.Expr | null)[]): string | und
   const name = (exprs[0] as ast.Ident).name;
   return name === "true" || name === "false" ? name : undefined;
 }
+
+export default defineAnalyzer({
+  name: "unnecessary_if",
+  doc: "Identifies `if-else` statements that can be replaced by simpler statements",
+  url: "https://github.com/mgechev/revive/blob/v1.17.0/RULES_DESCRIPTIONS.md#unnecessary-if",
+  group: "revive",
+  enabledByDefault: false,
+  runDespiteErrors: true,
+  run(pass) {
+    runRule(pass, create());
+  },
+});

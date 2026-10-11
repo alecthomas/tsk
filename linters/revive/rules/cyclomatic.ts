@@ -1,3 +1,5 @@
+import { defineAnalyzer } from "tsk";
+import { runRule } from "../lint";
 import * as ast from "go/ast";
 import * as token from "go/token";
 import { funcName } from "../funcname";
@@ -56,3 +58,16 @@ function complexity(fn: ast.FuncDecl): number {
   });
   return c;
 }
+
+export default defineAnalyzer<Options>({
+  name: "cyclomatic",
+  doc: "Sets restriction for maximum Cyclomatic complexity.",
+  url: "https://github.com/mgechev/revive/blob/v1.17.0/RULES_DESCRIPTIONS.md#cyclomatic",
+  group: "revive",
+  enabledByDefault: false,
+  runDespiteErrors: true,
+  config: defaults,
+  run(pass) {
+    runRule(pass, create(pass.config));
+  },
+});

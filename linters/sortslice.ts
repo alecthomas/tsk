@@ -13,6 +13,8 @@ export default defineAnalyzer({
 sort.Slice requires an argument of a slice type. Check that
 the interface{} value passed to sort.Slice is actually a slice.`,
   url: "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/sortslice",
+  group: "govet",
+  enabledByDefault: false,
   requires: [inspect],
   run(pass) {
     if (!imports(pass.pkg, "sort")) {

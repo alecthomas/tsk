@@ -65,6 +65,7 @@ and
 
 	slog.Info("message", "k1", v1, "k2") // call to slog.Info missing a final value`,
   url: "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/slog",
+  group: "govet",
   requires: [inspect],
   run(pass) {
     const stringType = types.Universe!.lookup("string")!.type();

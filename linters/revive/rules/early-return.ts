@@ -1,3 +1,5 @@
+import { defineAnalyzer } from "tsk";
+import { runRule } from "../lint";
 import { apply, type Chain, deviates, kindString, Target } from "../ifelse";
 import type { DeepReadonly, File, Rule } from "../lint";
 
@@ -44,3 +46,16 @@ export function create(options: DeepReadonly<Options>): Rule {
   };
   return { name, apply: (file: File) => apply(check, file.ast, Target.If, options.allowJump) };
 }
+
+export default defineAnalyzer<Options>({
+  name: "early_return",
+  doc: "Spots if-then-else statements where the predicate may be inverted to reduce nesting",
+  url: "https://github.com/mgechev/revive/blob/v1.17.0/RULES_DESCRIPTIONS.md#early-return",
+  group: "revive",
+  enabledByDefault: false,
+  runDespiteErrors: true,
+  config: defaults,
+  run(pass) {
+    runRule(pass, create(pass.config));
+  },
+});

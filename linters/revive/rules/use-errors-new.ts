@@ -1,3 +1,5 @@
+import { defineAnalyzer } from "tsk";
+import { runRule } from "../lint";
 import * as ast from "go/ast";
 import { isPkgDotName } from "../astutils";
 import type { Failure, File, Rule } from "../lint";
@@ -25,3 +27,15 @@ function apply(file: File): Failure[] {
   });
   return failures;
 }
+
+export default defineAnalyzer({
+  name: "use_errors_new",
+  doc: "Spots calls to `fmt.Errorf` that can be replaced by `errors.New`",
+  url: "https://github.com/mgechev/revive/blob/v1.17.0/RULES_DESCRIPTIONS.md#use-errors-new",
+  group: "revive",
+  enabledByDefault: false,
+  runDespiteErrors: true,
+  run(pass) {
+    runRule(pass, create());
+  },
+});

@@ -19,6 +19,7 @@ identifiers.
 Please see the documentation for package testing in golang.org/pkg/testing
 for the conventions that are enforced for Tests, Benchmarks, and Examples.`,
   url: "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/tests",
+  group: "govet",
   run(pass) {
     const checker = new Checker(pass);
     for (const f of pass.files) {

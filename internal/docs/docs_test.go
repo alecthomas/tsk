@@ -45,7 +45,7 @@ func analyzers() []docs.Analyzer {
 	return []docs.Analyzer{
 		{Name: "rules", Doc: "check rules\n\nRules apply to every package.", URL: "https://example.com", Source: "github.com/acme/linters@0123456789ab", Enabled: true,
 			Config: Some(docs.Config{Shape: shape(), Defaults: defaults()})},
-		{Name: "plain", Doc: "no options", Source: ".tsk/plain.ts"},
+		{Name: "plain", Doc: "no options", Source: ".tsk/plain.ts", Group: "acme"},
 	}
 }
 
@@ -62,13 +62,16 @@ func TestTOML(t *testing.T) {
 		`# Imports, as repository[//dir], to load from local directories instead, relative to this file. They are not fetched or locked.`,
 		`replace = {}`,
 		``,
-		`# Analyzers that do not run.`,
+		`# Analyzers and groups that do not run. Naming an analyzer wins over naming its group.`,
 		`disable = []`,
 		``,
-		`# Turn every analyzer off except those listed in enable.`,
+		`# Turn every analyzer off except those enable names.`,
 		`disable-all = false`,
 		``,
-		`# Analyzers that run when disable-all is true.`,
+		`# Turn every analyzer on, including those off by default, except those disable names.`,
+		`enable-all = false`,
+		``,
+		`# Analyzers and groups that run, including those off by default. Naming an analyzer wins over naming its group.`,
 		`enable = []`,
 		``,
 		`# Report findings in generated files, which are skipped by default.`,
@@ -120,7 +123,7 @@ func TestTOML(t *testing.T) {
 		``,
 		`labels = {camelKey = 'kept'}`,
 		``,
-		`# plain (disabled, .tsk/plain.ts)`,
+		`# plain (disabled, group acme, .tsk/plain.ts)`,
 		`#`,
 		`# no options`,
 		`#`,
@@ -148,8 +151,8 @@ func TestList(t *testing.T) {
 	var out bytes.Buffer
 	assert.NoError(t, docs.List(&out, analyzers()))
 	assert.Equal(t, strings.Join([]string{
-		`rules  enabled   github.com/acme/linters@0123456789ab  check rules`,
-		`plain  disabled  .tsk/plain.ts                         no options`,
+		`rules  enabled   -     github.com/acme/linters@0123456789ab  check rules`,
+		`plain  disabled  acme  .tsk/plain.ts                         no options`,
 		``,
 	}, "\n"), out.String())
 }
@@ -168,6 +171,7 @@ func TestListJSON(t *testing.T) {
   {
     "name": "plain",
     "enabled": false,
+    "group": "acme",
     "source": ".tsk/plain.ts",
     "doc": "no options"
   }

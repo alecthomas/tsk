@@ -1,3 +1,5 @@
+import { defineAnalyzer } from "tsk";
+import { runRule } from "../lint";
 import type * as ast from "go/ast";
 import * as token from "go/token";
 import { walk } from "../astutils";
@@ -80,3 +82,14 @@ function isBranchingCall(stmt: ast.ExprStmt): boolean {
   }
   return branchingFunctions.get((sel.x as ast.Ident).name)?.has(sel.sel!.name) ?? false;
 }
+
+export default defineAnalyzer({
+  name: "unreachable_code",
+  doc: "Warns on unreachable code",
+  url: "https://github.com/mgechev/revive/blob/v1.17.0/RULES_DESCRIPTIONS.md#unreachable-code",
+  group: "revive",
+  runDespiteErrors: true,
+  run(pass) {
+    runRule(pass, create());
+  },
+});

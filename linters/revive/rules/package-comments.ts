@@ -1,3 +1,5 @@
+import { defineAnalyzer } from "tsk";
+import { runRule } from "../lint";
 import type * as ast from "go/ast";
 import { isDirectiveComment } from "../astutils";
 import type { Failure, File, Rule } from "../lint";
@@ -77,3 +79,14 @@ function commentGroupEndLine(file: File, group: ast.CommentGroup): number {
 function baseName(path: string): string {
   return path.slice(path.lastIndexOf("/") + 1);
 }
+
+export default defineAnalyzer({
+  name: "package_comments",
+  doc: "Package commenting conventions.",
+  url: "https://github.com/mgechev/revive/blob/v1.17.0/RULES_DESCRIPTIONS.md#package-comments",
+  group: "revive",
+  runDespiteErrors: true,
+  run(pass) {
+    runRule(pass, create());
+  },
+});

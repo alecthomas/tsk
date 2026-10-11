@@ -52,6 +52,7 @@ Checked method names include:
 	UnmarshalJSON UnreadByte UnreadRune WriteByte
 	WriteTo`,
   url: "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/stdmethods",
+  group: "govet",
   requires: [inspect],
   run(pass) {
     const errorType = types.Universe!.lookup("error")!.type()!.underlying() as types.Interface;

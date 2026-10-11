@@ -1,0 +1,8 @@
+[[case]]
+name = "default"
+packages = ["example.com/revive/use-errors-new"]
+
+[[case]]
+name = "go1.25"
+dir = "go125"
+packages = ["example.com/useerrorsnew"]

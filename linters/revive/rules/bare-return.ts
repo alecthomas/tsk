@@ -1,3 +1,5 @@
+import { defineAnalyzer } from "tsk";
+import { runRule } from "../lint";
 import type * as ast from "go/ast";
 import { type Visitor, walk } from "../astutils";
 import type { Failure, File, Rule } from "../lint";
@@ -42,3 +44,15 @@ function apply(file: File): Failure[] {
   );
   return failures;
 }
+
+export default defineAnalyzer({
+  name: "bare_return",
+  doc: "Warns on bare returns",
+  url: "https://github.com/mgechev/revive/blob/v1.17.0/RULES_DESCRIPTIONS.md#bare-return",
+  group: "revive",
+  enabledByDefault: false,
+  runDespiteErrors: true,
+  run(pass) {
+    runRule(pass, create());
+  },
+});

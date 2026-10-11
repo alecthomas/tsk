@@ -1,3 +1,5 @@
+import { defineAnalyzer } from "tsk";
+import { runRule } from "../lint";
 import * as os from "os";
 import * as filepath from "path/filepath";
 import { isVersionPath, normalizePath } from "../astutils";
@@ -67,3 +69,16 @@ function isRootDir(dirPath: string): boolean {
     return false;
   }
 }
+
+export default defineAnalyzer<Options>({
+  name: "package_directory_mismatch",
+  doc: "Checks that package name matches containing directory name",
+  url: "https://github.com/mgechev/revive/blob/v1.17.0/RULES_DESCRIPTIONS.md#package-directory-mismatch",
+  group: "revive",
+  enabledByDefault: false,
+  runDespiteErrors: true,
+  config: defaults,
+  run(pass) {
+    runRule(pass, create(pass.config));
+  },
+});

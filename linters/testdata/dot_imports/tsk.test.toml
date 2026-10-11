@@ -1,0 +1,9 @@
+[[case]]
+name = "default"
+packages = ["example.com/revive/dot-imports/default"]
+
+[[case]]
+name = "allowed-packages"
+packages = ["example.com/revive/dot-imports/allowed"]
+[case.config]
+allowed-packages = ["errors", "context", "example.com/revive/dot-imports/lib"]

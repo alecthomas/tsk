@@ -1,3 +1,5 @@
+import { defineAnalyzer } from "tsk";
+import { runRule } from "../lint";
 import type * as ast from "go/ast";
 import type { Failure, File, Rule } from "../lint";
 
@@ -25,3 +27,15 @@ function importPackageName(imp: ast.ImportSpec): string {
     .slice(path.lastIndexOf("/") + 1)
     .replace(/^"+|"+$/g, "");
 }
+
+export default defineAnalyzer({
+  name: "redundant_import_alias",
+  doc: "Warns on import aliases matching the imported package name",
+  url: "https://github.com/mgechev/revive/blob/v1.17.0/RULES_DESCRIPTIONS.md#redundant-import-alias",
+  group: "revive",
+  enabledByDefault: false,
+  runDespiteErrors: true,
+  run(pass) {
+    runRule(pass, create());
+  },
+});

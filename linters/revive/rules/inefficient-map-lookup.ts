@@ -1,3 +1,5 @@
+import { defineAnalyzer } from "tsk";
+import { runRule } from "../lint";
 import type * as ast from "go/ast";
 import * as token from "go/token";
 import { isIdent, walk, type Visitor } from "../astutils";
@@ -66,3 +68,15 @@ function isRangeOverMapKey(file: File, stmt: ast.RangeStmt): boolean {
   }
   return file.pkg.typeOf(stmt.x!)?.string().startsWith("map[") ?? false;
 }
+
+export default defineAnalyzer({
+  name: "inefficient_map_lookup",
+  doc: "Spots iterative searches for a key in a map",
+  url: "https://github.com/mgechev/revive/blob/v1.17.0/RULES_DESCRIPTIONS.md#inefficient-map-lookup",
+  group: "revive",
+  enabledByDefault: false,
+  runDespiteErrors: true,
+  run(pass) {
+    runRule(pass, create());
+  },
+});

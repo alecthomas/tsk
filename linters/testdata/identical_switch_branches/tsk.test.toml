@@ -1,0 +1,9 @@
+[[case]]
+name = "default"
+packages = ["example.com/revive/identical-switch-branches/default"]
+
+[[case]]
+name = "allow-identical-default"
+packages = ["example.com/revive/identical-switch-branches/allow-identical-default"]
+[case.config]
+allow-identical-default = true

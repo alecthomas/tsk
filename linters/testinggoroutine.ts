@@ -35,6 +35,7 @@ started by the test. For example:
 	    }()
 	}`,
   url: "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/testinggoroutine",
+  group: "govet",
   requires: [inspect],
   run(pass) {
     if (!imports(pass.pkg, "testing")) {

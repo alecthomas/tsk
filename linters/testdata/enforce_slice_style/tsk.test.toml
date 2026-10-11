@@ -1,0 +1,21 @@
+[[case]]
+name = "any"
+packages = ["example.com/revive/enforce-slice-style/any"]
+
+[[case]]
+name = "literal"
+packages = ["example.com/revive/enforce-slice-style/literal"]
+[case.config]
+style = "literal"
+
+[[case]]
+name = "make"
+packages = ["example.com/revive/enforce-slice-style/make"]
+[case.config]
+style = "make"
+
+[[case]]
+name = "nil"
+packages = ["example.com/revive/enforce-slice-style/nil"]
+[case.config]
+style = "nil"

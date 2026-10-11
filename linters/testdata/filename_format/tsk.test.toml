@@ -1,0 +1,9 @@
+[[case]]
+name = "default"
+packages = ["example.com/revive/filename-format/default"]
+
+[[case]]
+name = "custom"
+packages = ["example.com/revive/filename-format/custom"]
+[case.config]
+format = "^[A-Za-z][A-Za-z0-9]*.go$"

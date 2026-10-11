@@ -1,3 +1,5 @@
+import { defineAnalyzer } from "tsk";
+import { runRule } from "../lint";
 import type * as ast from "go/ast";
 import { isCallToExitFunction, isIdent, seekNode, type Visitor, walk } from "../astutils";
 import type { Failure, File, Rule } from "../lint";
@@ -131,3 +133,15 @@ function isExit(node: ast.Node): boolean {
   }
   return isCallToExitFunction((sel.x as ast.Ident).name, sel.sel!.name, call.args);
 }
+
+export default defineAnalyzer({
+  name: "unconditional_recursion",
+  doc: "Warns on function calls that will lead to (direct) infinite recursion",
+  url: "https://github.com/mgechev/revive/blob/v1.17.0/RULES_DESCRIPTIONS.md#unconditional-recursion",
+  group: "revive",
+  enabledByDefault: false,
+  runDespiteErrors: true,
+  run(pass) {
+    runRule(pass, create());
+  },
+});

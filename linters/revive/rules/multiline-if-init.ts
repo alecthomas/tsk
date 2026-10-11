@@ -1,3 +1,5 @@
+import { defineAnalyzer } from "tsk";
+import { runRule } from "../lint";
 import type * as ast from "go/ast";
 import { walk } from "../astutils";
 import type { Failure, File, Rule } from "../lint";
@@ -26,3 +28,15 @@ function apply(file: File): Failure[] {
   );
   return failures;
 }
+
+export default defineAnalyzer({
+  name: "multiline_if_init",
+  doc: "Flags `if` statements whose init clause spans multiple lines",
+  url: "https://github.com/mgechev/revive/blob/v1.17.0/RULES_DESCRIPTIONS.md#multiline-if-init",
+  group: "revive",
+  enabledByDefault: false,
+  runDespiteErrors: true,
+  run(pass) {
+    runRule(pass, create());
+  },
+});

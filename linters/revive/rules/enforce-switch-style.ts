@@ -1,3 +1,5 @@
+import { defineAnalyzer } from "tsk";
+import { runRule } from "../lint";
 import * as ast from "go/ast";
 import * as token from "go/token";
 import type { DeepReadonly, Failure, File, Rule } from "../lint";
@@ -55,3 +57,16 @@ function allBranchesEndWithJumpStmt(clauses: ast.CaseClause[]): boolean {
     return last!.$type === "ReturnStmt" || (last!.$type === "BranchStmt" && (last as ast.BranchStmt).tok === token.BREAK);
   });
 }
+
+export default defineAnalyzer<Options>({
+  name: "enforce_switch_style",
+  doc: "Enforces consistent usage of `default` on `switch` statements.",
+  url: "https://github.com/mgechev/revive/blob/v1.17.0/RULES_DESCRIPTIONS.md#enforce-switch-style",
+  group: "revive",
+  enabledByDefault: false,
+  runDespiteErrors: true,
+  config: defaults,
+  run(pass) {
+    runRule(pass, create(pass.config));
+  },
+});

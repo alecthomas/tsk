@@ -1,3 +1,5 @@
+import { defineAnalyzer } from "tsk";
+import { runRule } from "../lint";
 import type * as ast from "go/ast";
 import { isIdent, walk, type Visitor } from "../astutils";
 import type { Failure, File, Rule } from "../lint";
@@ -47,3 +49,15 @@ function apply(file: File): Failure[] {
   walk(visitor, file.ast);
   return failures;
 }
+
+export default defineAnalyzer({
+  name: "use_slices_sort",
+  doc: "Proposes to replace calls to `sort.Ints`, `sort.Strings` and the like with their equivalents from `slices` package.",
+  url: "https://github.com/mgechev/revive/blob/v1.17.0/RULES_DESCRIPTIONS.md#use-slices-sort",
+  group: "revive",
+  enabledByDefault: false,
+  runDespiteErrors: true,
+  run(pass) {
+    runRule(pass, create());
+  },
+});

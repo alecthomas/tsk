@@ -1,0 +1,9 @@
+[[case]]
+name = "default"
+packages = ["example.com/revive/comment-spacings/default"]
+
+[[case]]
+name = "allow-list"
+packages = ["example.com/revive/comment-spacings/custom"]
+[case.config]
+allow-list = ["myOwnDirective:", "+optional"]

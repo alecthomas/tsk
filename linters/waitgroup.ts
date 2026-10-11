@@ -36,6 +36,7 @@ The correct code calls Add before starting the goroutine:
 	}()
 	wg.Wait()`,
   url: "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/waitgroup",
+  group: "govet",
   requires: [inspect],
   run(pass) {
     if (!imports(pass.pkg, "sync")) {

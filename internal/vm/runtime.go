@@ -446,6 +446,11 @@ type Metadata struct {
 	Requires         []Requirement
 	Facts            []string
 	RunDespiteErrors bool
+	// Group names the analyzer's group, or is empty.
+	Group string
+	// EnabledByDefault is whether the analyzer runs when the config does not
+	// name it or its group; it is set unless the analyzer declares otherwise.
+	EnabledByDefault bool
 	// IgnoresNolint is set when the analyzer declares nolint: false, so
 	// //nolint comments do not suppress its findings.
 	IgnoresNolint bool
@@ -485,6 +490,10 @@ func (r *Runtime) Metadata(name string) (Metadata, error) {
 	metadata.RunDespiteErrors = !isAbsent(object.Get("runDespiteErrors")) && object.Get("runDespiteErrors").ToBoolean()
 	metadata.IgnoresNolint = !isAbsent(object.Get("nolint")) && !object.Get("nolint").ToBoolean()
 	metadata.SkipTests = !isAbsent(object.Get("tests")) && !object.Get("tests").ToBoolean()
+	metadata.EnabledByDefault = isAbsent(object.Get("enabledByDefault")) || object.Get("enabledByDefault").ToBoolean()
+	if metadata.Group, err = r.stringProperty(object, "group", false); err != nil {
+		return Metadata{}, errors.Errorf("analyzer %s: %v", name, err)
+	}
 	scope, err := r.stringProperty(object, "scope", false)
 	if err != nil {
 		return Metadata{}, errors.Errorf("analyzer %s: %v", name, err)

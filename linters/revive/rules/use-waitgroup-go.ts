@@ -1,3 +1,5 @@
+import { defineAnalyzer } from "tsk";
+import { runRule } from "../lint";
 import type * as ast from "go/ast";
 import { isPkgDotName, seekNode, walk, type Visitor } from "../astutils";
 import type { Failure, File, Rule } from "../lint";
@@ -71,3 +73,15 @@ function hasCallToWgDone(goStmt: ast.GoStmt): boolean {
 function isCallToWgAdd(stmt: ast.Stmt): boolean {
   return stmt.$type === "ExprStmt" && stmt.x!.$type === "CallExpr" && isPkgDotName(stmt.x.fun, "wg", "Add");
 }
+
+export default defineAnalyzer({
+  name: "use_waitgroup_go",
+  doc: "Proposes to replace `wg.Add ... go {... wg.Done ...}` idiom with `wg.Go`",
+  url: "https://github.com/mgechev/revive/blob/v1.17.0/RULES_DESCRIPTIONS.md#use-waitgroup-go",
+  group: "revive",
+  enabledByDefault: false,
+  runDespiteErrors: true,
+  run(pass) {
+    runRule(pass, create());
+  },
+});

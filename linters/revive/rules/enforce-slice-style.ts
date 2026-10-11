@@ -1,3 +1,5 @@
+import { defineAnalyzer } from "tsk";
+import { runRule } from "../lint";
 import type * as ast from "go/ast";
 import { isIdent, type Visitor, walk } from "../astutils";
 import type { DeepReadonly, Failure, File, Rule } from "../lint";
@@ -78,3 +80,16 @@ function isSliceType(v: ast.Expr | null): boolean {
   const decl = (v as ast.Ident).obj?.decl as ast.Node | null | undefined;
   return decl?.$type === "TypeSpec" && isSliceType((decl as ast.TypeSpec).type);
 }
+
+export default defineAnalyzer<Options>({
+  name: "enforce_slice_style",
+  doc: "Enforces consistent usage of `make([]type, 0)` or `[]type{}` for slice initialization. Does not affect `make(map[type]type, non_zero_len, or_non_zero_cap)` constructions.",
+  url: "https://github.com/mgechev/revive/blob/v1.17.0/RULES_DESCRIPTIONS.md#enforce-slice-style",
+  group: "revive",
+  enabledByDefault: false,
+  runDespiteErrors: true,
+  config: defaults,
+  run(pass) {
+    runRule(pass, create(pass.config));
+  },
+});

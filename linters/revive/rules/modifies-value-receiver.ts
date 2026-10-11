@@ -1,3 +1,5 @@
+import { defineAnalyzer } from "tsk";
+import { runRule } from "../lint";
 import type * as ast from "go/ast";
 import * as token from "go/token";
 import { pickNodes, seekNode } from "../astutils";
@@ -82,3 +84,15 @@ function receiverModifications(receiverName: string, body: ast.BlockStmt | null)
   };
   return pickNodes(body, finder);
 }
+
+export default defineAnalyzer({
+  name: "modifies_value_receiver",
+  doc: "Warns on assignments to value-passed method receivers",
+  url: "https://github.com/mgechev/revive/blob/v1.17.0/RULES_DESCRIPTIONS.md#modifies-value-receiver",
+  group: "revive",
+  enabledByDefault: false,
+  runDespiteErrors: true,
+  run(pass) {
+    runRule(pass, create());
+  },
+});

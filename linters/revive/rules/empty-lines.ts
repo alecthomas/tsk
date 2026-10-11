@@ -1,3 +1,5 @@
+import { defineAnalyzer } from "tsk";
+import { runRule } from "../lint";
 import * as ast from "go/ast";
 import type * as token from "go/token";
 import type { Failure, File, Rule } from "../lint";
@@ -46,3 +48,15 @@ function commentLines(file: File): Set<number> {
   }
   return result;
 }
+
+export default defineAnalyzer({
+  name: "empty_lines",
+  doc: "Warns when there are heading or trailing newlines in a block",
+  url: "https://github.com/mgechev/revive/blob/v1.17.0/RULES_DESCRIPTIONS.md#empty-lines",
+  group: "revive",
+  enabledByDefault: false,
+  runDespiteErrors: true,
+  run(pass) {
+    runRule(pass, create());
+  },
+});

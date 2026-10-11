@@ -1,3 +1,5 @@
+import { defineAnalyzer } from "tsk";
+import { runRule } from "../lint";
 import * as filepath from "path/filepath";
 import type { DeepReadonly, Failure, File, Rule } from "../lint";
 
@@ -42,3 +44,16 @@ function nonASCIIMessage(s: string): string {
   }
   return result;
 }
+
+export default defineAnalyzer<Options>({
+  name: "filename_format",
+  doc: "Enforces the formatting of filenames",
+  url: "https://github.com/mgechev/revive/blob/v1.17.0/RULES_DESCRIPTIONS.md#filename-format",
+  group: "revive",
+  enabledByDefault: false,
+  runDespiteErrors: true,
+  config: defaults,
+  run(pass) {
+    runRule(pass, create(pass.config));
+  },
+});

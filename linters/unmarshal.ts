@@ -12,6 +12,7 @@ export default defineAnalyzer({
 The unmarshal analysis reports calls to functions such as json.Unmarshal
 in which the argument type is not a pointer or an interface.`,
   url: "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/unmarshal",
+  group: "govet",
   requires: [inspect],
   run(pass) {
     switch (pass.pkg.path()) {

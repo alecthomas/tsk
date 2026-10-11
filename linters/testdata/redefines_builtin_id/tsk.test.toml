@@ -1,0 +1,8 @@
+[[case]]
+name = "default"
+packages = ["example.com/revive/redefines-builtin-id"]
+
+[[case]]
+name = "before-go1.21"
+dir = "go1.20"
+packages = ["example.com/revive-go120/redefines-builtin-id"]

@@ -248,24 +248,30 @@ func (p *Project) Select(s config.LintSelection) error {
 }
 
 // Selected returns the analyzers a selection picks from every analyzer,
-// ignoring the config file, as tsk test does.
+// including those off by default, ignoring the config file, as tsk test does.
 func (p *Project) Selected(s config.Selection) ([]string, error) {
 	if err := p.checkSelection(s); err != nil {
 		return nil, err
 	}
-	file := config.File{}.Select(s)
-	return slices.DeleteFunc(slices.Clone(p.Names()), func(name string) bool { return !file.Enabled(name) }), nil
+	file := config.File{EnableAll: true}.Select(s)
+	var selected []string
+	for _, linter := range p.engine.Linters() {
+		if file.Enabled(linter) {
+			selected = append(selected, linter.Name)
+		}
+	}
+	return selected, nil
 }
 
 func (p *Project) checkSelection(s config.Selection) error {
-	known := p.Names()
+	known := p.engine.Selectable()
 	for _, flag := range []struct {
 		name  string
 		names []string
 	}{{"--disable", s.Disable}, {"--enable", s.Enable}} {
 		for _, name := range flag.names {
 			if !slices.Contains(known, name) {
-				return errors.Errorf("%s names unknown analyzer %s", flag.name, name)
+				return errors.Errorf("%s names unknown analyzer or group %s", flag.name, name)
 			}
 		}
 	}
@@ -305,7 +311,7 @@ func (p *Project) Describe(names []string) ([]docs.Analyzer, error) {
 		if len(names) > 0 && !slices.Contains(names, analyzer.Name) {
 			continue
 		}
-		analyzer.Enabled = p.file.Enabled(analyzer.Name)
+		analyzer.Enabled = p.file.Enabled(config.Linter{Name: analyzer.Name, Group: analyzer.Group, Default: analyzer.EnabledByDefault})
 		analyzer.Source = p.source(analyzer.Source)
 		selected = append(selected, analyzer)
 	}

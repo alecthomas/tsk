@@ -1,0 +1,9 @@
+[[case]]
+name = "default"
+packages = ["example.com/revive/banned-characters/default"]
+
+[[case]]
+name = "default"
+packages = ["example.com/revive/banned-characters/banned"]
+[case.config]
+characters = ["\u03a9", "\u03a3", "\u03c3", "1"]

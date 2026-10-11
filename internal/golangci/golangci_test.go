@@ -5,6 +5,7 @@ import (
 	"log/slog"
 	"os"
 	"path/filepath"
+	"slices"
 	"testing"
 
 	"github.com/alecthomas/assert/v2"
@@ -20,47 +21,51 @@ func analyzers() []docs.Analyzer {
 	strings := ts.ArrayShape{Element: ts.StringShape{}}
 	var vet []docs.Analyzer
 	for _, name := range vetNames() {
+		analyzer := docs.Analyzer{Name: name, Group: "govet", EnabledByDefault: !slices.Contains(nonDefaultVet(), name)}
 		switch name {
 		case "printf":
-			vet = append(vet, docs.Analyzer{Name: name, Config: Some(docs.Config{
+			analyzer.Config = Some(docs.Config{
 				Shape:    ts.ObjectShape{Properties: []ts.Property{{Name: "funcs", Shape: strings}}},
 				Defaults: map[string]any{"funcs": []any{}},
-			})})
+			})
 		case "shadow":
-			vet = append(vet, docs.Analyzer{Name: name, Config: Some(docs.Config{
+			analyzer.Config = Some(docs.Config{
 				Shape:    ts.ObjectShape{Properties: []ts.Property{{Name: "strict", Shape: ts.BooleanShape{}}}},
 				Defaults: map[string]any{"strict": false},
-			})})
-		default:
-			vet = append(vet, docs.Analyzer{Name: name})
+			})
 		}
+		vet = append(vet, analyzer)
 	}
 	return append(vet, []docs.Analyzer{
-		{Name: "errcheck", Config: Some(docs.Config{
+		{Name: "errcheck", EnabledByDefault: true, Config: Some(docs.Config{
 			Shape:    ts.ObjectShape{Properties: []ts.Property{{Name: "checkBlank", Shape: ts.BooleanShape{}}}},
 			Defaults: map[string]any{"checkBlank": false},
 		})},
-		{Name: "funlen", Config: Some(docs.Config{
+		{Name: "funlen", EnabledByDefault: true, Config: Some(docs.Config{
 			Shape:    ts.ObjectShape{Properties: []ts.Property{{Name: "lines", Shape: ts.NumberShape{}}, {Name: "statements", Shape: ts.NumberShape{}}}},
 			Defaults: map[string]any{"lines": 60.0, "statements": 40.0},
 		})},
-		{Name: "revive", Config: Some(docs.Config{
-			Shape: ts.ObjectShape{Properties: []ts.Property{
-				{Name: "enable", Shape: strings},
-				{Name: "disable", Shape: strings},
-				{Name: "enableDefaultRules", Shape: ts.BooleanShape{}},
-				{Name: "directives", Shape: strings},
-				{Name: "dotImports", Shape: ts.ObjectShape{Properties: []ts.Property{{Name: "allowedPackages", Shape: strings}}}},
-			}},
-			Defaults: map[string]any{},
+		// Revive's rules, of which dot-imports, exported, and var-naming run by
+		// default. Revive's atomic clashes with vet's, so its name is prefixed.
+		{Name: "dot_imports", Group: "revive", EnabledByDefault: true, Config: Some(docs.Config{
+			Shape:    ts.ObjectShape{Properties: []ts.Property{{Name: "allowedPackages", Shape: strings}}},
+			Defaults: map[string]any{"allowedPackages": []any{}},
 		})},
-		{Name: "exhaustruct", Config: Some(docs.Config{
+		{Name: "exported", Group: "revive", EnabledByDefault: true},
+		{Name: "var_naming", Group: "revive", EnabledByDefault: true},
+		{Name: "line_length_limit", Group: "revive", Config: Some(docs.Config{
+			Shape:    ts.ObjectShape{Properties: []ts.Property{{Name: "max", Shape: ts.NumberShape{}}}},
+			Defaults: map[string]any{"max": 80.0},
+		})},
+		{Name: "revive_atomic", Group: "revive"},
+		{Name: "imports_blocklist", Group: "revive"},
+		{Name: "exhaustruct", EnabledByDefault: true, Config: Some(docs.Config{
 			Shape:    ts.ObjectShape{Properties: []ts.Property{{Name: "ignorePatterns", Shape: strings}, {Name: "allowEmptyReturns", Shape: ts.BooleanShape{}}}},
 			Defaults: map[string]any{"ignorePatterns": []any{}, "allowEmptyReturns": false},
 		})},
-		// Not a golangci-lint linter, so it stays enabled.
-		{Name: "encapsulation"},
-		{Name: "unused"},
+		// Not a golangci-lint linter, so it keeps its default.
+		{Name: "encapsulation", EnabledByDefault: true},
+		{Name: "unused", EnabledByDefault: true},
 	}...)
 }
 
@@ -122,12 +127,9 @@ linters:
   disable: [funlen, gocritic]
 `,
 			expected: golangci.Result{
-				// govet's analyzers that are not on by default stay off.
-				Settings: map[string]any{"disable": []string{
-					"atomicalign", "deepequalerrors", "fieldalignment", "funlen", "httpmux", "nilness", "reflectvaluecompare",
-					"shadow", "sortslice", "unusedwrite",
-				}},
-				Tables: map[string]map[string]any{},
+				// govet's and revive's defaults match their analyzers' own.
+				Settings: map[string]any{"disable": []string{"funlen"}},
+				Tables:   map[string]map[string]any{},
 			},
 		},
 		{
@@ -177,17 +179,53 @@ linters:
           disabled: true
 `,
 			expected: golangci.Result{
-				Settings: map[string]any{"disable": nonDefaultVet()},
-				Tables: map[string]map[string]any{"revive": {
-					"enable":               []any{"dot-imports", "line-length-limit"},
-					"disable":              []any{"exported"},
-					"enable-default-rules": true,
-					"directives":           []any{"specify-disable-reason"},
-					"dot-imports":          map[string]any{"allowed-packages": []any{"example.com/opt"}},
-				}},
+				// Rules become their analyzers: line-length-limit is off by
+				// default, and exported is on.
+				Settings: map[string]any{"disable": []string{"exported"}, "enable": []string{"line_length_limit"}},
+				Tables:   map[string]map[string]any{"dot_imports": {"allowed-packages": []any{"example.com/opt"}}},
 				Warnings: []string{
-					"revive rule line-length-limit: positional arguments are not imported; set [revive.line-length-limit] options instead",
+					"linters.settings.revive.directives is not imported: tsk has no equivalent",
+					"revive rule line-length-limit: positional arguments are not imported; set [line_length_limit] options instead",
 					"linters.settings.revive.severity is not imported: tsk has no equivalent",
+				},
+			},
+		},
+		{
+			// Rules, without enable-default-rules, replace revive's defaults.
+			name: "ReviveSelectsRules",
+			config: `
+version: "2"
+linters:
+  default: none
+  enable: [revive]
+  settings:
+    revive:
+      rules:
+        - name: var-naming
+        - name: atomic
+        - name: imports-blacklist
+        - name: unknown-rule
+  exclusions:
+    rules:
+      - text: "^var-naming: don't use"
+        linters: [revive]
+      - path: legacy/
+        linters: [revive]
+        text: "should have"
+`,
+			expected: golangci.Result{
+				Settings: map[string]any{
+					"disable-all": true,
+					"enable":      []string{"encapsulation", "imports_blocklist", "revive_atomic", "var_naming"},
+					"exclude": []any{
+						map[string]any{"linters": []string{"var_naming"}, "text": "^don't use"},
+						map[string]any{"linters": []string{"revive"}, "path": "legacy/", "text": "should have"},
+					},
+				},
+				Tables: map[string]map[string]any{},
+				Warnings: []string{
+					"revive rule unknown-rule is not imported: tsk has no analyzer for it",
+					`linters.exclusions.rules[1] {"linters":["revive"],"path":"legacy/","text":"should have"}: findings of revive's analyzers do not start with their names in tsk; check its text still matches`,
 				},
 			},
 		},
@@ -219,7 +257,6 @@ formatters:
 `,
 			expected: golangci.Result{
 				Settings: map[string]any{
-					"disable":        nonDefaultVet(),
 					"no-tests":       true,
 					"lint-generated": true,
 					"skip-tests":     []string{"funlen"},
@@ -266,7 +303,7 @@ linters:
 		},
 		{
 			// govet's analyzers are separate in tsk, so its settings spread
-			// across their tables and its exclusion rules across their names.
+			// across their tables, and exclusion rules name them or their group.
 			name: "Govet",
 			config: `
 version: "2"
@@ -303,7 +340,7 @@ linters:
 					"exclude": []any{
 						map[string]any{"linters": []string{"shadow"}, "text": `^declaration of "err"`},
 						map[string]any{"linters": []string{"printf"}, "path": "cmd/"},
-						map[string]any{"linters": vetNames(), "path": "cmd/", "text": "composite literal"},
+						map[string]any{"linters": []string{"govet"}, "path": "cmd/", "text": "composite literal"},
 					},
 				},
 				Tables: map[string]map[string]any{"printf": {"funcs": []any{"example.com/log.Infof"}}},
@@ -312,7 +349,7 @@ linters:
 					"linters.settings.govet.check-shadowing is not imported: tsk has no equivalent",
 					"linters.settings.govet.settings.findcall is not imported: tsk has no findcall analyzer",
 					"linters.settings.govet.settings.shadow.strict is not imported: shadow.strict: expected a boolean, got a string",
-					`linters.exclusions.rules[2] {"linters":["govet"],"path":"cmd/","text":"composite literal"}: its text now applies to every vet analyzer, whose findings do not start with the analyzer's name in tsk`,
+					`linters.exclusions.rules[2] {"linters":["govet"],"path":"cmd/","text":"composite literal"}: findings of govet's analyzers do not start with their names in tsk; check its text still matches`,
 				},
 			},
 		},
@@ -379,8 +416,6 @@ func TestImport(t *testing.T) {
 	assert.Equal(t, `# Imported from .golangci.yml by tsk config import.
 
 imports = ['github.com/acme/linters@v1.0.0']
-
-disable = ['atomicalign', 'deepequalerrors', 'fieldalignment', 'httpmux', 'nilness', 'reflectvaluecompare', 'shadow', 'sortslice', 'unusedwrite']
 
 [replace]
 'github.com/acme/linters' = '../linters'

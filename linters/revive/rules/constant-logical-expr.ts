@@ -1,3 +1,5 @@
+import { defineAnalyzer } from "tsk";
+import { runRule } from "../lint";
 import * as ast from "go/ast";
 import * as token from "go/token";
 import { goFmt } from "../astutils";
@@ -34,3 +36,15 @@ function apply(file: File): Failure[] {
   });
   return failures;
 }
+
+export default defineAnalyzer({
+  name: "constant_logical_expr",
+  doc: "Warns on constant logical expressions",
+  url: "https://github.com/mgechev/revive/blob/v1.17.0/RULES_DESCRIPTIONS.md#constant-logical-expr",
+  group: "revive",
+  enabledByDefault: false,
+  runDespiteErrors: true,
+  run(pass) {
+    runRule(pass, create());
+  },
+});

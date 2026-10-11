@@ -1,0 +1,15 @@
+[[case]]
+name = "default"
+packages = ["example.com/revive/defer"]
+
+[[case]]
+name = "loop-disabled"
+packages = ["example.com/revive/defer/loopdisabled"]
+[case.config]
+allow = ["return", "recover", "call-chain", "method-call"]
+
+[[case]]
+name = "only-loop"
+packages = ["example.com/revive/defer/onlyloop"]
+[case.config]
+allow = ["loop"]

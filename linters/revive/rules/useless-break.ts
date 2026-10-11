@@ -1,3 +1,5 @@
+import { defineAnalyzer } from "tsk";
+import { runRule } from "../lint";
 import type * as ast from "go/ast";
 import * as token from "go/token";
 import { type Visitor, walk } from "../astutils";
@@ -52,3 +54,15 @@ function apply(file: File): Failure[] {
   walk(visitor, file.ast);
   return failures;
 }
+
+export default defineAnalyzer({
+  name: "useless_break",
+  doc: "Warns on useless `break` statements in case clauses",
+  url: "https://github.com/mgechev/revive/blob/v1.17.0/RULES_DESCRIPTIONS.md#useless-break",
+  group: "revive",
+  enabledByDefault: false,
+  runDespiteErrors: true,
+  run(pass) {
+    runRule(pass, create());
+  },
+});

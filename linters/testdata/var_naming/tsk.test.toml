@@ -1,0 +1,19 @@
+[[case]]
+name = "default"
+packages = ["example.com/revive/var-naming"]
+
+[[case]]
+name = "lists"
+packages = ["example.com/revive/var-naming/lists"]
+[case.config]
+allowlist = ["ID"]
+blocklist = ["VM"]
+
+[[case]]
+name = "skip"
+packages = ["example.com/revive/var-naming/skip"]
+[case.config]
+allowlist = ["ID"]
+blocklist = ["VM"]
+skip-initialism-name-checks = true
+upper-case-const = true

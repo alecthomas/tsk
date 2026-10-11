@@ -18,6 +18,7 @@ The timeformat checker looks for time formats with the 2006-02-01 (yyyy-dd-mm)
 format. Internationally, "yyyy-dd-mm" does not occur in common calendar date
 standards, and so it is more likely that 2006-01-02 (yyyy-mm-dd) was intended.`,
   url: "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/timeformat",
+  group: "govet",
   requires: [inspect],
   run(pass) {
     for (const cursor of pass.resultOf(inspect).root().preorder(ast.CallExpr)) {

@@ -1,3 +1,5 @@
+import { defineAnalyzer } from "tsk";
+import { runRule } from "../lint";
 import type * as ast from "go/ast";
 import { type Visitor, walk } from "../astutils";
 import type { DeepReadonly, Failure, File, Rule } from "../lint";
@@ -74,3 +76,16 @@ class NestingVisitor implements Visitor {
     this.nesting = old;
   }
 }
+
+export default defineAnalyzer<Options>({
+  name: "max_control_nesting",
+  doc: "Sets restriction for maximum nesting of control structures.",
+  url: "https://github.com/mgechev/revive/blob/v1.17.0/RULES_DESCRIPTIONS.md#max-control-nesting",
+  group: "revive",
+  enabledByDefault: false,
+  runDespiteErrors: true,
+  config: defaults,
+  run(pass) {
+    runRule(pass, create(pass.config));
+  },
+});

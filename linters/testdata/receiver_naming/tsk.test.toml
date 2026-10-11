@@ -1,0 +1,9 @@
+[[case]]
+name = "default"
+packages = ["example.com/revive/receiver-naming"]
+
+[[case]]
+name = "max-length"
+packages = ["example.com/revive/receiver-naming/maxlength"]
+[case.config]
+max-length = 2

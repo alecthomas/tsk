@@ -11,6 +11,7 @@ export default defineAnalyzer({
   name: "buildtag",
   doc: "check //go:build and // +build directives",
   url: "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/buildtag",
+  group: "govet",
   run(pass) {
     for (const f of pass.files) {
       checkGoFile(pass, f!);

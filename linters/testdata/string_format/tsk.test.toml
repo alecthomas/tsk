@@ -1,0 +1,26 @@
+[[case]]
+name = "default"
+packages = ["example.com/revive/string-format"]
+[[case.config.checks]]
+scope = "stringFormatMethod1"
+regex = "/^[A-Z]/"
+message = "must start with a capital letter"
+[[case.config.checks]]
+scope = "stringFormatMethod2[2].d"
+regex = "/[^\\.]$/"
+[[case.config.checks]]
+scope = "s.Method3[2]"
+regex = "!/^[Tt][Hh]/"
+message = "must not start with 'th'"
+[[case.config.checks]]
+scope = "s.Method4"
+regex = "!/^[Ot][Tt]/"
+message = "must not start with 'ot'"
+
+[[case]]
+name = "duplicated-strings"
+packages = ["example.com/revive/string-format/issue1063"]
+[[case.config.checks]]
+scope = "fmt.Errorf[0],errors.New[0]"
+regex = "/^([^A-Z]|$)/"
+message = "must not start with a capital letter"

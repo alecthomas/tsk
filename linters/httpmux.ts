@@ -16,6 +16,8 @@ methods whose patterns use features added in Go 1.22, like HTTP methods (such as
 "GET") and wildcards. (See https://pkg.go.dev/net/http#ServeMux for details.)
 Such patterns can be registered in older versions of Go, but will not behave as expected.`,
   url: "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/httpmux",
+  group: "govet",
+  enabledByDefault: false,
   requires: [inspect],
   run(pass) {
     if (goVersionAfter121(pass.pkg.goVersion()) || !imports(pass.pkg, "net/http")) {

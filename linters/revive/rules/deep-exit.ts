@@ -1,3 +1,5 @@
+import { defineAnalyzer } from "tsk";
+import { runRule } from "../lint";
 import * as ast from "go/ast";
 import { isCallToExitFunction, isPkgDotName } from "../astutils";
 import type { Failure, File, Rule } from "../lint";
@@ -72,3 +74,15 @@ function isTestExample(fd: ast.FuncDecl): boolean {
 function isLower(r: string): boolean {
   return r.toUpperCase() !== r && r.toLowerCase() === r;
 }
+
+export default defineAnalyzer({
+  name: "deep_exit",
+  doc: "Looks for program exits in funcs other than `main()` or `init()`",
+  url: "https://github.com/mgechev/revive/blob/v1.17.0/RULES_DESCRIPTIONS.md#deep-exit",
+  group: "revive",
+  enabledByDefault: false,
+  runDespiteErrors: true,
+  run(pass) {
+    runRule(pass, create());
+  },
+});

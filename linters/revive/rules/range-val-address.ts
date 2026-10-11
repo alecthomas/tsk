@@ -1,3 +1,5 @@
+import { defineAnalyzer } from "tsk";
+import { runRule } from "../lint";
 import type * as ast from "go/ast";
 import * as token from "go/token";
 import { walk, type Visitor } from "../astutils";
@@ -92,3 +94,15 @@ function bodyVisitor(value: ast.Ident, valueIsStarExpr: boolean, failures: Failu
   };
   return visitor;
 }
+
+export default defineAnalyzer({
+  name: "range_val_address",
+  doc: "Warns if address of range value is used dangerously",
+  url: "https://github.com/mgechev/revive/blob/v1.17.0/RULES_DESCRIPTIONS.md#range-val-address",
+  group: "revive",
+  enabledByDefault: false,
+  runDespiteErrors: true,
+  run(pass) {
+    runRule(pass, create());
+  },
+});

@@ -1,3 +1,5 @@
+import { defineAnalyzer } from "tsk";
+import { runRule } from "../lint";
 import { apply, type Chain, Target } from "../ifelse";
 import type { DeepReadonly, File, Rule } from "../lint";
 
@@ -30,3 +32,15 @@ export function create(options: DeepReadonly<Options>): Rule {
   };
   return { name, apply: (file: File) => apply(check, file.ast, Target.Else, false) };
 }
+
+export default defineAnalyzer<Options>({
+  name: "indent_error_flow",
+  doc: "Prevents redundant else statements.",
+  url: "https://github.com/mgechev/revive/blob/v1.17.0/RULES_DESCRIPTIONS.md#indent-error-flow",
+  group: "revive",
+  runDespiteErrors: true,
+  config: defaults,
+  run(pass) {
+    runRule(pass, create(pass.config));
+  },
+});

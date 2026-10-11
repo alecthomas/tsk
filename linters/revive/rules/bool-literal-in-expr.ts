@@ -1,3 +1,5 @@
+import { defineAnalyzer } from "tsk";
+import { runRule } from "../lint";
 import * as ast from "go/ast";
 import * as token from "go/token";
 import type { Failure, File, Rule } from "../lint";
@@ -41,3 +43,15 @@ function booleanLit(n: ast.Expr | null): string | undefined {
   const name = (n as ast.Ident).name;
   return name === "true" || name === "false" ? name : undefined;
 }
+
+export default defineAnalyzer({
+  name: "bool_literal_in_expr",
+  doc: "Suggests removing Boolean literals from logic expressions",
+  url: "https://github.com/mgechev/revive/blob/v1.17.0/RULES_DESCRIPTIONS.md#bool-literal-in-expr",
+  group: "revive",
+  enabledByDefault: false,
+  runDespiteErrors: true,
+  run(pass) {
+    runRule(pass, create());
+  },
+});

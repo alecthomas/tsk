@@ -85,7 +85,8 @@ func Cases(dir string) ([]Case, error) {
 
 // Run runs one case. Failures are reported to t, as analysistest does.
 func Run(t analysistest.Testing, e *engine.Engine, analyzer, dir string, c Case) error {
-	file := config.File{Tables: map[string]map[string]any{analyzer: c.Config}}
+	// Enabling the analyzer runs it even when it is off by default.
+	file := config.File{Enable: []string{analyzer}, Tables: map[string]map[string]any{analyzer: c.Config}}
 	// Test data is all first-party, so no package is skipped.
 	analyzers, err := e.Analyzers(file, nil)
 	if err != nil {

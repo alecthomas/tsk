@@ -20,6 +20,7 @@ package comment, and only in package main or *_test.go files.
 This analyzer does not check //go:build, which is handled by the
 buildtag analyzer.`,
   url: "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/directive",
+  group: "govet",
   run(pass) {
     for (const f of pass.files) {
       checkGoFile(pass, f!);

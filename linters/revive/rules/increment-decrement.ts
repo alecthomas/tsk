@@ -1,3 +1,5 @@
+import { defineAnalyzer } from "tsk";
+import { runRule } from "../lint";
 import * as ast from "go/ast";
 import * as token from "go/token";
 import type { Failure, File, Rule } from "../lint";
@@ -30,3 +32,14 @@ function apply(file: File): Failure[] {
 function isOne(expr: ast.Expr): boolean {
   return expr.$type === "BasicLit" && (expr as ast.BasicLit).kind === token.INT && (expr as ast.BasicLit).value === "1";
 }
+
+export default defineAnalyzer({
+  name: "increment_decrement",
+  doc: "Use `i++` and `i--` instead of `i += 1` and `i -= 1`.",
+  url: "https://github.com/mgechev/revive/blob/v1.17.0/RULES_DESCRIPTIONS.md#increment-decrement",
+  group: "revive",
+  runDespiteErrors: true,
+  run(pass) {
+    runRule(pass, create());
+  },
+});

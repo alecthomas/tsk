@@ -19,6 +19,7 @@ WithDeadline and variants such as WithCancelCause must be called,
 or the new context will remain live until its parent context is cancelled.
 (The background context is never cancelled.)`,
   url: "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/lostcancel",
+  group: "govet",
   requires: [inspect, ctrlflow],
   run(pass) {
     if (!imports(pass.pkg, contextPackage)) {

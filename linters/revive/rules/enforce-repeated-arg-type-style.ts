@@ -1,3 +1,5 @@
+import { defineAnalyzer } from "tsk";
+import { runRule } from "../lint";
 import * as ast from "go/ast";
 import { goFmt } from "../astutils";
 import type { DeepReadonly, Failure, File, Rule } from "../lint";
@@ -61,3 +63,16 @@ function check(fields: ast.FieldList | null, style: Style, kind: string, needNam
     }
   }
 }
+
+export default defineAnalyzer<Options>({
+  name: "enforce_repeated_arg_type_style",
+  doc: "Enforces consistent style for repeated argument and/or return value types.",
+  url: "https://github.com/mgechev/revive/blob/v1.17.0/RULES_DESCRIPTIONS.md#enforce-repeated-arg-type-style",
+  group: "revive",
+  enabledByDefault: false,
+  runDespiteErrors: true,
+  config: defaults,
+  run(pass) {
+    runRule(pass, create(pass.config));
+  },
+});

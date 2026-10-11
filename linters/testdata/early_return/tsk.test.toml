@@ -1,0 +1,22 @@
+[[case]]
+name = "default"
+packages = ["example.com/revive/early-return"]
+
+[[case]]
+name = "scope"
+packages = ["example.com/revive/early-return/scope"]
+[case.config]
+preserve-scope = true
+
+[[case]]
+name = "jump"
+packages = ["example.com/revive/early-return/jump"]
+[case.config]
+allow-jump = true
+
+[[case]]
+name = "jump-scope"
+packages = ["example.com/revive/early-return/jumpscope"]
+[case.config]
+allow-jump = true
+preserve-scope = true

@@ -1,0 +1,9 @@
+[[case]]
+name = "default"
+packages = ["example.com/revive/max-control-nesting/default"]
+
+[[case]]
+name = "max2"
+packages = ["example.com/revive/max-control-nesting/max2"]
+[case.config]
+max = 2

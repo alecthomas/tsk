@@ -17,6 +17,7 @@ Inadvertently copying a value containing a lock, such as sync.Mutex or
 sync.WaitGroup, may cause both copies to malfunction. Generally such
 values should be referred to through a pointer.`,
   url: "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/copylock",
+  group: "govet",
   requires: [inspect],
   runDespiteErrors: true,
   run(pass) {

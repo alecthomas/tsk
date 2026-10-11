@@ -1,0 +1,9 @@
+[[case]]
+name = "default"
+packages = ["example.com/revive/error-strings"]
+
+[[case]]
+name = "custom-functions"
+packages = ["example.com/revive/error-strings/custom"]
+[case.config]
+custom-functions = ["pkgErrors.Wrap", " errors.Wrap "]

@@ -1,3 +1,5 @@
+import { defineAnalyzer } from "tsk";
+import { runRule } from "../lint";
 import * as ast from "go/ast";
 import * as token from "go/token";
 import { type Visitor, walk } from "../astutils";
@@ -161,3 +163,16 @@ function binExprComplexity(n: ast.BinaryExpr): number {
 function isBoolOp(op: token.Token): boolean {
   return op === token.LAND || op === token.LOR;
 }
+
+export default defineAnalyzer<Options>({
+  name: "cognitive_complexity",
+  doc: "Sets restriction for maximum Cognitive complexity.",
+  url: "https://github.com/mgechev/revive/blob/v1.17.0/RULES_DESCRIPTIONS.md#cognitive-complexity",
+  group: "revive",
+  enabledByDefault: false,
+  runDespiteErrors: true,
+  config: defaults,
+  run(pass) {
+    runRule(pass, create(pass.config));
+  },
+});

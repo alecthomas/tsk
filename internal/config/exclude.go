@@ -24,6 +24,8 @@ type Exclusion struct {
 // Finding is a diagnostic as exclusions see it.
 type Finding struct {
 	Analyzer string
+	// Group is the analyzer's group, or empty; rules may name either.
+	Group string
 	// Path is relative to the project root, with "/" separators.
 	Path    string
 	Message string
@@ -113,7 +115,8 @@ func (e Excluder) Excluded(finding Finding) bool {
 }
 
 func (r rule) matches(finding Finding) bool {
-	if len(r.linters) > 0 && !slices.Contains(r.linters, finding.Analyzer) {
+	if len(r.linters) > 0 && !slices.Contains(r.linters, finding.Analyzer) &&
+		(finding.Group == "" || !slices.Contains(r.linters, finding.Group)) {
 		return false
 	}
 	if !matchOrAbsent(r.path, finding.Path) || matches(r.pathExcept, finding.Path) || !matchOrAbsent(r.text, finding.Message) {

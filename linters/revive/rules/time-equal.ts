@@ -1,3 +1,5 @@
+import { defineAnalyzer } from "tsk";
+import { runRule } from "../lint";
 import type * as types from "go/types";
 import * as token from "go/token";
 import { goFmt, walk, type Visitor } from "../astutils";
@@ -40,3 +42,15 @@ function isTime(t: types.Type | null): boolean {
   const obj = t.obj();
   return obj !== null && obj.pkg() !== null && obj.pkg()!.path() === "time" && obj.name() === "Time";
 }
+
+export default defineAnalyzer({
+  name: "time_equal",
+  doc: "Suggests to use `time.Time.Equal` instead of `==` and `!=` for equality check time.",
+  url: "https://github.com/mgechev/revive/blob/v1.17.0/RULES_DESCRIPTIONS.md#time-equal",
+  group: "revive",
+  enabledByDefault: false,
+  runDespiteErrors: true,
+  run(pass) {
+    runRule(pass, create());
+  },
+});

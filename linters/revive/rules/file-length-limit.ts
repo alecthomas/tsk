@@ -1,3 +1,5 @@
+import { defineAnalyzer } from "tsk";
+import { runRule } from "../lint";
 import type * as ast from "go/ast";
 import type { DeepReadonly, Failure, File, Rule } from "../lint";
 
@@ -61,3 +63,16 @@ function countCommentLines(comments: readonly (ast.CommentGroup | null)[]): numb
   }
   return count;
 }
+
+export default defineAnalyzer<Options>({
+  name: "file_length_limit",
+  doc: "Enforces a maximum number of lines per file",
+  url: "https://github.com/mgechev/revive/blob/v1.17.0/RULES_DESCRIPTIONS.md#file-length-limit",
+  group: "revive",
+  enabledByDefault: false,
+  runDespiteErrors: true,
+  config: defaults,
+  run(pass) {
+    runRule(pass, create(pass.config));
+  },
+});

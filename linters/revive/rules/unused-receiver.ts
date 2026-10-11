@@ -1,3 +1,5 @@
+import { defineAnalyzer } from "tsk";
+import { runRule } from "../lint";
 import { seekNode } from "../astutils";
 import type { DeepReadonly, Failure, File, Rule } from "../lint";
 
@@ -51,3 +53,16 @@ export function create(options: DeepReadonly<Options>): Rule {
     },
   };
 }
+
+export default defineAnalyzer<Options>({
+  name: "unused_receiver",
+  doc: "Suggests to rename or remove unused method receivers",
+  url: "https://github.com/mgechev/revive/blob/v1.17.0/RULES_DESCRIPTIONS.md#unused-receiver",
+  group: "revive",
+  enabledByDefault: false,
+  runDespiteErrors: true,
+  config: defaults,
+  run(pass) {
+    runRule(pass, create(pass.config));
+  },
+});

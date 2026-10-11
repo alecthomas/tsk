@@ -1,3 +1,5 @@
+import { defineAnalyzer } from "tsk";
+import { runRule } from "../lint";
 import * as ast from "go/ast";
 import { goFmt, isStringLiteral } from "../astutils";
 import type { Failure, File, Rule } from "../lint";
@@ -68,3 +70,15 @@ function apply(file: File): Failure[] {
   });
   return failures;
 }
+
+export default defineAnalyzer({
+  name: "unnecessary_format",
+  doc: "Identifies calls to formatting functions where the format string does not contain any formatting verbs",
+  url: "https://github.com/mgechev/revive/blob/v1.17.0/RULES_DESCRIPTIONS.md#unnecessary-format",
+  group: "revive",
+  enabledByDefault: false,
+  runDespiteErrors: true,
+  run(pass) {
+    runRule(pass, create());
+  },
+});

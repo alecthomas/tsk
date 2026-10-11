@@ -14,8 +14,9 @@ extracted once, read-only, and loaded from there.
 The core decisions:
 
 1. **Listing a library enables it.** A library is a bundle of analyzers, not
-   a set of modules to pick from. Unwanted analyzers are turned off with
-   `disable`.
+   a set of modules to pick from. Its analyzers run, except those it leaves
+   off by default. Unwanted analyzers are turned off with `disable`, and
+   others turned on with `enable`.
 2. **Pins are commits.** The config names a version; the lock file records the
    commit it resolved to. A commit identifies the exact file tree, so no
    content hash is needed.

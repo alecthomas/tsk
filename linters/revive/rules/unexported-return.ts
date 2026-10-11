@@ -1,3 +1,5 @@
+import { defineAnalyzer } from "tsk";
+import { runRule } from "../lint";
 import * as ast from "go/ast";
 import * as types from "go/types";
 import { receiverType } from "../astutils";
@@ -79,3 +81,14 @@ function exportedTypeName(obj: types.TypeName): boolean {
   // Builtin types have no package.
   return obj.pkg() === null || obj.exported();
 }
+
+export default defineAnalyzer({
+  name: "unexported_return",
+  doc: "Warns when a public return is from unexported type.",
+  url: "https://github.com/mgechev/revive/blob/v1.17.0/RULES_DESCRIPTIONS.md#unexported-return",
+  group: "revive",
+  runDespiteErrors: true,
+  run(pass) {
+    runRule(pass, create());
+  },
+});

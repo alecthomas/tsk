@@ -1,0 +1,3 @@
+[[case]]
+name = "default"
+packages = ["example.com/revive/unexported-return/golint", "example.com/revive/unexported-return/foo", "example.com/revive/unexported-return/main"]

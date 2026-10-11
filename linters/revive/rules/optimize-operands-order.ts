@@ -1,3 +1,5 @@
+import { defineAnalyzer } from "tsk";
+import { runRule } from "../lint";
 import * as ast from "go/ast";
 import * as token from "go/token";
 import { goFmt, seekNode } from "../astutils";
@@ -57,3 +59,15 @@ function swapped(n: ast.BinaryExpr, expr: string): string {
   }
   return `${goFmt(n.y!)}${op}${goFmt(n.x!)}`;
 }
+
+export default defineAnalyzer({
+  name: "optimize_operands_order",
+  doc: "Checks inefficient conditional expressions",
+  url: "https://github.com/mgechev/revive/blob/v1.17.0/RULES_DESCRIPTIONS.md#optimize-operands-order",
+  group: "revive",
+  enabledByDefault: false,
+  runDespiteErrors: true,
+  run(pass) {
+    runRule(pass, create());
+  },
+});

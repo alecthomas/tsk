@@ -1,3 +1,5 @@
+import { defineAnalyzer } from "tsk";
+import { runRule } from "../lint";
 import * as ast from "go/ast";
 import type { DeepReadonly, Failure, File, Rule } from "../lint";
 
@@ -38,3 +40,16 @@ export function create(options: DeepReadonly<Options>): Rule {
     },
   };
 }
+
+export default defineAnalyzer<Options>({
+  name: "max_public_structs",
+  doc: "The maximum number of public structs in a file.",
+  url: "https://github.com/mgechev/revive/blob/v1.17.0/RULES_DESCRIPTIONS.md#max-public-structs",
+  group: "revive",
+  enabledByDefault: false,
+  runDespiteErrors: true,
+  config: defaults,
+  run(pass) {
+    runRule(pass, create(pass.config));
+  },
+});

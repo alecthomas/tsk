@@ -1,3 +1,5 @@
+import { defineAnalyzer } from "tsk";
+import { runRule } from "../lint";
 import type * as ast from "go/ast";
 import * as types from "go/types";
 import { goFmt, isPointerToPkgDotType, walk, type Visitor } from "../astutils";
@@ -123,3 +125,16 @@ function isSafeFprintfToBuffer(file: File, call: ast.CallExpr): boolean {
   const argType = file.pkg.typeOf(call.args[0]!);
   return argType !== null && (isPointerToPkgDotType(argType, "bytes", "Buffer") || isPointerToPkgDotType(argType, "strings", "Builder"));
 }
+
+export default defineAnalyzer<Options>({
+  name: "unhandled_error",
+  doc: "Warns on unhandled errors returned by function calls",
+  url: "https://github.com/mgechev/revive/blob/v1.17.0/RULES_DESCRIPTIONS.md#unhandled-error",
+  group: "revive",
+  enabledByDefault: false,
+  runDespiteErrors: true,
+  config: defaults,
+  run(pass) {
+    runRule(pass, create(pass.config));
+  },
+});

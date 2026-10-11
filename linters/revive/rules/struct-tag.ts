@@ -1,3 +1,5 @@
+import { defineAnalyzer } from "tsk";
+import { runRule } from "../lint";
 import * as ast from "go/ast";
 import { goFmt, walk } from "../astutils";
 import type { DeepReadonly, Failure, File, Rule } from "../lint";
@@ -835,3 +837,16 @@ const validateLHS = new Set([
   "unique",
   "validateFn",
 ]);
+
+export default defineAnalyzer<Options>({
+  name: "struct_tag",
+  doc: "Checks common struct tags like `json`, `xml`, `yaml`",
+  url: "https://github.com/mgechev/revive/blob/v1.17.0/RULES_DESCRIPTIONS.md#struct-tag",
+  group: "revive",
+  enabledByDefault: false,
+  runDespiteErrors: true,
+  config: defaults,
+  run(pass) {
+    runRule(pass, create(pass.config));
+  },
+});

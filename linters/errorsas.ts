@@ -19,6 +19,7 @@ For example:
 	var unwrappedErr net.DNSError
 	errors.As(err, unwrappedErr) // should use &unwrappedErr, DNSError.Error has a pointer receiver`,
   url: "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/errorsas",
+  group: "govet",
   // Upstream finds calls with the typeindex pass, which tsk does not provide.
   requires: [inspect],
   run(pass) {

@@ -1,3 +1,5 @@
+import { defineAnalyzer } from "tsk";
+import { runRule } from "../lint";
 import type * as ast from "go/ast";
 import * as token from "go/token";
 import { isIdent, isStringLiteral, pickNodes, walk, type Visitor } from "../astutils";
@@ -148,3 +150,15 @@ function isVariadicAppend(call: ast.CallExpr): boolean {
 function isEmptySliceLiteral(expr: ast.Expr): boolean {
   return expr.$type === "CompositeLit" && expr.elts.length === 0 && expr.type !== null && expr.type.$type === "ArrayType" && expr.type.len === null;
 }
+
+export default defineAnalyzer({
+  name: "use_slices_concat",
+  doc: "Proposes to replace appends to an empty slice with a call to `slices.Concat`.",
+  url: "https://github.com/mgechev/revive/blob/v1.17.0/RULES_DESCRIPTIONS.md#use-slices-concat",
+  group: "revive",
+  enabledByDefault: false,
+  runDespiteErrors: true,
+  run(pass) {
+    runRule(pass, create());
+  },
+});

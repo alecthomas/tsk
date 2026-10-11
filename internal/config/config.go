@@ -28,9 +28,10 @@ type File struct {
 	// Replace maps imports, as ParseImport formats them without a version, to
 	// directories relative to the config file.
 	Replace    map[string]string `toml:"replace" help:"Imports, as repository[//dir], to load from local directories instead, relative to this file. They are not fetched or locked."`
-	Disable    []string          `toml:"disable" help:"Analyzers that do not run."`
-	DisableAll bool              `toml:"disable-all" help:"Turn every analyzer off except those listed in enable."`
-	Enable     []string          `toml:"enable" help:"Analyzers that run when disable-all is true."`
+	Disable    []string          `toml:"disable" help:"Analyzers and groups that do not run. Naming an analyzer wins over naming its group."`
+	DisableAll bool              `toml:"disable-all" help:"Turn every analyzer off except those enable names."`
+	EnableAll  bool              `toml:"enable-all" help:"Turn every analyzer on, including those off by default, except those disable names."`
+	Enable     []string          `toml:"enable" help:"Analyzers and groups that run, including those off by default. Naming an analyzer wins over naming its group."`
 	// LintGenerated keeps findings in generated files, which golangci-lint
 	// also drops by default.
 	LintGenerated bool     `toml:"lint-generated" help:"Report findings in generated files, which are skipped by default."`
@@ -81,50 +82,69 @@ func isSetting(key string) bool {
 	return slices.ContainsFunc(Settings(), func(setting Setting) bool { return setting.Key == key })
 }
 
-// Enabled reports whether the config runs an analyzer.
-func (f File) Enabled(name string) bool {
-	if f.DisableAll {
-		return slices.Contains(f.Enable, name)
+// Linter is what selecting an analyzer depends on.
+type Linter struct {
+	Name string
+	// Group is the group the analyzer belongs to, or empty.
+	Group string
+	// Default is whether the analyzer runs when the config does not name it
+	// or its group.
+	Default bool
+}
+
+// Enabled reports whether the config runs an analyzer. Naming the analyzer
+// wins over naming its group, and disable wins over enable at each level.
+func (f File) Enabled(linter Linter) bool {
+	named := func(names []string) bool { return slices.Contains(names, linter.Name) }
+	grouped := func(names []string) bool { return linter.Group != "" && slices.Contains(names, linter.Group) }
+	switch {
+	case named(f.Disable):
+		return false
+	case named(f.Enable):
+		return true
+	case grouped(f.Disable):
+		return false
+	case grouped(f.Enable):
+		return true
+	case f.EnableAll:
+		return true
+	case f.DisableAll:
+		return false
 	}
-	return !slices.Contains(f.Disable, name)
+	return linter.Default
 }
 
 // Selection picks analyzers on the command line, over the config file's
 // disable, disable-all and enable settings.
 type Selection struct {
-	Disable    []string `help:"Analyzers that do not run." placeholder:"ANALYZER"`
-	DisableAll bool     `help:"Turn every analyzer off except those listed in --enable, whatever the config file enables." xor:"all"`
-	Enable     []string `help:"Analyzers that run, even if the config file disables them." placeholder:"ANALYZER"`
+	Disable    []string `help:"Analyzers and groups that do not run." placeholder:"ANALYZER"`
+	DisableAll bool     `help:"Turn every analyzer off except those named by --enable, whatever the config file enables." xor:"all"`
+	Enable     []string `help:"Analyzers and groups that run, even if off by default or disabled by the config file." placeholder:"ANALYZER"`
 }
 
 // LintSelection is a Selection for lint, which applies the config file's, so
 // it can also undo all of it.
 type LintSelection struct {
 	Selection `embed:""`
-	EnableAll bool `help:"Turn every analyzer on except those listed in --disable, whatever the config file disables." xor:"all"`
+	EnableAll bool `help:"Turn every analyzer on, including those off by default, except those named by --disable, whatever the config file disables." xor:"all"`
 }
 
 // SelectLint returns the config with a lint selection applied over it.
 func (f File) SelectLint(s LintSelection) File {
 	if s.EnableAll {
-		f.Disable, f.DisableAll, f.Enable = nil, false, nil
+		f.Disable, f.DisableAll, f.EnableAll, f.Enable = nil, false, true, nil
 	}
 	return f.Select(s.Selection)
 }
 
 // Select returns the config with a selection applied over it. --disable wins
-// over --enable, which wins over --disable-all and the config file.
+// over --enable, which wins over --disable-all and the config file's lists.
 func (f File) Select(s Selection) File {
-	switch {
-	case s.DisableAll:
-		f.DisableAll = true
-		f.Enable = without(s.Enable, s.Disable)
-		f.Disable = nil
-	case f.DisableAll:
-		f.Enable = without(slices.Concat(f.Enable, s.Enable), s.Disable)
-	default:
-		f.Disable = slices.Concat(without(f.Disable, s.Enable), s.Disable)
+	if s.DisableAll {
+		f.Disable, f.DisableAll, f.EnableAll, f.Enable = nil, true, false, nil
 	}
+	f.Enable = without(slices.Concat(f.Enable, s.Enable), s.Disable)
+	f.Disable = slices.Concat(without(f.Disable, s.Enable), s.Disable)
 	return f
 }
 
@@ -216,11 +236,13 @@ func Parse(name, text string) (File, error) {
 		return File{}, errors.Wrapf(err, "%s", name)
 	}
 	// Each combination below would silently ignore a setting.
-	switch {
-	case len(file.Enable) > 0 && !file.DisableAll:
-		return File{}, errors.Errorf("%s: enable needs disable-all = true; every analyzer already runs", name)
-	case len(file.Disable) > 0 && file.DisableAll:
-		return File{}, errors.Errorf("%s: disable has no effect with disable-all = true; list analyzers to run in enable", name)
+	if file.EnableAll && file.DisableAll {
+		return File{}, errors.Errorf("%s: enable-all and disable-all cannot both be true", name)
+	}
+	for _, both := range file.Enable {
+		if slices.Contains(file.Disable, both) {
+			return File{}, errors.Errorf("%s: %s is in both enable and disable", name, both)
+		}
 	}
 	return file, nil
 }

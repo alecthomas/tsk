@@ -55,6 +55,7 @@ export default defineAnalyzer({
   name: "framepointer",
   doc: "report assembly that clobbers the frame pointer before saving it",
   url: "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/framepointer",
+  group: "govet",
   run(pass) {
     const arch = arches.get(goarch());
     if (arch === undefined || (goos() !== "linux" && goos() !== "darwin")) {

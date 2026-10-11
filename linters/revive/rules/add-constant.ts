@@ -1,3 +1,5 @@
+import { defineAnalyzer } from "tsk";
+import { runRule } from "../lint";
 import type * as ast from "go/ast";
 import * as token from "go/token";
 import { type Visitor, walk } from "../astutils";
@@ -169,3 +171,16 @@ function isEmptyString(lit: string): boolean {
   }
   return lit === `""`;
 }
+
+export default defineAnalyzer<Options>({
+  name: "add_constant",
+  doc: "Suggests using constant for magic numbers and string literals",
+  url: "https://github.com/mgechev/revive/blob/v1.17.0/RULES_DESCRIPTIONS.md#add-constant",
+  group: "revive",
+  enabledByDefault: false,
+  runDespiteErrors: true,
+  config: defaults,
+  run(pass) {
+    runRule(pass, create(pass.config));
+  },
+});

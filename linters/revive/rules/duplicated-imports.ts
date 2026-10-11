@@ -1,3 +1,5 @@
+import { defineAnalyzer } from "tsk";
+import { runRule } from "../lint";
 import type { Failure, File, Rule } from "../lint";
 
 export const name = "duplicated-imports";
@@ -19,3 +21,15 @@ function apply(file: File): Failure[] {
   }
   return failures;
 }
+
+export default defineAnalyzer({
+  name: "duplicated_imports",
+  doc: "Looks for packages that are imported two or more times",
+  url: "https://github.com/mgechev/revive/blob/v1.17.0/RULES_DESCRIPTIONS.md#duplicated-imports",
+  group: "revive",
+  enabledByDefault: false,
+  runDespiteErrors: true,
+  run(pass) {
+    runRule(pass, create());
+  },
+});

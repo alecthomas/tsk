@@ -1,0 +1,15 @@
+[[case]]
+name = "default"
+packages = ["example.com/revive/cyclomatic/default"]
+
+[[case]]
+name = "max1"
+packages = ["example.com/revive/cyclomatic/max1"]
+[case.config]
+max = 1
+
+[[case]]
+name = "max3"
+packages = ["example.com/revive/cyclomatic/max3"]
+[case.config]
+max = 3

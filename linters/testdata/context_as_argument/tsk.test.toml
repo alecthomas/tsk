@@ -1,0 +1,9 @@
+[[case]]
+name = "default"
+packages = ["example.com/revive/context-as-argument/default"]
+
+[[case]]
+name = "allow-types-before"
+packages = ["example.com/revive/context-as-argument/allowed"]
+[case.config]
+allow-types-before = ["AllowedBeforeType", "AllowedBeforeStruct", "*AllowedBeforePtrStruct", "*testing.T"]

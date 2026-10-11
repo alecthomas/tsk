@@ -1,0 +1,3 @@
+[[case]]
+name = "default"
+packages = ["example.com/revive/import-shadowing", "example.com/revive/import-shadowing/versions", "example.com/revive/import-shadowing/k8s"]

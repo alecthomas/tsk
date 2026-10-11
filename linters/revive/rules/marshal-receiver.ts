@@ -1,3 +1,5 @@
+import { defineAnalyzer } from "tsk";
+import { runRule } from "../lint";
 import { receiverType } from "../astutils";
 import type { Failure, File, Rule } from "../lint";
 
@@ -30,3 +32,15 @@ function apply(file: File): Failure[] {
   }
   return failures;
 }
+
+export default defineAnalyzer({
+  name: "marshal_receiver",
+  doc: "Checks receiver type consistency for common marshal/unmarshal methods.",
+  url: "https://github.com/mgechev/revive/blob/v1.17.0/RULES_DESCRIPTIONS.md#marshal-receiver",
+  group: "revive",
+  enabledByDefault: false,
+  runDespiteErrors: true,
+  run(pass) {
+    runRule(pass, create());
+  },
+});

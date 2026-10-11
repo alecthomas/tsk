@@ -1,0 +1,9 @@
+[[case]]
+name = "default"
+packages = ["example.com/revive/unused-parameter"]
+
+[[case]]
+name = "custom-regex"
+packages = ["example.com/revive/unused-parameter/customregex"]
+[case.config]
+allow-regex = "^xxx"

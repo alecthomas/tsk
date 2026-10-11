@@ -65,6 +65,7 @@ is not reported.
 Unlike upstream, this port does not run the inliner, so it suggests no
 fixes, and reports calls the inliner would decline to reduce.`,
   url: "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/inline",
+  group: "govet",
   requires: [inspect],
   facts: [funcFact, constFact, aliasFact],
   scope: "all",

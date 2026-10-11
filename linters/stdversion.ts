@@ -23,6 +23,7 @@ new" field or method of a type that is itself "too new", as this may
 have false positives, for example if fields or methods are accessed
 through a type alias that is guarded by a Go version constraint.`,
   url: "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/stdversion",
+  group: "govet",
   requires: [inspect],
   runDespiteErrors: true,
   run(pass) {

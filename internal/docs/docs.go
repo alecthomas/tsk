@@ -25,7 +25,13 @@ type Analyzer struct {
 	URL  string
 	// Source names where the analyzer is defined, such as a library or a
 	// script path.
-	Source  string
+	Source string
+	// Group names the analyzer's group, or is empty.
+	Group string
+	// EnabledByDefault is whether the analyzer runs when the config names
+	// neither it nor its group.
+	EnabledByDefault bool
+	// Enabled is whether the project's config runs the analyzer.
 	Enabled bool
 	Config  Option[Config]
 }
@@ -61,7 +67,11 @@ func TOML(w io.Writer, analyzers []Analyzer, options Options) error {
 	}
 	for _, analyzer := range analyzers {
 		r.line("")
-		r.line(r.dim("# ") + r.name(analyzer.Name) + r.dim(" (") + r.status(analyzer.Enabled) + r.dim(", ") + r.source(analyzer.Source) + r.dim(")"))
+		group := ""
+		if analyzer.Group != "" {
+			group = r.dim(", group ") + analyzer.Group
+		}
+		r.line(r.dim("# ") + r.name(analyzer.Name) + r.dim(" (") + r.status(analyzer.Enabled) + group + r.dim(", ") + r.source(analyzer.Source) + r.dim(")"))
 		if analyzer.Doc != "" {
 			r.line(r.dim("#"))
 			r.indented("# ", analyzer.Doc, r.dim)

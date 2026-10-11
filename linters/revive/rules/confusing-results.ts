@@ -1,3 +1,5 @@
+import { defineAnalyzer } from "tsk";
+import { runRule } from "../lint";
 import type * as ast from "go/ast";
 import { goFmt } from "../astutils";
 import type { Failure, File, Rule } from "../lint";
@@ -33,3 +35,15 @@ function apply(file: File): Failure[] {
   }
   return failures;
 }
+
+export default defineAnalyzer({
+  name: "confusing_results",
+  doc: "Suggests to name potentially confusing function results",
+  url: "https://github.com/mgechev/revive/blob/v1.17.0/RULES_DESCRIPTIONS.md#confusing-results",
+  group: "revive",
+  enabledByDefault: false,
+  runDespiteErrors: true,
+  run(pass) {
+    runRule(pass, create());
+  },
+});

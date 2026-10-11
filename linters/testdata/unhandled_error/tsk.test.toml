@@ -1,0 +1,9 @@
+[[case]]
+name = "default"
+packages = ["example.com/revive/unhandled-error/default"]
+
+[[case]]
+name = "ignore-list"
+packages = ["example.com/revive/unhandled-error/ignorelist"]
+[case.config]
+ignore-list = ["unhandledError1", "fmt\\.Print", "os\\.(Create|WriteFile|Chmod)", "net\\..*", "bytes\\.Buffer\\.Write", " fixtures\\.unhandledErrorStruct2\\.reterr "]

@@ -1,0 +1,11 @@
+[[case]]
+name = "default"
+packages = ["example.com/revive/imports-blocklist/wildcards"]
+[case.config]
+packages = ["github.com/full/match", "wildcard/**/between", "wildcard/backward/**", "**/wildcard/forward", "full"]
+
+[[case]]
+name = "original"
+packages = ["example.com/revive/imports-blocklist/original"]
+[case.config]
+packages = ["crypto/md5", "crypto/sha1"]

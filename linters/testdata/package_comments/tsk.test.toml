@@ -1,0 +1,3 @@
+[[case]]
+name = "default"
+packages = ["example.com/revive/package-comments/crlf", "example.com/revive/package-comments/missing", "example.com/revive/package-comments/wrongform", "example.com/revive/package-comments/block", "example.com/revive/package-comments/directives", "example.com/revive/package-comments/nolint", "example.com/revive/package-comments/main", "example.com/revive/package-comments/multifile", "example.com/revive/package-comments/named", "example.com/revive/package-comments/first"]

@@ -1,0 +1,13 @@
+[[case]]
+name = "default"
+packages = ["example.com/revive/redundant-build-tag"]
+
+[[case]]
+name = "go1.20"
+dir = "go1.20"
+packages = ["example.com/revive-go120"]
+
+[[case]]
+name = "go1.21"
+dir = "go1.21"
+packages = ["example.com/revive-go121rbt"]

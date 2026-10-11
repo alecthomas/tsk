@@ -1,0 +1,4 @@
+[[case]]
+name = "default"
+dir = "go1.21"
+packages = ["example.com/revive-go121/range-val-address"]

@@ -1,0 +1,39 @@
+[[case]]
+name = "default"
+packages = ["example.com/revive/file-length-limit/disabled"]
+
+[[case]]
+name = "max0"
+packages = ["example.com/revive/file-length-limit/disabled"]
+[case.config]
+max = 0
+skip-comments = true
+skip-blank-lines = true
+
+[[case]]
+name = "max11"
+packages = ["example.com/revive/file-length-limit/max9"]
+[case.config]
+max = 11
+
+[[case]]
+name = "skip-comments"
+packages = ["example.com/revive/file-length-limit/skipcomments"]
+[case.config]
+max = 8
+skip-comments = true
+
+[[case]]
+name = "skip-blank-lines"
+packages = ["example.com/revive/file-length-limit/skipblank"]
+[case.config]
+max = 7
+skip-blank-lines = true
+
+[[case]]
+name = "skip-both"
+packages = ["example.com/revive/file-length-limit/skipboth"]
+[case.config]
+max = 4
+skip-comments = true
+skip-blank-lines = true

@@ -1,0 +1,15 @@
+[[case]]
+name = "any"
+packages = ["example.com/revive/enforce-map-style/any"]
+
+[[case]]
+name = "literal"
+packages = ["example.com/revive/enforce-map-style/literal"]
+[case.config]
+style = "literal"
+
+[[case]]
+name = "make"
+packages = ["example.com/revive/enforce-map-style/make"]
+[case.config]
+style = "make"

@@ -34,6 +34,8 @@ Another example is about non-pointer receiver:
 		t.x = i  // unused write to field x
 	}`,
   url: "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/unusedwrite",
+  group: "govet",
+  enabledByDefault: false,
   requires: [buildssa],
   run(pass) {
     // The analysis may give false positives with unsafe (golang/go#67684).

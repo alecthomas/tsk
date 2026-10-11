@@ -1,3 +1,5 @@
+import { defineAnalyzer } from "tsk";
+import { runRule } from "../lint";
 import * as ast from "go/ast";
 import type { DeepReadonly, Failure, File, Rule } from "../lint";
 
@@ -65,3 +67,16 @@ function roundHalfEven(n: number): number {
   const rounded = Math.round(n);
   return rounded - n === 0.5 && rounded % 2 !== 0 ? rounded - 1 : rounded;
 }
+
+export default defineAnalyzer<Options>({
+  name: "comments_density",
+  doc: "Enforces a minimum comment / code relation",
+  url: "https://github.com/mgechev/revive/blob/v1.17.0/RULES_DESCRIPTIONS.md#comments-density",
+  group: "revive",
+  enabledByDefault: false,
+  runDespiteErrors: true,
+  config: defaults,
+  run(pass) {
+    runRule(pass, create(pass.config));
+  },
+});

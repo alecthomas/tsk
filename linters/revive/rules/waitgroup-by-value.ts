@@ -1,3 +1,5 @@
+import { defineAnalyzer } from "tsk";
+import { runRule } from "../lint";
 import { isPkgDotName } from "../astutils";
 import type { Failure, File, Rule } from "../lint";
 
@@ -23,3 +25,15 @@ function apply(file: File): Failure[] {
   }
   return failures;
 }
+
+export default defineAnalyzer({
+  name: "waitgroup_by_value",
+  doc: "Warns on functions taking sync.WaitGroup as a by-value parameter",
+  url: "https://github.com/mgechev/revive/blob/v1.17.0/RULES_DESCRIPTIONS.md#waitgroup-by-value",
+  group: "revive",
+  enabledByDefault: false,
+  runDespiteErrors: true,
+  run(pass) {
+    runRule(pass, create());
+  },
+});

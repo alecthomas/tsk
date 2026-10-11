@@ -1,3 +1,5 @@
+import { defineAnalyzer } from "tsk";
+import { runRule } from "../lint";
 import * as ast from "go/ast";
 import * as token from "go/token";
 import type * as types from "go/types";
@@ -69,3 +71,15 @@ function isTime(typ: types.Type | null): boolean {
   const obj = (typ as types.Named).obj();
   return obj !== null && obj.pkg() !== null && obj.pkg()!.path() === "time" && obj.name() === "Time";
 }
+
+export default defineAnalyzer({
+  name: "epoch_naming",
+  doc: "Enforces naming conventions for epoch time variables",
+  url: "https://github.com/mgechev/revive/blob/v1.17.0/RULES_DESCRIPTIONS.md#epoch-naming",
+  group: "revive",
+  enabledByDefault: false,
+  runDespiteErrors: true,
+  run(pass) {
+    runRule(pass, create());
+  },
+});

@@ -119,11 +119,11 @@ These libraries are known to work with `tsk`. Add one with `tsk get
 | Command | Does |
 |---|---|
 | `tsk [lint] [packages...]` | Lints packages with every enabled linter. `--fix` applies suggested fixes, `--diff` prints them instead, `--json` emits JSON, `-c N` shows N lines of context, and `--no-test` skips test files. `--enable`, `--disable`, `--disable-all`, and `--enable-all` choose linters over the config file. |
-| `tsk test` | Runs each linter against its test data. `--enable`, `--disable`, and `--disable-all` choose which linters. See [Writing tests](#writing-tests). |
+| `tsk test` | Runs each linter, including those off by default, against its test data. `--enable`, `--disable`, and `--disable-all` choose which linters. See [Writing tests](#writing-tests). |
 | `tsk check` | Type-checks scripts and validates `.tsk/config.toml`. |
 | `tsk init` | Writes the script declarations to `.tsk/types/` and a `tsconfig.json` to `.tsk/`, for editor completion and type checking. |
 | `tsk config [linters...]` | Prints a `.tsk/config.toml` documenting each linter and option, set to its default. |
-| `tsk list` | Lists every linter, whether it is enabled, where it is defined, and its summary. `--json` prints a JSON array instead, with each linter's full documentation and URL. |
+| `tsk list` | Lists every linter, whether it is enabled, its group, where it is defined, and its summary. `--json` prints a JSON array instead, with each linter's full documentation and URL. |
 | `tsk get [libraries...]` | Adds or updates [libraries](#using-libraries) and pins them in `.tsk/lock.toml`. |
 | `tsk sync` | Downloads every pinned library missing from the cache. |
 
@@ -146,19 +146,34 @@ analysed. Libraries are still cached in the default location.
 choose which linters run:
 
 ```toml
-# Run every linter except these.
-disable = ["nopanic"]
+# Turn these linters off.
+disable = ["nopanic", "revive"]
+
+# Turn on linters that are off by default.
+enable = ["shadow"]
 
 # Or run only these.
 # disable-all = true
-# enable = ["nopanic"]
+# enable = ["nopanic", "govet"]
+
+# Or run every linter, including those off by default, except those disabled.
+# enable-all = true
 
 [nopanic]
 message = "return an error instead of panicking"
 ```
 
-A disabled linter still runs when an enabled one requires it. Unknown linters,
-unknown options, and values of the wrong type are errors.
+Some linters are off by default, and run only when `enable` names them. Related
+linters can form a group, such as `govet` or `revive` in `tsk`'s own library. A
+group's name works wherever a linter's does: in `enable`, `disable`,
+`skip-tests`, exclusion rules, `//nolint` comments, and on the command line.
+Enabling a group turns on all of its linters, including those off by default.
+Naming a linter wins over naming its group, so `disable = ["revive"]` with
+`enable = ["var_naming"]` runs only `var_naming` of revive's linters.
+
+A disabled linter still runs when an enabled one requires it. Unknown linters
+and groups, unknown options, values of the wrong type, and a name in both
+`enable` and `disable` are errors.
 
 Findings in generated files are dropped, as golangci-lint drops them: a file is
 generated when, before its package clause, it has a line matching
@@ -197,8 +212,9 @@ imports = [
 ]
 ```
 
-Every linter in a listed library runs, as if its scripts were in `.tsk/`. Turn
-off the ones you do not want with `disable`. `tsk get` prints the linters each
+Every linter in a listed library runs, as if its scripts were in `.tsk/`,
+except those it leaves off by default. Turn off the ones you do not want with
+`disable`, and turn on others with `enable`. `tsk get` prints the linters each
 change adds or removes, because an update can add new ones.
 
 An import is `<repository>[@<version>][//<dir>]`:
@@ -255,7 +271,8 @@ the config, so remove one meant only for your machine before you commit.
 Suppress findings with a `//nolint:<linter>[,<linter>...] [<reason>]` comment,
 as with golangci-lint. At the end of a line it covers that line. On its own
 line it also covers the declaration or statement below it, when that starts in
-the same column. A bare `//nolint` covers every linter.
+the same column. A bare `//nolint` covers every linter, and a group's name
+covers every linter in the group.
 
 ### Writing linters
 
@@ -281,6 +298,8 @@ Calling `defineAnalyzer` registers a linter. Its definition mirrors
 | `name` | A Go identifier. It names the linter in `.tsk/config.toml`, `//nolint` comments, and output. |
 | `doc` | The documentation. The first line is a summary. |
 | `url` | Optional link to more documentation. |
+| `group` | Optional group, a Go identifier distinct from every linter's name, that config and `//nolint` comments can name for all its linters. |
+| `enabledByDefault` | `false` runs the linter only when the config enables it or its group. |
 | `config` | Default option values. See [Options](#options). |
 | `requires` | Linters whose results `run` reads, from other scripts or from `tsk/passes`. |
 | `facts` | Every fact the linter imports or exports. See [Facts](#facts). |

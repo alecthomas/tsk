@@ -14,14 +14,15 @@ import (
 )
 
 // Reporter wraps pass.Report to drop the analyzer's findings that a //nolint
-// comment suppresses. Comments are only scanned once a finding is reported.
-func Reporter(pass *analysis.Pass, analyzer string) func(analysis.Diagnostic) {
+// comment suppresses. A comment may name the analyzer or any of names, such
+// as its group. Comments are only scanned once a finding is reported.
+func Reporter(pass *analysis.Pass, names ...string) func(analysis.Diagnostic) {
 	index := sync.OnceValue(func() map[*token.File][]directive { return scan(pass.Fset, pass.Files) })
 	return func(diagnostic analysis.Diagnostic) {
 		file := pass.Fset.File(diagnostic.Pos)
 		if file != nil {
 			line := file.Line(diagnostic.Pos)
-			if slices.ContainsFunc(index()[file], func(d directive) bool { return d.suppresses(analyzer, line) }) {
+			if slices.ContainsFunc(index()[file], func(d directive) bool { return d.suppresses(names, line) }) {
 				return
 			}
 		}
@@ -51,8 +52,9 @@ func (d *directive) precedes(position token.Position) bool {
 
 func (d *directive) coverTo(line int) { d.to = max(d.to, line) }
 
-func (d *directive) suppresses(analyzer string, line int) bool {
-	return line >= d.from && line <= d.to && (len(d.analyzers) == 0 || slices.Contains(d.analyzers, analyzer))
+func (d *directive) suppresses(names []string, line int) bool {
+	return line >= d.from && line <= d.to &&
+		(len(d.analyzers) == 0 || slices.ContainsFunc(names, func(name string) bool { return slices.Contains(d.analyzers, name) }))
 }
 
 func scan(fset *token.FileSet, files []*ast.File) map[*token.File][]directive {

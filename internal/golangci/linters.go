@@ -30,9 +30,12 @@ func standardLinters() []string {
 	return []string{"errcheck", "govet", "ineffassign", "staticcheck", "unused"}
 }
 
-// govet is golangci-lint's linter running go vet's analyzers, which tsk has
-// as separate analyzers.
-const govet = "govet"
+// govet and revive are golangci-lint linters whose analyzers or rules tsk has
+// as separate analyzers, each in a group of the same name.
+const (
+	govet  = "govet"
+	revive = "revive"
+)
 
 // vetAnalyzers returns the analyzers golangci-lint v2.14.0's govet can run.
 func vetAnalyzers() []string {

@@ -1,0 +1,9 @@
+[[case]]
+name = "default"
+packages = ["example.com/revive/max-public-structs/default"]
+
+[[case]]
+name = "max1"
+packages = ["example.com/revive/max-public-structs/max1"]
+[case.config]
+max = 1

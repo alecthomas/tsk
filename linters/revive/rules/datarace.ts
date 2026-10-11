@@ -1,3 +1,5 @@
+import { defineAnalyzer } from "tsk";
+import { runRule } from "../lint";
 import type * as ast from "go/ast";
 import { pickNodes, walk, type Visitor } from "../astutils";
 import type { Failure, File, Rule } from "../lint";
@@ -72,3 +74,15 @@ function raceVisitor(failures: Failure[], returnIDs: Set<NodeUID>, rangeIDs: Set
   };
   return visitor;
 }
+
+export default defineAnalyzer({
+  name: "datarace",
+  doc: "Spots potential dataraces",
+  url: "https://github.com/mgechev/revive/blob/v1.17.0/RULES_DESCRIPTIONS.md#datarace",
+  group: "revive",
+  enabledByDefault: false,
+  runDespiteErrors: true,
+  run(pass) {
+    runRule(pass, create());
+  },
+});

@@ -1,3 +1,5 @@
+import { defineAnalyzer } from "tsk";
+import { runRule } from "../lint";
 import type * as ast from "go/ast";
 import * as token from "go/token";
 import { isIdent, walk } from "../astutils";
@@ -96,3 +98,15 @@ function containsComments(start: token.Pos, end: token.Pos, f: ast.File): boolea
   }
   return false;
 }
+
+export default defineAnalyzer({
+  name: "if_return",
+  doc: "Redundant if when returning an error.",
+  url: "https://github.com/mgechev/revive/blob/v1.17.0/RULES_DESCRIPTIONS.md#if-return",
+  group: "revive",
+  enabledByDefault: false,
+  runDespiteErrors: true,
+  run(pass) {
+    runRule(pass, create());
+  },
+});

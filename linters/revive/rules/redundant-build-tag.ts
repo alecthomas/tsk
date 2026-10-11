@@ -1,3 +1,5 @@
+import { defineAnalyzer } from "tsk";
+import { runRule } from "../lint";
 import type { Failure, File, Rule } from "../lint";
 
 export const name = "redundant-build-tag";
@@ -101,3 +103,15 @@ function cmpInt(x: string, y: string): number {
   }
   return x < y ? -1 : 1;
 }
+
+export default defineAnalyzer({
+  name: "redundant_build_tag",
+  doc: "Warns about redundant `// +build` comment lines",
+  url: "https://github.com/mgechev/revive/blob/v1.17.0/RULES_DESCRIPTIONS.md#redundant-build-tag",
+  group: "revive",
+  enabledByDefault: false,
+  runDespiteErrors: true,
+  run(pass) {
+    runRule(pass, create());
+  },
+});

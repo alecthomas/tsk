@@ -1,3 +1,5 @@
+import { defineAnalyzer } from "tsk";
+import { runRule } from "../lint";
 import * as ast from "go/ast";
 import * as token from "go/token";
 import { unquote } from "../../internal/strconv";
@@ -42,3 +44,15 @@ function check(lit: ast.BasicLit, failures: Failure[]): void {
   }
   failures.push({ node: lit, confidence: 1, failure: `prefer secure protocol ${scheme}s over ${scheme} in ${lit.value}` });
 }
+
+export default defineAnalyzer({
+  name: "unsecure_url_scheme",
+  doc: "Checks for usage of potentially unsecure URL schemes.",
+  url: "https://github.com/mgechev/revive/blob/v1.17.0/RULES_DESCRIPTIONS.md#unsecure-url-scheme",
+  group: "revive",
+  enabledByDefault: false,
+  runDespiteErrors: true,
+  run(pass) {
+    runRule(pass, create());
+  },
+});

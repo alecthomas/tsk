@@ -1,6 +1,7 @@
 package docs
 
 import (
+	"cmp"
 	"encoding/json"
 	"io"
 	"strings"
@@ -9,8 +10,8 @@ import (
 	"github.com/alecthomas/errors"
 )
 
-// List writes one line per analyzer: its name, whether it is enabled, where
-// it is defined, and the first line of its documentation.
+// List writes one line per analyzer: its name, whether it is enabled, its
+// group or "-", where it is defined, and the first line of its documentation.
 func List(w io.Writer, analyzers []Analyzer) error {
 	table := tabwriter.NewWriter(w, 0, 0, 2, ' ', 0)
 	for _, analyzer := range analyzers {
@@ -18,8 +19,9 @@ func List(w io.Writer, analyzers []Analyzer) error {
 		if analyzer.Enabled {
 			status = "enabled"
 		}
+		group := cmp.Or(analyzer.Group, "-")
 		summary, _, _ := strings.Cut(analyzer.Doc, "\n")
-		if _, err := io.WriteString(table, strings.Join([]string{analyzer.Name, status, analyzer.Source, summary}, "\t")+"\n"); err != nil {
+		if _, err := io.WriteString(table, strings.Join([]string{analyzer.Name, status, group, analyzer.Source, summary}, "\t")+"\n"); err != nil {
 			return errors.WithStack(err)
 		}
 	}
@@ -30,6 +32,7 @@ func List(w io.Writer, analyzers []Analyzer) error {
 type listed struct {
 	Name    string `json:"name"`
 	Enabled bool   `json:"enabled"`
+	Group   string `json:"group,omitzero"`
 	Source  string `json:"source"`
 	Doc     string `json:"doc"`
 	URL     string `json:"url,omitzero"`
@@ -40,7 +43,7 @@ type listed struct {
 func ListJSON(w io.Writer, analyzers []Analyzer) error {
 	entries := make([]listed, 0, len(analyzers))
 	for _, analyzer := range analyzers {
-		entries = append(entries, listed{Name: analyzer.Name, Enabled: analyzer.Enabled, Source: analyzer.Source, Doc: analyzer.Doc, URL: analyzer.URL})
+		entries = append(entries, listed{Name: analyzer.Name, Enabled: analyzer.Enabled, Group: analyzer.Group, Source: analyzer.Source, Doc: analyzer.Doc, URL: analyzer.URL})
 	}
 	encoder := json.NewEncoder(w)
 	encoder.SetIndent("", "  ")

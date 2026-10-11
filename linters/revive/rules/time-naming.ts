@@ -1,3 +1,5 @@
+import { defineAnalyzer } from "tsk";
+import { runRule } from "../lint";
 import * as ast from "go/ast";
 import type * as types from "go/types";
 import type { Failure, File, Rule } from "../lint";
@@ -73,3 +75,14 @@ function isNamedType(typ: types.Type | null, importPath: string, typeName: strin
   const obj = (typ as types.Named).obj();
   return obj !== null && obj.pkg() !== null && obj.pkg()!.path() === importPath && obj.name() === typeName;
 }
+
+export default defineAnalyzer({
+  name: "time_naming",
+  doc: "Conventions around the naming of time variables.",
+  url: "https://github.com/mgechev/revive/blob/v1.17.0/RULES_DESCRIPTIONS.md#time-naming",
+  group: "revive",
+  runDespiteErrors: true,
+  run(pass) {
+    runRule(pass, create());
+  },
+});

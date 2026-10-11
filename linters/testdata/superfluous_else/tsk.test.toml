@@ -1,0 +1,9 @@
+[[case]]
+name = "default"
+packages = ["example.com/revive/superfluous-else"]
+
+[[case]]
+name = "scope"
+packages = ["example.com/revive/superfluous-else/scope"]
+[case.config]
+preserve-scope = true

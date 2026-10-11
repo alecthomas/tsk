@@ -1,0 +1,9 @@
+[[case]]
+name = "default"
+packages = ["example.com/revive/argument-limit/default"]
+
+[[case]]
+name = "max3"
+packages = ["example.com/revive/argument-limit/max3"]
+[case.config]
+max = 3

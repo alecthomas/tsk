@@ -1,0 +1,9 @@
+[[case]]
+name = "default"
+packages = ["example.com/revive/cognitive-complexity/default"]
+
+[[case]]
+name = "max0"
+packages = ["example.com/revive/cognitive-complexity/max0"]
+[case.config]
+max = 0

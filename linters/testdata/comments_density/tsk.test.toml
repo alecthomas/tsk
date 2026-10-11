@@ -1,0 +1,15 @@
+[[case]]
+name = "default"
+packages = ["example.com/revive/comments-density/default"]
+
+[[case]]
+name = "70"
+packages = ["example.com/revive/comments-density/low"]
+[case.config]
+minimum = 70
+
+[[case]]
+name = "90"
+packages = ["example.com/revive/comments-density/high"]
+[case.config]
+minimum = 90

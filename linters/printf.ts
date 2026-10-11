@@ -116,6 +116,7 @@ to it an implementation whose method is a wrapper.
 
 The funcs option names additional print functions.`,
   url: "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/printf",
+  group: "govet",
   requires: [inspect],
   facts: [isWrapper],
   scope: "all",

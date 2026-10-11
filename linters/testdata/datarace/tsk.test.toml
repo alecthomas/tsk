@@ -1,0 +1,8 @@
+[[case]]
+name = "default"
+packages = ["example.com/revive/datarace"]
+
+[[case]]
+name = "before-go1.22"
+dir = "go1.21"
+packages = ["example.com/revive-go121/datarace"]

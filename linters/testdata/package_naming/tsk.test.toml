@@ -1,0 +1,31 @@
+[[case]]
+name = "default"
+packages = ["example.com/revive/package-naming/mixedcaps", "example.com/revive/package-naming/underscore", "example.com/revive/package-naming/toplevel", "example.com/revive/package-naming/pkg", "example.com/revive/package-naming/util", "example.com/revive/package-naming/commonstd"]
+
+[[case]]
+name = "regex"
+packages = ["example.com/revive/package-naming/regex", "example.com/revive/package-naming/regexok"]
+[case.config]
+convention-name-check-regex = "^[a-z][a-zA-Z0-9]*$"
+
+[[case]]
+name = "bad-names"
+packages = ["example.com/revive/package-naming/extra", "example.com/revive/package-naming/userdefined"]
+[case.config]
+check-extra-bad-name = true
+user-defined-bad-names = ["Data"]
+
+[[case]]
+name = "all-std"
+packages = ["example.com/revive/package-naming/allstd", "example.com/revive/package-naming/allstdcommon"]
+[case.config]
+check-collision-with-all-std = true
+
+[[case]]
+name = "skipped"
+packages = ["example.com/revive/package-naming/skipped/mixedcaps", "example.com/revive/package-naming/skipped/toplevel", "example.com/revive/package-naming/skipped/util", "example.com/revive/package-naming/skipped/http"]
+[case.config]
+skip-convention-name-check = true
+skip-top-level-check = true
+skip-default-bad-name-check = true
+skip-collision-with-common-std = true

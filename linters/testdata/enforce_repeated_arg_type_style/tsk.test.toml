@@ -1,0 +1,45 @@
+[[case]]
+name = "default"
+packages = ["example.com/revive/enforce-repeated-arg-type-style/default"]
+
+[[case]]
+name = "full-args"
+packages = ["example.com/revive/enforce-repeated-arg-type-style/full-args"]
+[case.config]
+func-arg-style = "full"
+func-ret-val-style = "full"
+
+[[case]]
+name = "full-return"
+packages = ["example.com/revive/enforce-repeated-arg-type-style/full-return"]
+[case.config]
+func-arg-style = "full"
+func-ret-val-style = "full"
+
+[[case]]
+name = "short-args"
+packages = ["example.com/revive/enforce-repeated-arg-type-style/short-args"]
+[case.config]
+func-arg-style = "short"
+func-ret-val-style = "short"
+
+[[case]]
+name = "short-return"
+packages = ["example.com/revive/enforce-repeated-arg-type-style/short-return"]
+[case.config]
+func-arg-style = "short"
+func-ret-val-style = "short"
+
+[[case]]
+name = "mixed-full-short"
+packages = ["example.com/revive/enforce-repeated-arg-type-style/mixed-full-short"]
+[case.config]
+func-arg-style = "full"
+func-ret-val-style = "short"
+
+[[case]]
+name = "mixed-short-full"
+packages = ["example.com/revive/enforce-repeated-arg-type-style/mixed-short-full"]
+[case.config]
+func-arg-style = "short"
+func-ret-val-style = "full"

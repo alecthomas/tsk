@@ -1,3 +1,5 @@
+import { defineAnalyzer } from "tsk";
+import { runRule } from "../lint";
 import * as ast from "go/ast";
 import { isIdent, walk, type Visitor } from "../astutils";
 import type { DeepReadonly, Failure, File, Rule } from "../lint";
@@ -105,3 +107,16 @@ function deferVisitor(report: Report, state: State): Visitor {
   };
   return visitor;
 }
+
+export default defineAnalyzer<Options>({
+  name: "defer",
+  doc: "Warns on some [defer gotchas](https://blog.learngoprogramming.com/5-gotchas-of-defer-in-go-golang-part-iii-36a1ab3d6ef1)",
+  url: "https://github.com/mgechev/revive/blob/v1.17.0/RULES_DESCRIPTIONS.md#defer",
+  group: "revive",
+  enabledByDefault: false,
+  runDespiteErrors: true,
+  config: defaults,
+  run(pass) {
+    runRule(pass, create(pass.config));
+  },
+});
