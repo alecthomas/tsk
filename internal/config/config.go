@@ -30,8 +30,8 @@ type File struct {
 	Replace    map[string]string `toml:"replace" help:"Imports, as repository[//dir], to load from local directories instead, relative to this file. They are not fetched or locked."`
 	Disable    []string          `toml:"disable" help:"Analyzers and groups that do not run. Naming an analyzer wins over naming its group."`
 	DisableAll bool              `toml:"disable-all" help:"Turn every analyzer off except those enable names."`
-	EnableAll  bool              `toml:"enable-all" help:"Turn every analyzer on, including those off by default, except those disable names."`
-	Enable     []string          `toml:"enable" help:"Analyzers and groups that run, including those off by default. Naming an analyzer wins over naming its group."`
+	EnableAll  bool              `toml:"enable-all" help:"Turn every analyzer on except those disable names and those off by default."`
+	Enable     []string          `toml:"enable" help:"Analyzers and groups that run. An analyzer off by default runs only if named itself, not by its group. Naming an analyzer wins over naming its group."`
 	// LintGenerated keeps findings in generated files, which golangci-lint
 	// also drops by default.
 	LintGenerated bool     `toml:"lint-generated" help:"Report findings in generated files, which are skipped by default."`
@@ -87,8 +87,8 @@ type Linter struct {
 	Name string
 	// Group is the group the analyzer belongs to, or empty.
 	Group string
-	// Default is whether the analyzer runs when the config does not name it
-	// or its group.
+	// Default is false for an analyzer that runs only when enable names it,
+	// not its group, and not with enable-all.
 	Default bool
 }
 
@@ -102,6 +102,8 @@ func (f File) Enabled(linter Linter) bool {
 		return false
 	case named(f.Enable):
 		return true
+	case !linter.Default:
+		return false
 	case grouped(f.Disable):
 		return false
 	case grouped(f.Enable):
@@ -111,7 +113,7 @@ func (f File) Enabled(linter Linter) bool {
 	case f.DisableAll:
 		return false
 	}
-	return linter.Default
+	return true
 }
 
 // Selection picks analyzers on the command line, over the config file's
@@ -119,14 +121,14 @@ func (f File) Enabled(linter Linter) bool {
 type Selection struct {
 	Disable    []string `help:"Analyzers and groups that do not run." placeholder:"ANALYZER"`
 	DisableAll bool     `help:"Turn every analyzer off except those named by --enable, whatever the config file enables." xor:"all"`
-	Enable     []string `help:"Analyzers and groups that run, even if off by default or disabled by the config file." placeholder:"ANALYZER"`
+	Enable     []string `help:"Analyzers and groups that run, even if disabled by the config file. An analyzer off by default runs only if named itself." placeholder:"ANALYZER"`
 }
 
 // LintSelection is a Selection for lint, which applies the config file's, so
 // it can also undo all of it.
 type LintSelection struct {
 	Selection `embed:""`
-	EnableAll bool `help:"Turn every analyzer on, including those off by default, except those named by --disable, whatever the config file disables." xor:"all"`
+	EnableAll bool `help:"Turn every analyzer on except those named by --disable and those off by default, whatever the config file disables." xor:"all"`
 }
 
 // SelectLint returns the config with a lint selection applied over it.

@@ -135,8 +135,8 @@ needed. The definition mirrors `analysis.Analyzer`:
 - `runDespiteErrors`
 - `group`: a group the config and `//nolint` comments can name for all its
   analyzers; see [Config](#config).
-- `enabledByDefault`: `false` runs the analyzer only when the config enables
-  it or its group.
+- `enabledByDefault`: `false` runs the analyzer only when `enable` names it,
+  not its group, and not with `enable-all`.
 - `tests`: `false` drops the analyzer's findings in `_test.go` files.
 - `nolint`: `false` stops `//nolint` comments suppressing the analyzer's
   findings, for an analyzer that checks the comments themselves.
@@ -182,6 +182,11 @@ false`; `disable` turns analyzers off and `enable` turns them on, while
 analyzer. Both lists accept group names, which stand for every analyzer in
 the group. Naming an analyzer wins over naming its group, and at each level
 `disable` wins over `enable`, so a broad setting can carry exceptions.
+
+An analyzer off by default runs only when `enable` names it. Neither its group
+nor `enable-all` turns it on. This matches golangci-lint, where enabling govet
+or revive, or every linter, runs only their default checks. It also lets
+`disable-all` with a group in `enable` select just that group's default set.
 Combinations that would ignore a setting are errors. Disabled analyzers still
 run when another requires them. The file is parsed with go-toml, so decoding
 errors give a line and column.

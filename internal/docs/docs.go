@@ -28,8 +28,8 @@ type Analyzer struct {
 	Source string
 	// Group names the analyzer's group, or is empty.
 	Group string
-	// EnabledByDefault is whether the analyzer runs when the config names
-	// neither it nor its group.
+	// EnabledByDefault is false for an analyzer that runs only when enable
+	// names it, not its group.
 	EnabledByDefault bool
 	// Enabled is whether the project's config runs the analyzer.
 	Enabled bool

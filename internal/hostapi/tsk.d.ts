@@ -101,8 +101,8 @@ declare module "tsk" {
      */
     readonly group?: string;
     /**
-     * Whether the analyzer runs when the config names neither it nor its
-     * group. Defaults to true; enabling it, or its group, runs it regardless.
+     * Whether the analyzer runs unless the config turns it off. Defaults to
+     * true; when false, it runs only if enable names it, not its group.
      */
     readonly enabledByDefault?: boolean;
     /**

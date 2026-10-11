@@ -138,13 +138,20 @@ func TestSelect(t *testing.T) {
 	for _, name := range []string{"one", "two", "three"} {
 		assert.NoError(t, os.WriteFile(filepath.Join(c.Dir, name+".ts"), []byte(analyzerScript(name)), 0o600))
 	}
+	zero := `import { defineAnalyzer } from "tsk";
+export default defineAnalyzer({ name: "zero", doc: "zero linter", group: "g", enabledByDefault: false, run() {} });
+`
+	assert.NoError(t, os.WriteFile(filepath.Join(c.Dir, "zero.ts"), []byte(zero), 0o600))
 	logger := slog.New(slog.DiscardHandler)
 	p, err := project.Load(t.Context(), logger, c, library.NewCache(library.Config{Cache: t.TempDir()}, logger))
 	assert.NoError(t, err)
 
 	selected, err := p.Selected(config.Selection{Disable: []string{"two"}})
 	assert.NoError(t, err)
-	assert.Equal(t, []string{"one", "three"}, selected)
+	assert.Equal(t, []string{"one", "three", "zero"}, selected)
+	selected, err = p.Selected(config.Selection{DisableAll: true, Enable: []string{"g"}})
+	assert.NoError(t, err)
+	assert.Equal(t, []string{"zero"}, selected)
 	_, err = p.Selected(config.Selection{Enable: []string{"four"}})
 	assert.EqualError(t, err, "--enable names unknown analyzer or group four")
 

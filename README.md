@@ -156,18 +156,19 @@ enable = ["shadow"]
 # disable-all = true
 # enable = ["nopanic", "govet"]
 
-# Or run every linter, including those off by default, except those disabled.
+# Or run every linter except those disabled and those off by default.
 # enable-all = true
 
 [nopanic]
 message = "return an error instead of panicking"
 ```
 
-Some linters are off by default, and run only when `enable` names them. Related
-linters can form a group, such as `govet` or `revive` in `tsk`'s own library. A
-group's name works wherever a linter's does: in `enable`, `disable`,
-`skip-tests`, exclusion rules, `//nolint` comments, and on the command line.
-Enabling a group turns on all of its linters, including those off by default.
+Some linters are off by default, and run only when `enable` names them; neither
+their group nor `enable-all` turns them on. Related linters can form a group,
+such as `govet` or `revive` in `tsk`'s own library. A group's name works
+wherever a linter's does: in `enable`, `disable`, `skip-tests`, exclusion
+rules, `//nolint` comments, and on the command line. Enabling a group turns on
+its linters that are on by default, and disabling it turns off all of them.
 Naming a linter wins over naming its group, so `disable = ["revive"]` with
 `enable = ["var_naming"]` runs only `var_naming` of revive's linters.
 
@@ -299,7 +300,7 @@ Calling `defineAnalyzer` registers a linter. Its definition mirrors
 | `doc` | The documentation. The first line is a summary. |
 | `url` | Optional link to more documentation. |
 | `group` | Optional group, a Go identifier distinct from every linter's name, that config and `//nolint` comments can name for all its linters. |
-| `enabledByDefault` | `false` runs the linter only when the config enables it or its group. |
+| `enabledByDefault` | `false` runs the linter only when `enable` names it; its group and `enable-all` do not turn it on. |
 | `config` | Default option values. See [Options](#options). |
 | `requires` | Linters whose results `run` reads, from other scripts or from `tsk/passes`. |
 | `facts` | Every fact the linter imports or exports. See [Facts](#facts). |

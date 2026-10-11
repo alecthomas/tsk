@@ -663,7 +663,8 @@ export default defineAnalyzer({ name: "` + name + `", doc: "member", ` + definit
 `
 }
 
-// An analyzer off by default runs only when the config names it or its group.
+// An analyzer off by default runs only when the config names it, not its
+// group or enable-all.
 func TestGroupsAndDefaults(t *testing.T) {
 	e := load(t, map[string]string{
 		"a.ts": groupScript("a", `group: "g",`),
@@ -677,9 +678,10 @@ func TestGroupsAndDefaults(t *testing.T) {
 		Enabled []string
 	}{
 		{Name: "Default", Enabled: []string{"a", "b"}},
-		{Name: "EnableGroup", File: config.File{Enable: []string{"g"}}, Enabled: []string{"a", "b", "c"}},
+		{Name: "EnableOffByDefault", File: config.File{Enable: []string{"c"}}, Enabled: []string{"a", "b", "c"}},
+		{Name: "EnableGroup", File: config.File{DisableAll: true, Enable: []string{"g"}}, Enabled: []string{"a"}},
 		{Name: "DisableGroup", File: config.File{Disable: []string{"g"}}, Enabled: []string{"b"}},
-		{Name: "EnableAll", File: config.File{EnableAll: true}, Enabled: []string{"a", "b", "c"}},
+		{Name: "EnableAll", File: config.File{EnableAll: true}, Enabled: []string{"a", "b"}},
 	}
 	for _, test := range tests {
 		t.Run(test.Name, func(t *testing.T) {

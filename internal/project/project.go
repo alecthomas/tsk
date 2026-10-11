@@ -253,9 +253,12 @@ func (p *Project) Selected(s config.Selection) ([]string, error) {
 	if err := p.checkSelection(s); err != nil {
 		return nil, err
 	}
-	file := config.File{EnableAll: true}.Select(s)
+	file := config.File{}.Select(s)
 	var selected []string
 	for _, linter := range p.engine.Linters() {
+		// Only a linter's own name turns it on when off by default, so treat
+		// every linter as on by default for a group in --enable to reach it.
+		linter.Default = true
 		if file.Enabled(linter) {
 			selected = append(selected, linter.Name)
 		}
