@@ -85,23 +85,24 @@ func TestConfigResolve(t *testing.T) {
 	assert.NoError(t, err)
 	type resolved struct {
 		Cache   string
-		Results Option[string]
+		Results  Option[string]
+		Testdata string
 	}
 	tests := []struct {
 		name  string
 		cache string
 		want  resolved
 	}{
-		{name: "Default", want: resolved{Cache: "/user/tsk", Results: Some("/user/tsk/lint")}},
-		{name: "Absolute", cache: "/elsewhere", want: resolved{Cache: "/elsewhere", Results: Some("/elsewhere/lint")}},
-		{name: "Relative", cache: "here", want: resolved{Cache: filepath.Join(cwd, "here"), Results: Some(filepath.Join(cwd, "here", "lint"))}},
-		{name: "Disable", cache: "disable", want: resolved{Cache: "/user/tsk", Results: None[string]()}},
+		{name: "Default", want: resolved{Cache: "/user/tsk", Results: Some("/user/tsk/lint"), Testdata: "/user/tsk/testdata"}},
+		{name: "Absolute", cache: "/elsewhere", want: resolved{Cache: "/elsewhere", Results: Some("/elsewhere/lint"), Testdata: "/elsewhere/testdata"}},
+		{name: "Relative", cache: "here", want: resolved{Cache: filepath.Join(cwd, "here"), Results: Some(filepath.Join(cwd, "here", "lint")), Testdata: filepath.Join(cwd, "here", "testdata")}},
+		{name: "Disable", cache: "disable", want: resolved{Cache: "/user/tsk", Results: None[string](), Testdata: "/user/tsk/testdata"}},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			c, err := library.Config{Cache: test.cache}.Resolve(Some("/user"))
 			assert.NoError(t, err)
-			assert.Equal(t, test.want, resolved{Cache: c.Cache, Results: c.Results()})
+			assert.Equal(t, test.want, resolved{Cache: c.Cache, Results: c.Results(), Testdata: c.Testdata()})
 		})
 	}
 }

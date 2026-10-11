@@ -20,7 +20,6 @@ import (
 	"github.com/pelletier/go-toml/v2"
 	"golang.org/x/sync/errgroup"
 	"golang.org/x/tools/go/analysis"
-	"golang.org/x/tools/go/analysis/analysistest"
 
 	"github.com/alecthomas/tsk/internal/config"
 	"github.com/alecthomas/tsk/internal/engine"
@@ -84,7 +83,7 @@ func Cases(dir string) ([]Case, error) {
 }
 
 // Run runs one case. Failures are reported to t, as analysistest does.
-func Run(t analysistest.Testing, e *engine.Engine, analyzer, dir string, c Case) error {
+func Run(t Testing, e *engine.Engine, store *Store, analyzer, dir string, c Case) error {
 	// Enabling the analyzer runs it even when it is off by default.
 	file := config.File{Enable: []string{analyzer}, Tables: map[string]map[string]any{analyzer: c.Config}}
 	// Test data is all first-party, so no package is skipped.
@@ -101,7 +100,7 @@ func Run(t analysistest.Testing, e *engine.Engine, analyzer, dir string, c Case)
 	if err != nil {
 		return errors.Wrap(err, "resolve testdata")
 	}
-	analysistest.Run(t, absolute, found, c.Packages...)
+	analyze(t, store, absolute, found, c.Packages...)
 	return nil
 }
 
@@ -152,8 +151,9 @@ type event struct {
 
 // RunAll runs every case of the named analyzers with testdata under the
 // scripts directory concurrently, writing each case's result to out as soon
-// as it finishes. Cases setting a target platform run through isolate.
-func RunAll(e *engine.Engine, analyzers []string, scripts string, out io.Writer, config Config, isolate Isolate) error {
+// as it finishes. Cases setting a target platform run through isolate. Cases
+// load their packages from store.
+func RunAll(e *engine.Engine, store *Store, analyzers []string, scripts string, out io.Writer, config Config, isolate Isolate) error {
 	var all []*analyzerCase
 	// remaining counts each analyzer's unreported cases, so JSON output can
 	// mark its first and last results.
@@ -182,8 +182,9 @@ func RunAll(e *engine.Engine, analyzers []string, scripts string, out io.Writer,
 	// Each case builds its own analyzers, and the engine's runtime pool is
 	// safe to share, so cases are independent. Each owns its recorder.
 	//
-	// Every case type-checks its dependencies from source, so more cases at
-	// once mostly add garbage collection; half the CPUs measured fastest.
+	// Cases whose analyzers use facts type-check dependencies from source, so
+	// more cases at once mostly add garbage collection; half the CPUs measured
+	// fastest.
 	var group errgroup.Group
 	group.SetLimit(max(1, runtime.GOMAXPROCS(0)/2))
 	// The mutex keeps each case's lines together in out and guards failed,
@@ -200,7 +201,7 @@ func RunAll(e *engine.Engine, analyzers []string, scripts string, out io.Writer,
 				started[ac.analyzer] = start
 			}
 			mu.Unlock()
-			run := func() error { return Run(ac.recorder, e, ac.analyzer, ac.dir, ac.c) }
+			run := func() error { return Run(ac.recorder, e, store, ac.analyzer, ac.dir, ac.c) }
 			if ac.c.targeted() && config.Case == "" {
 				run = func() error { return runIsolated(isolate, ac) }
 			}

@@ -60,6 +60,12 @@ func (c Config) Results() Option[string] {
 	return Some(filepath.Join(c.Cache, "lint"))
 }
 
+// Testdata returns the directory holding test data that tsk test prepared.
+// The config must be resolved.
+func (c Config) Testdata() string {
+	return filepath.Join(c.Cache, "testdata")
+}
+
 // Cache holds a bare mirror of each library repository, under git/, and
 // each library at each pinned commit, under src/. Snapshots never change once
 // written, so they are read without locking.

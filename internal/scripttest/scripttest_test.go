@@ -65,7 +65,7 @@ func setup(t *testing.T) (string, *engine.Engine) {
 func TestRunAllReportsEveryCase(t *testing.T) {
 	scripts, e := setup(t)
 	var out bytes.Buffer
-	err := scripttest.RunAll(e, e.Names(), scripts, &out, scripttest.Config{}, noIsolate(t))
+	err := scripttest.RunAll(e, newStore(t),e.Names(), scripts, &out, scripttest.Config{}, noIsolate(t))
 	assert.EqualError(t, err, "1 of 4 cases failed")
 
 	// Cases report as they finish, in any order; failure details follow
@@ -87,8 +87,13 @@ func TestRunAllReportsEveryCase(t *testing.T) {
 
 	// Only the named analyzers' cases run.
 	out.Reset()
-	assert.NoError(t, scripttest.RunAll(e, []string{"beta"}, scripts, &out, scripttest.Config{}, noIsolate(t)))
+	assert.NoError(t, scripttest.RunAll(e, newStore(t),[]string{"beta"}, scripts, &out, scripttest.Config{}, noIsolate(t)))
 	assert.Equal(t, "ok   beta/good\n", out.String())
+}
+
+func newStore(t *testing.T) *scripttest.Store {
+	t.Helper()
+	return scripttest.NewStore(t.TempDir())
 }
 
 // noIsolate fails the test if a case runs in its own process.
@@ -116,7 +121,7 @@ func TestRunAllIsolatesTargetedCases(t *testing.T) {
 			`{"analyzer":"beta","case":"arm","passed":false,"failures":["boom"],"duration":1}` + "\n"), errors.New("exit status 1")
 	}
 	var out bytes.Buffer
-	err := scripttest.RunAll(e, []string{"beta"}, scripts, &out, scripttest.Config{}, isolate)
+	err := scripttest.RunAll(e, newStore(t),[]string{"beta"}, scripts, &out, scripttest.Config{}, isolate)
 	assert.EqualError(t, err, "1 of 2 cases failed")
 	assert.Equal(t, []string{"beta/arm GOOS=linux GOARCH=arm"}, isolated)
 	assert.Contains(t, out.String(), "FAIL beta/arm\n     boom\n")
@@ -124,7 +129,7 @@ func TestRunAllIsolatesTargetedCases(t *testing.T) {
 
 	// The isolated process runs the named case itself.
 	out.Reset()
-	assert.NoError(t, scripttest.RunAll(e, []string{"beta"}, scripts, &out, scripttest.Config{Case: "beta/arm"}, noIsolate(t)))
+	assert.NoError(t, scripttest.RunAll(e, newStore(t),[]string{"beta"}, scripts, &out, scripttest.Config{Case: "beta/arm"}, noIsolate(t)))
 	assert.Equal(t, "ok   beta/arm\n", out.String())
 }
 
@@ -141,7 +146,7 @@ type result struct {
 func TestRunAllJSON(t *testing.T) {
 	scripts, e := setup(t)
 	var out bytes.Buffer
-	err := scripttest.RunAll(e, e.Names(), scripts, &out, scripttest.Config{JSON: true}, noIsolate(t))
+	err := scripttest.RunAll(e, newStore(t),e.Names(), scripts, &out, scripttest.Config{JSON: true}, noIsolate(t))
 	assert.EqualError(t, err, "1 of 4 cases failed")
 
 	var lines []result

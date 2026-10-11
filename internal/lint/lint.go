@@ -129,7 +129,7 @@ func runJSON(ctx context.Context, a Analysis, c Config, dir string, stdout, stde
 // load loads c.Packages with syntax for analysis.
 func load(ctx context.Context, analyzers []*analysis.Analyzer, c Config, dir string) ([]*packages.Package, error) {
 	mode := packages.LoadSyntax | packages.NeedModule
-	if needFacts(analyzers) {
+	if NeedFacts(analyzers) {
 		mode = packages.LoadAllSyntax | packages.NeedModule
 	}
 	initial, err := packages.Load(&packages.Config{Context: ctx, Mode: mode, Dir: dir, Tests: c.Test}, c.Packages...)
@@ -250,9 +250,9 @@ func withoutTestedVariants(pkgs []*packages.Package) []*packages.Package {
 	})
 }
 
-// needFacts reports whether an analyzer, or one it requires, uses facts, so
+// NeedFacts reports whether an analyzer, or one it requires, uses facts, so
 // dependencies must be loaded from source.
-func needFacts(analyzers []*analysis.Analyzer) bool {
+func NeedFacts(analyzers []*analysis.Analyzer) bool {
 	seen := map[*analysis.Analyzer]bool{}
 	queue := append([]*analysis.Analyzer(nil), analyzers...)
 	for len(queue) > 0 {

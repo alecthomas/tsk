@@ -109,7 +109,7 @@ type testCommand struct {
 	scripttest.Config `embed:""`
 }
 
-func (t testCommand) Run(ctx context.Context, log *slog.Logger, c *project.Config, cache *library.Cache) error {
+func (t testCommand) Run(ctx context.Context, log *slog.Logger, c *project.Config, cache *library.Cache, store *scripttest.Store) error {
 	p, err := project.Load(ctx, log, *c, cache)
 	if err != nil {
 		return errors.WithStack(err)
@@ -118,7 +118,7 @@ func (t testCommand) Run(ctx context.Context, log *slog.Logger, c *project.Confi
 	if err != nil {
 		return errors.WithStack(err)
 	}
-	return errors.WithStack(scripttest.RunAll(p.Engine(), analyzers, p.Dir(), os.Stdout, t.Config, isolateCase(ctx)))
+	return errors.WithStack(scripttest.RunAll(p.Engine(), store, analyzers, p.Dir(), os.Stdout, t.Config, isolateCase(ctx)))
 }
 
 // isolateCase reruns this command for one case in a new process, whose
@@ -270,5 +270,7 @@ func main() {
 	if dir, ok := cacheConfig.Results().Get(); ok {
 		results = Some(lint.NewCache(dir))
 	}
-	kctx.FatalIfErrorf(kctx.Run(&resolved, log, library.NewCache(cacheConfig, log), results))
+	// The store follows the toolchain found above, so it is created after.
+	store := scripttest.NewStore(cacheConfig.Testdata())
+	kctx.FatalIfErrorf(kctx.Run(&resolved, log, library.NewCache(cacheConfig, log), results, store))
 }
