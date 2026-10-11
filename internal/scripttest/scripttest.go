@@ -4,12 +4,14 @@ package scripttest
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"io"
 	"os"
 	"path/filepath"
 	"runtime"
 	"strings"
+	"sync"
 
 	"github.com/alecthomas/errors"
 	"github.com/pelletier/go-toml/v2"
@@ -103,10 +105,23 @@ type analyzerCase struct {
 	recorder *recorder
 }
 
+// Config holds the options for running every case.
+type Config struct {
+	JSON bool `help:"Print each case's result as a line of JSON."`
+}
+
+// result is a case's result as JSON.
+type result struct {
+	Analyzer string   `json:"analyzer"`
+	Case     string   `json:"case"`
+	Passed   bool     `json:"passed"`
+	Failures []string `json:"failures,omitzero"`
+}
+
 // RunAll runs every case of the named analyzers with testdata under the
-// scripts directory concurrently, writing one result line per case to out in
-// order.
-func RunAll(e *engine.Engine, analyzers []string, scripts string, out io.Writer) error {
+// scripts directory concurrently, writing each case's result to out as soon
+// as it finishes.
+func RunAll(e *engine.Engine, analyzers []string, scripts string, out io.Writer, config Config) error {
 	var all []*analyzerCase
 	for _, analyzer := range analyzers {
 		dir := Dir(scripts, analyzer)
@@ -131,28 +146,45 @@ func RunAll(e *engine.Engine, analyzers []string, scripts string, out io.Writer)
 	// once mostly add garbage collection; half the CPUs measured fastest.
 	var group errgroup.Group
 	group.SetLimit(max(1, runtime.GOMAXPROCS(0)/2))
+	// The mutex keeps each case's lines together in out and guards failed.
+	var mu sync.Mutex
+	failed := 0
 	for _, ac := range all {
 		group.Go(func() error {
-			return Run(ac.recorder, e, ac.analyzer, ac.dir, ac.c)
+			if err := Run(ac.recorder, e, ac.analyzer, ac.dir, ac.c); err != nil {
+				return err
+			}
+			mu.Lock()
+			defer mu.Unlock()
+			if len(ac.recorder.Failures()) > 0 {
+				failed++
+			}
+			return report(out, ac, config)
 		})
 	}
 	if err := group.Wait(); err != nil {
 		return errors.WithStack(err)
 	}
-	failed := 0
-	for _, ac := range all {
-		if len(ac.recorder.Failures()) == 0 {
-			fmt.Fprintf(out, "ok   %s/%s\n", ac.analyzer, ac.c.Name) //nolint:errcheck // Output is best effort.
-			continue
-		}
-		failed++
-		fmt.Fprintf(out, "FAIL %s/%s\n", ac.analyzer, ac.c.Name) //nolint:errcheck // Output is best effort.
-		for _, failure := range ac.recorder.Failures() {
-			fmt.Fprintln(out, "     "+strings.ReplaceAll(failure, "\n", "\n     ")) //nolint:errcheck // Output is best effort.
-		}
-	}
 	if failed > 0 {
 		return errors.Errorf("%d of %d cases failed", failed, len(all))
+	}
+	return nil
+}
+
+// report writes a case's result, with its failures if any, to out.
+func report(out io.Writer, ac *analyzerCase, config Config) error {
+	failures := ac.recorder.Failures()
+	if config.JSON {
+		line := result{Analyzer: ac.analyzer, Case: ac.c.Name, Passed: len(failures) == 0, Failures: failures}
+		return errors.Wrap(json.NewEncoder(out).Encode(line), "write result")
+	}
+	if len(failures) == 0 {
+		fmt.Fprintf(out, "ok   %s/%s\n", ac.analyzer, ac.c.Name) //nolint:errcheck // Output is best effort.
+		return nil
+	}
+	fmt.Fprintf(out, "FAIL %s/%s\n", ac.analyzer, ac.c.Name) //nolint:errcheck // Output is best effort.
+	for _, failure := range failures {
+		fmt.Fprintln(out, "     "+strings.ReplaceAll(failure, "\n", "\n     ")) //nolint:errcheck // Output is best effort.
 	}
 	return nil
 }

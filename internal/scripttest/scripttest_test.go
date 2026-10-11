@@ -2,10 +2,13 @@ package scripttest_test
 
 import (
 	"bytes"
+	"cmp"
 	"context"
+	"encoding/json"
 	"log/slog"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"testing"
 	"testing/fstest"
@@ -30,7 +33,10 @@ export default defineAnalyzer({
 });
 `
 
-func TestRunAllReportsCasesInOrder(t *testing.T) {
+// setup writes testdata for analyzers alpha and beta, where one of alpha's
+// cases fails, and returns the scripts directory and engine.
+func setup(t *testing.T) (string, *engine.Engine) {
+	t.Helper()
 	scripts := t.TempDir()
 	files := map[string]string{
 		"testdata/alpha/tsk.test.toml": "[[case]]\nname = \"good\"\npackages = [\"a\"]\n\n" +
@@ -52,29 +58,66 @@ func TestRunAllReportsCasesInOrder(t *testing.T) {
 	}
 	e, err := engine.Load(context.Background(), slog.New(slog.DiscardHandler), []compile.Source{{Name: "project", FS: source}})
 	assert.NoError(t, err)
+	return scripts, e
+}
 
+func TestRunAllReportsEveryCase(t *testing.T) {
+	scripts, e := setup(t)
 	var out bytes.Buffer
-	err = scripttest.RunAll(e, e.Names(), scripts, &out)
+	err := scripttest.RunAll(e, e.Names(), scripts, &out, scripttest.Config{})
 	assert.EqualError(t, err, "1 of 4 cases failed")
 
-	// Cases run concurrently but report in declaration order; failure
-	// details follow their case.
+	// Cases report as they finish, in any order; failure details follow
+	// their case.
 	var results []string
 	for line := range strings.SplitSeq(strings.TrimSpace(out.String()), "\n") {
 		if strings.HasPrefix(line, "ok") || strings.HasPrefix(line, "FAIL") {
 			results = append(results, line)
 		}
 	}
+	slices.Sort(results)
 	assert.Equal(t, []string{
-		"ok   alpha/good",
 		"FAIL alpha/bad",
 		"ok   alpha/also-good",
+		"ok   alpha/good",
 		"ok   beta/good",
 	}, results)
 	assert.Contains(t, out.String(), "FAIL alpha/bad\n     ")
 
 	// Only the named analyzers' cases run.
 	out.Reset()
-	assert.NoError(t, scripttest.RunAll(e, []string{"beta"}, scripts, &out))
+	assert.NoError(t, scripttest.RunAll(e, []string{"beta"}, scripts, &out, scripttest.Config{}))
 	assert.Equal(t, "ok   beta/good\n", out.String())
+}
+
+type result struct {
+	Analyzer string   `json:"analyzer"`
+	Case     string   `json:"case"`
+	Passed   bool     `json:"passed"`
+	Failures []string `json:"failures"`
+}
+
+func TestRunAllJSON(t *testing.T) {
+	scripts, e := setup(t)
+	var out bytes.Buffer
+	err := scripttest.RunAll(e, e.Names(), scripts, &out, scripttest.Config{JSON: true})
+	assert.EqualError(t, err, "1 of 4 cases failed")
+
+	// Each line is one case's result.
+	var results []result
+	for line := range strings.SplitSeq(strings.TrimSpace(out.String()), "\n") {
+		var r result
+		assert.NoError(t, json.Unmarshal([]byte(line), &r))
+		results = append(results, r)
+	}
+	slices.SortFunc(results, func(a, b result) int {
+		return cmp.Or(strings.Compare(a.Analyzer, b.Analyzer), strings.Compare(a.Case, b.Case))
+	})
+	assert.Equal(t, []result{
+		{Analyzer: "alpha", Case: "also-good", Passed: true},
+		{Analyzer: "alpha", Case: "bad"},
+		{Analyzer: "alpha", Case: "good", Passed: true},
+		{Analyzer: "beta", Case: "good", Passed: true},
+	}, results, assert.Exclude[[]string]())
+	assert.NotZero(t, len(results[1].Failures))
 }

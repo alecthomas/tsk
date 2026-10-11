@@ -103,7 +103,8 @@ func (l lintCommand) flagArgs() []string {
 }
 
 type testCommand struct {
-	config.Selection `embed:""`
+	config.Selection  `embed:""`
+	scripttest.Config `embed:""`
 }
 
 func (t testCommand) Run(ctx context.Context, log *slog.Logger, c *project.Config, cache *library.Cache) error {
@@ -115,7 +116,7 @@ func (t testCommand) Run(ctx context.Context, log *slog.Logger, c *project.Confi
 	if err != nil {
 		return errors.WithStack(err)
 	}
-	return errors.WithStack(scripttest.RunAll(p.Engine(), analyzers, p.Dir(), os.Stdout))
+	return errors.WithStack(scripttest.RunAll(p.Engine(), analyzers, p.Dir(), os.Stdout, t.Config))
 }
 
 type checkCommand struct{}
