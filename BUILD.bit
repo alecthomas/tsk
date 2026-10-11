@@ -129,4 +129,7 @@ target lint = [lint-tsk, vet-go, fmt-check-go, lint-ts, lint-actions, lint-actio
 # Format everything
 target fmt = [fix-go, fmt-go, fmt-ts, fmt-action-pins]
 
+# Build tsk
+target build = [tsk-bin]
+
 target default = [test, lint]
