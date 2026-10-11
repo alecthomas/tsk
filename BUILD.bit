@@ -88,20 +88,16 @@ gen = exec {
 explicit bump = exec {
   command = <<-EOL
     set -eu
-    current="$(git-sv current-version)"
-    next="$(git-sv next-version)"
-    if [ -z "$next" ]; then
-      echo "Nothing to release since v$current" >&2
+    current="$(svu current)"
+    # .svu.yml keeps breaking changes to a minor bump while the major is 0.
+    next="$(svu next)"
+    if [ "$next" = "$current" ]; then
+      echo "Nothing to release since $current" >&2
       exit 1
     fi
-    # git-sv bumps the major version for any breaking change, but while it is
-    # 0, breaking changes only bump the minor version.
-    if [ "${current%%.*}" = 0 ] && [ "${next%%.*}" != 0 ]; then
-      next="$(echo "$current" | awk -F. '{ print "0." ($2 + 1) ".0" }')"
-    fi
-    git tag --annotate "v$next" --message "Release v$next"
+    git tag --annotate "$next" --message "Release $next"
     # A tag left behind by a failed push would block the retry.
-    git push origin "v$next" || { git tag --delete "v$next"; exit 1; }
+    git push origin "$next" || { git tag --delete "$next"; exit 1; }
   EOL
   resolve = "git rev-parse HEAD"
 }

@@ -1,0 +1,2 @@
+# While the major version is 0, breaking changes bump the minor version.
+v0: true
