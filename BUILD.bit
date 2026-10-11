@@ -108,7 +108,12 @@ explicit bump = exec {
 
 # Test this repository's linter library the way any library tests itself.
 test-linters = exec.test {
-  command = "#{root}/#{tsk-bin.path} test --dir linters"
+  command = "#{root}/#{tsk-bin.path} test --dir linters --json"
+  results = <<-EOF
+    if .event then {suite: .analyzer, event: .event} + (if .duration then {duration: .duration} else {} end)
+    else {name: .case, suite: .analyzer, status: (if .passed then "pass" else "fail" end), duration: .duration, output: ((.failures // []) | join("\n"))}
+    end
+  EOF
   inputs = ["linters/**", "internal/hostapi/*", "internal/bindings/dts/*.d.ts"]
   depends_on = [tsk-bin]
 }
