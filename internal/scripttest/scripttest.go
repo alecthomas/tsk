@@ -7,11 +7,13 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"maps"
 	"os"
 	"path/filepath"
 	"runtime"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/alecthomas/errors"
 	"github.com/pelletier/go-toml/v2"
@@ -103,6 +105,7 @@ type analyzerCase struct {
 	dir      string
 	c        Case
 	recorder *recorder
+	duration time.Duration
 }
 
 // Config holds the options for running every case.
@@ -116,6 +119,17 @@ type result struct {
 	Case     string   `json:"case"`
 	Passed   bool     `json:"passed"`
 	Failures []string `json:"failures,omitzero"`
+	// Duration is in seconds.
+	Duration float64 `json:"duration"`
+}
+
+// event marks, in JSON output, where an analyzer's results start or end.
+type event struct {
+	Event    string `json:"event"`
+	Analyzer string `json:"analyzer"`
+	// Duration, in seconds, runs from the analyzer's first case starting to
+	// its last finishing. Only end events have one.
+	Duration float64 `json:"duration,omitzero"`
 }
 
 // RunAll runs every case of the named analyzers with testdata under the
@@ -123,6 +137,9 @@ type result struct {
 // as it finishes.
 func RunAll(e *engine.Engine, analyzers []string, scripts string, out io.Writer, config Config) error {
 	var all []*analyzerCase
+	// remaining counts each analyzer's unreported cases, so JSON output can
+	// mark its first and last results.
+	remaining := map[string]int{}
 	for _, analyzer := range analyzers {
 		dir := Dir(scripts, analyzer)
 		if _, err := os.Stat(dir); err != nil {
@@ -135,7 +152,9 @@ func RunAll(e *engine.Engine, analyzers []string, scripts string, out io.Writer,
 		for _, c := range cases {
 			all = append(all, &analyzerCase{analyzer: analyzer, dir: dir, c: c, recorder: newRecorder()})
 		}
+		remaining[analyzer] = len(cases)
 	}
+	total := maps.Clone(remaining)
 	if len(all) == 0 {
 		return errors.Errorf("no testdata found under %s", filepath.Join(scripts, "testdata"))
 	}
@@ -146,20 +165,43 @@ func RunAll(e *engine.Engine, analyzers []string, scripts string, out io.Writer,
 	// once mostly add garbage collection; half the CPUs measured fastest.
 	var group errgroup.Group
 	group.SetLimit(max(1, runtime.GOMAXPROCS(0)/2))
-	// The mutex keeps each case's lines together in out and guards failed.
+	// The mutex keeps each case's lines together in out and guards failed,
+	// remaining, and started.
 	var mu sync.Mutex
 	failed := 0
+	// started holds when each analyzer's first case started.
+	started := map[string]time.Time{}
 	for _, ac := range all {
 		group.Go(func() error {
+			start := time.Now()
+			mu.Lock()
+			if _, ok := started[ac.analyzer]; !ok {
+				started[ac.analyzer] = start
+			}
+			mu.Unlock()
 			if err := Run(ac.recorder, e, ac.analyzer, ac.dir, ac.c); err != nil {
 				return err
 			}
+			ac.duration = time.Since(start)
 			mu.Lock()
 			defer mu.Unlock()
 			if len(ac.recorder.Failures()) > 0 {
 				failed++
 			}
-			return report(out, ac, config)
+			first := remaining[ac.analyzer] == total[ac.analyzer]
+			remaining[ac.analyzer]--
+			if config.JSON && first {
+				if err := writeJSON(out, event{Event: "start", Analyzer: ac.analyzer}); err != nil {
+					return err
+				}
+			}
+			if err := report(out, ac, config); err != nil {
+				return err
+			}
+			if config.JSON && remaining[ac.analyzer] == 0 {
+				return writeJSON(out, event{Event: "end", Analyzer: ac.analyzer, Duration: time.Since(started[ac.analyzer]).Seconds()})
+			}
+			return nil
 		})
 	}
 	if err := group.Wait(); err != nil {
@@ -175,8 +217,7 @@ func RunAll(e *engine.Engine, analyzers []string, scripts string, out io.Writer,
 func report(out io.Writer, ac *analyzerCase, config Config) error {
 	failures := ac.recorder.Failures()
 	if config.JSON {
-		line := result{Analyzer: ac.analyzer, Case: ac.c.Name, Passed: len(failures) == 0, Failures: failures}
-		return errors.Wrap(json.NewEncoder(out).Encode(line), "write result")
+		return writeJSON(out, result{Analyzer: ac.analyzer, Case: ac.c.Name, Passed: len(failures) == 0, Failures: failures, Duration: ac.duration.Seconds()})
 	}
 	if len(failures) == 0 {
 		fmt.Fprintf(out, "ok   %s/%s\n", ac.analyzer, ac.c.Name) //nolint:errcheck // Output is best effort.
@@ -187,6 +228,11 @@ func report(out io.Writer, ac *analyzerCase, config Config) error {
 		fmt.Fprintln(out, "     "+strings.ReplaceAll(failure, "\n", "\n     ")) //nolint:errcheck // Output is best effort.
 	}
 	return nil
+}
+
+// writeJSON writes value to out as one line of JSON.
+func writeJSON(out io.Writer, value any) error {
+	return errors.Wrap(json.NewEncoder(out).Encode(value), "write result")
 }
 
 // recorder collects analysistest failures.

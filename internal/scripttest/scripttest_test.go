@@ -90,11 +90,14 @@ func TestRunAllReportsEveryCase(t *testing.T) {
 	assert.Equal(t, "ok   beta/good\n", out.String())
 }
 
+// result is a line of JSON output: an event or a case's result.
 type result struct {
+	Event    string   `json:"event"`
 	Analyzer string   `json:"analyzer"`
 	Case     string   `json:"case"`
 	Passed   bool     `json:"passed"`
 	Failures []string `json:"failures"`
+	Duration float64  `json:"duration"`
 }
 
 func TestRunAllJSON(t *testing.T) {
@@ -103,12 +106,31 @@ func TestRunAllJSON(t *testing.T) {
 	err := scripttest.RunAll(e, e.Names(), scripts, &out, scripttest.Config{JSON: true})
 	assert.EqualError(t, err, "1 of 4 cases failed")
 
-	// Each line is one case's result.
-	var results []result
+	var lines []result
 	for line := range strings.SplitSeq(strings.TrimSpace(out.String()), "\n") {
 		var r result
 		assert.NoError(t, json.Unmarshal([]byte(line), &r))
-		results = append(results, r)
+		// Results and end events carry a duration; start events do not.
+		assert.Equal(t, r.Event != "start", r.Duration > 0, line)
+		lines = append(lines, r)
+	}
+	// Each analyzer's results sit between its start and end events, though
+	// analyzers' results may interleave.
+	var results []result
+	for _, analyzer := range []string{"alpha", "beta"} {
+		var events []string
+		for _, line := range lines {
+			switch {
+			case line.Analyzer != analyzer:
+			case line.Event != "":
+				events = append(events, line.Event)
+			default:
+				events = append(events, "result")
+				results = append(results, line)
+			}
+		}
+		expected := slices.Repeat([]string{"result"}, len(events)-2)
+		assert.Equal(t, slices.Concat([]string{"start"}, expected, []string{"end"}), events, analyzer)
 	}
 	slices.SortFunc(results, func(a, b result) int {
 		return cmp.Or(strings.Compare(a.Analyzer, b.Analyzer), strings.Compare(a.Case, b.Case))
@@ -118,6 +140,6 @@ func TestRunAllJSON(t *testing.T) {
 		{Analyzer: "alpha", Case: "bad"},
 		{Analyzer: "alpha", Case: "good", Passed: true},
 		{Analyzer: "beta", Case: "good", Passed: true},
-	}, results, assert.Exclude[[]string]())
+	}, results, assert.Exclude[[]string](), assert.Exclude[float64]())
 	assert.NotZero(t, len(results[1].Failures))
 }
