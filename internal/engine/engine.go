@@ -122,6 +122,11 @@ func (e *Engine) Fingerprint(file config.File, mainModules []string) string {
 	for _, name := range slices.Sorted(maps.Keys(e.program.Modules)) {
 		h.Write(fmt.Appendf(nil, "module %q %q\n", name, e.program.Modules[name]))
 	}
+	// The root matters only to exclusions, so without them it is left out and
+	// checkouts in different places share results.
+	if len(file.Exclude) == 0 && len(file.ExcludePaths) == 0 {
+		file.Root = ""
+	}
 	// fmt prints maps in key order, so equal settings print the same.
 	h.Write(fmt.Appendf(nil, "file %#v\nmain modules %q\n", file, mainModules))
 	return hex.EncodeToString(h.Sum(nil))
@@ -144,6 +149,10 @@ func (e *Engine) Analyzers(file config.File, mainModules []string) ([]*analysis.
 	if err != nil {
 		return nil, err
 	}
+	excluder, err := file.Excluder()
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
 	analyzers := map[string]*analysis.Analyzer{}
 	environments := map[string]*vm.Environment{}
 	timer := newLoadTimer(e.logger)
@@ -153,15 +162,15 @@ func (e *Engine) Analyzers(file config.File, mainModules []string) ([]*analysis.
 			return nil, err
 		}
 		environment := &vm.Environment{
-			Config:        resolved,
-			Facts:         factTypes[metadata.Name],
-			Analyzers:     map[string]*analysis.Analyzer{},
-			SkipGenerated: !file.LintGenerated,
-			SkipTests:     metadata.SkipTests || file.NoTests || slices.Contains(file.SkipTests, metadata.Name),
-			Recorder:      e.recorder,
+			Config:    resolved,
+			Facts:     factTypes[metadata.Name],
+			Analyzers: map[string]*analysis.Analyzer{},
+			Recorder:  e.recorder,
 		}
+		skipTests := metadata.SkipTests || file.NoTests || slices.Contains(file.SkipTests, metadata.Name)
+		filter := newFilter(metadata.Name, skipTests, !file.LintGenerated, excluder, file.Root)
 		environments[metadata.Name] = environment
-		analyzers[metadata.Name] = e.analyzer(metadata, environment, mainModules, timer)
+		analyzers[metadata.Name] = e.analyzer(metadata, environment, filter, mainModules, timer)
 	}
 	for _, metadata := range e.metadata {
 		analyzer := analyzers[metadata.Name]
@@ -196,7 +205,11 @@ func (e *Engine) checkNames(file config.File) error {
 			return errors.Errorf("table %s names an unknown analyzer", name)
 		}
 	}
-	for key, names := range map[string][]string{"disable": file.Disable, "enable": file.Enable, "skip-tests": file.SkipTests} {
+	lists := map[string][]string{"disable": file.Disable, "enable": file.Enable, "skip-tests": file.SkipTests}
+	for i, exclusion := range file.Exclude {
+		lists[fmt.Sprintf("exclude[%d].linters", i)] = exclusion.Linters
+	}
+	for key, names := range lists {
 		for _, name := range names {
 			if !slices.Contains(known, name) {
 				return errors.Errorf("%s names unknown analyzer %s", key, name)
@@ -273,7 +286,7 @@ func inModules(pass *analysis.Pass, modules []string) bool {
 	return len(modules) == 0 || (pass.Module != nil && slices.Contains(modules, pass.Module.Path))
 }
 
-func (e *Engine) analyzer(metadata vm.Metadata, environment *vm.Environment, mainModules []string, timer *loadTimer) *analysis.Analyzer {
+func (e *Engine) analyzer(metadata vm.Metadata, environment *vm.Environment, filter filter, mainModules []string, timer *loadTimer) *analysis.Analyzer {
 	analyzer := &analysis.Analyzer{
 		Name:             metadata.Name,
 		Doc:              metadata.Doc,
@@ -304,11 +317,14 @@ func (e *Engine) analyzer(metadata vm.Metadata, environment *vm.Environment, mai
 		defer e.pool.put(runtime)
 		start := time.Now()
 		logger.Debug("Analyzer started", "wait", start.Sub(queued))
-		// A copy, so the driver's pass keeps its own Report.
+		// A copy, so the driver's pass keeps its own Report. The config's
+		// filters run before //nolint comments.
 		filtered := *pass
+		report := pass.Report
 		if !metadata.IgnoresNolint {
-			filtered.Report = nolint.Reporter(pass, metadata.Name)
+			report = nolint.Reporter(pass, metadata.Name)
 		}
+		filtered.Report = filter.reporter(pass, report)
 		run := *environment
 		run.Pass = &filtered
 		run.Dependency = !inModules(pass, mainModules)

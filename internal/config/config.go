@@ -36,6 +36,13 @@ type File struct {
 	LintGenerated bool     `toml:"lint-generated" help:"Report findings in generated files, which are skipped by default."`
 	NoTests       bool     `toml:"no-tests" help:"Report no findings in _test.go files, as --no-test does."`
 	SkipTests     []string `toml:"skip-tests" help:"Analyzers that report no findings in _test.go files."`
+	// Exclude and ExcludePaths follow golangci-lint's linters.exclusions rules
+	// and paths.
+	Exclude      []Exclusion `toml:"exclude" help:"Findings to drop, as golangci-lint's exclusion rules: each sets linters and Go regular expressions for path, path-except, text, and source, which must all match. Paths are relative to the directory containing .tsk."`
+	ExcludePaths []string    `toml:"exclude-paths" help:"Go regular expressions for file paths, relative to the directory containing .tsk, whose findings are all dropped."`
+	// Root is the directory exclusion paths are relative to; the project
+	// sets it after loading.
+	Root string `toml:"-"`
 	// Tables maps analyzer names to their raw tables.
 	Tables map[string]map[string]any `toml:"-"`
 }
@@ -203,6 +210,9 @@ func Parse(name, text string) (File, error) {
 		return File{}, errors.Wrapf(err, "%s", name)
 	}
 	if err := file.checkReplace(); err != nil {
+		return File{}, errors.Wrapf(err, "%s", name)
+	}
+	if _, err := file.Excluder(); err != nil {
 		return File{}, errors.Wrapf(err, "%s", name)
 	}
 	// Each combination below would silently ignore a setting.

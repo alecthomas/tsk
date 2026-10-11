@@ -79,6 +79,12 @@ func TestTOML(t *testing.T) {
 		``,
 		`# Analyzers that report no findings in _test.go files.`,
 		`skip-tests = []`,
+		``,
+		`# Findings to drop, as golangci-lint's exclusion rules: each sets linters and Go regular expressions for path, path-except, text, and source, which must all match. Paths are relative to the directory containing .tsk.`,
+		`exclude = []`,
+		``,
+		`# Go regular expressions for file paths, relative to the directory containing .tsk, whose findings are all dropped.`,
+		`exclude-paths = []`,
 	}
 	tables := []string{
 		``,

@@ -99,6 +99,9 @@ func Load(ctx context.Context, logger *slog.Logger, c Config, cache *library.Cac
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
+	// Exclusion paths are relative to the directory holding the scripts
+	// directory, which is the project root.
+	file.Root = filepath.Dir(c.Dir)
 	libraries, err := libraryDirs(ctx, c, file, cache)
 	if err != nil {
 		return nil, err

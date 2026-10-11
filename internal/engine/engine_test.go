@@ -579,6 +579,39 @@ func TestReportFilters(t *testing.T) {
 	}
 }
 
+func TestExclusions(t *testing.T) {
+	const reported = `package example // want "file"` + "\n"
+	e := load(t, map[string]string{"files.ts": filesScript("")})
+	dir, cleanup, err := analysistest.WriteFiles(map[string]string{
+		"example/plain.go":   reported,
+		"example/bypath.go":  "package example\n",
+		"example/source.go":  "package example // drop\n",
+		"example/textual.go": "package example\n",
+		"example/allgone.go": "package example\n",
+	})
+	assert.NoError(t, err)
+	defer cleanup()
+	file := config.File{
+		// analysistest puts packages under src, so paths are relative to it.
+		Root: filepath.Join(dir, "src"),
+		Exclude: []config.Exclusion{
+			{Path: `^example/bypath\.go$`},
+			{Source: `// drop$`},
+			{Linters: []string{"files"}, Text: `^file$`, Path: `textual`},
+		},
+		ExcludePaths: []string{`allgone\.go$`},
+	}
+	analyzers, err := e.Analyzers(file, nil)
+	assert.NoError(t, err)
+	analysistest.Run(t, dir, analyzers[0], "example")
+}
+
+func TestExclusionNamesUnknownAnalyzer(t *testing.T) {
+	e := load(t, map[string]string{"files.ts": filesScript("")})
+	_, err := e.Analyzers(config.File{Exclude: []config.Exclusion{{Linters: []string{"missing"}, Text: "x"}}}, nil)
+	assert.EqualError(t, err, "exclude[0].linters names unknown analyzer missing")
+}
+
 func TestSkipTestsNamesUnknownAnalyzer(t *testing.T) {
 	e := load(t, map[string]string{"files.ts": filesScript("")})
 	_, err := e.Analyzers(config.File{SkipTests: []string{"missing"}}, nil)
