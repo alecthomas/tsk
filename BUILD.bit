@@ -33,6 +33,13 @@ fmt-check-go[go-module] = go.fmt-l {
   dir = go-module
 }
 
+# The tsk linters cover golangci-lint's, which leaves out go vet's own checks.
+vet-go[go-module] = exec.test {
+  command = "go vet ./..."
+  dir = go-module
+  inputs = ["#{go-module}/**/*.go", "#{go-module}/go.mod", "#{go-module}/go.sum"]
+}
+
 # Lint this repository with its own linters, which .tsk/config.toml imports
 # from linters/ in the same commit.
 lint-tsk[go-module] = exec.test {
@@ -116,7 +123,7 @@ explicit tsk-bin = go.exe {
 target test = [test-go, test-linters]
 
 # Lint everything
-target lint = [lint-tsk,fmt-check-go, lint-ts, lint-actions, lint-action-pins, lint-release]
+target lint = [lint-tsk, vet-go, fmt-check-go, lint-ts, lint-actions, lint-action-pins, lint-release]
 
 # Format everything
 target fmt = [fix-go, fmt-go, fmt-ts, fmt-action-pins]
