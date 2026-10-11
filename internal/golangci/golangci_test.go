@@ -18,7 +18,24 @@ import (
 
 func analyzers() []docs.Analyzer {
 	strings := ts.ArrayShape{Element: ts.StringShape{}}
-	return []docs.Analyzer{
+	var vet []docs.Analyzer
+	for _, name := range vetNames() {
+		switch name {
+		case "printf":
+			vet = append(vet, docs.Analyzer{Name: name, Config: Some(docs.Config{
+				Shape:    ts.ObjectShape{Properties: []ts.Property{{Name: "funcs", Shape: strings}}},
+				Defaults: map[string]any{"funcs": []any{}},
+			})})
+		case "shadow":
+			vet = append(vet, docs.Analyzer{Name: name, Config: Some(docs.Config{
+				Shape:    ts.ObjectShape{Properties: []ts.Property{{Name: "strict", Shape: ts.BooleanShape{}}}},
+				Defaults: map[string]any{"strict": false},
+			})})
+		default:
+			vet = append(vet, docs.Analyzer{Name: name})
+		}
+	}
+	return append(vet, []docs.Analyzer{
 		{Name: "errcheck", Config: Some(docs.Config{
 			Shape:    ts.ObjectShape{Properties: []ts.Property{{Name: "checkBlank", Shape: ts.BooleanShape{}}}},
 			Defaults: map[string]any{"checkBlank": false},
@@ -44,6 +61,27 @@ func analyzers() []docs.Analyzer {
 		// Not a golangci-lint linter, so it stays enabled.
 		{Name: "encapsulation"},
 		{Name: "unused"},
+	}...)
+}
+
+// vetNames returns the vet analyzers tsk has: all govet runs except findcall.
+func vetNames() []string {
+	return []string{
+		"appends", "asmdecl", "assign", "atomic", "atomicalign", "bools", "buildtag", "cgocall", "composites",
+		"copylocks", "deepequalerrors", "defers", "directive", "errorsas", "fieldalignment", "framepointer",
+		"hostport", "httpmux", "httpresponse", "ifaceassert", "inline", "loopclosure", "lostcancel", "nilfunc",
+		"nilness", "printf", "reflectvaluecompare", "shadow", "shift", "sigchanyzer", "slog", "sortslice",
+		"stdmethods", "stdversion", "stringintconv", "structtag", "testinggoroutine", "tests", "timeformat",
+		"unmarshal", "unreachable", "unsafeptr", "unusedresult", "unusedwrite", "waitgroup",
+	}
+}
+
+// nonDefaultVet returns the vet analyzers tsk has that govet does not run by
+// default.
+func nonDefaultVet() []string {
+	return []string{
+		"atomicalign", "deepequalerrors", "fieldalignment", "httpmux", "nilness", "reflectvaluecompare", "shadow",
+		"sortslice", "unusedwrite",
 	}
 }
 
@@ -63,9 +101,16 @@ linters:
   disable: [errcheck]
 `,
 			expected: golangci.Result{
-				Settings: map[string]any{"disable-all": true, "enable": []string{"encapsulation", "funlen", "unused"}},
+				// govet becomes its default analyzers.
+				Settings: map[string]any{"disable-all": true, "enable": []string{
+					"appends", "asmdecl", "assign", "atomic", "bools", "buildtag", "cgocall", "composites", "copylocks",
+					"defers", "directive", "encapsulation", "errorsas", "framepointer", "funlen", "hostport", "httpresponse",
+					"ifaceassert", "inline", "loopclosure", "lostcancel", "nilfunc", "printf", "shift", "sigchanyzer", "slog",
+					"stdmethods", "stdversion", "stringintconv", "structtag", "testinggoroutine", "tests", "timeformat",
+					"unmarshal", "unreachable", "unsafeptr", "unused", "unusedresult", "waitgroup",
+				}},
 				Tables:   map[string]map[string]any{},
-				Warnings: []string{"not available in tsk, so not enabled: gocritic, govet, ineffassign, staticcheck"},
+				Warnings: []string{"not available in tsk, so not enabled: gocritic, ineffassign, staticcheck"},
 			},
 		},
 		{
@@ -77,8 +122,12 @@ linters:
   disable: [funlen, gocritic]
 `,
 			expected: golangci.Result{
-				Settings: map[string]any{"disable": []string{"funlen"}},
-				Tables:   map[string]map[string]any{},
+				// govet's analyzers that are not on by default stay off.
+				Settings: map[string]any{"disable": []string{
+					"atomicalign", "deepequalerrors", "fieldalignment", "funlen", "httpmux", "nilness", "reflectvaluecompare",
+					"shadow", "sortslice", "unusedwrite",
+				}},
+				Tables: map[string]map[string]any{},
 			},
 		},
 		{
@@ -128,7 +177,7 @@ linters:
           disabled: true
 `,
 			expected: golangci.Result{
-				Settings: map[string]any{},
+				Settings: map[string]any{"disable": nonDefaultVet()},
 				Tables: map[string]map[string]any{"revive": {
 					"enable":               []any{"dot-imports", "line-length-limit"},
 					"disable":              []any{"exported"},
@@ -170,6 +219,7 @@ formatters:
 `,
 			expected: golangci.Result{
 				Settings: map[string]any{
+					"disable":        nonDefaultVet(),
 					"no-tests":       true,
 					"lint-generated": true,
 					"skip-tests":     []string{"funlen"},
@@ -211,6 +261,58 @@ linters:
 				}},
 				Warnings: []string{
 					"linters.settings.exhaustruct.exclude is not imported: it is an exhaustruct v4 option, and tsk's exhaustruct is v5, which has ignore-patterns instead",
+				},
+			},
+		},
+		{
+			// govet's analyzers are separate in tsk, so its settings spread
+			// across their tables and its exclusion rules across their names.
+			name: "Govet",
+			config: `
+version: "2"
+linters:
+  default: none
+  enable: [govet]
+  settings:
+    govet:
+      disable-all: true
+      enable: [printf, shadow, findcall]
+      check-shadowing: true
+      settings:
+        printf:
+          funcs: [example.com/log.Infof]
+        shadow:
+          strict: "yes"
+        findcall:
+          name: x
+  exclusions:
+    rules:
+      - text: '^shadow: declaration of "err"'
+        linters: [govet]
+      - text: "^printf:"
+        path: cmd/
+        linters: [govet]
+      - text: "composite literal"
+        path: cmd/
+        linters: [govet]
+`,
+			expected: golangci.Result{
+				Settings: map[string]any{
+					"disable-all": true,
+					"enable":      []string{"encapsulation", "printf", "shadow"},
+					"exclude": []any{
+						map[string]any{"linters": []string{"shadow"}, "text": `^declaration of "err"`},
+						map[string]any{"linters": []string{"printf"}, "path": "cmd/"},
+						map[string]any{"linters": vetNames(), "path": "cmd/", "text": "composite literal"},
+					},
+				},
+				Tables: map[string]map[string]any{"printf": {"funcs": []any{"example.com/log.Infof"}}},
+				Warnings: []string{
+					"not available in tsk, so not enabled: findcall",
+					"linters.settings.govet.check-shadowing is not imported: tsk has no equivalent",
+					"linters.settings.govet.settings.findcall is not imported: tsk has no findcall analyzer",
+					"linters.settings.govet.settings.shadow.strict is not imported: shadow.strict: expected a boolean, got a string",
+					`linters.exclusions.rules[2] {"linters":["govet"],"path":"cmd/","text":"composite literal"}: its text now applies to every vet analyzer, whose findings do not start with the analyzer's name in tsk`,
 				},
 			},
 		},
@@ -277,6 +379,8 @@ func TestImport(t *testing.T) {
 	assert.Equal(t, `# Imported from .golangci.yml by tsk config import.
 
 imports = ['github.com/acme/linters@v1.0.0']
+
+disable = ['atomicalign', 'deepequalerrors', 'fieldalignment', 'httpmux', 'nilness', 'reflectvaluecompare', 'shadow', 'sortslice', 'unusedwrite']
 
 [replace]
 'github.com/acme/linters' = '../linters'

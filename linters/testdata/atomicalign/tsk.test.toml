@@ -1,0 +1,17 @@
+# a.go builds only for arm and 386, where 64-bit values need not be aligned.
+# On the host, the case checks that a 64-bit platform reports nothing.
+[[case]]
+name = "default"
+packages = ["a", "b"]
+
+[[case]]
+name = "linux-386"
+packages = ["a", "b"]
+goos = "linux"
+goarch = "386"
+
+[[case]]
+name = "linux-arm"
+packages = ["a", "b"]
+goos = "linux"
+goarch = "arm"

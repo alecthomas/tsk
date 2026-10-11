@@ -1,0 +1,56 @@
+# As upstream, one case per platform, each loading that platform's assembly.
+# Upstream skips loong64, whose asm10.s the toolchain cannot yet build.
+[[case]]
+name = "linux-amd64"
+packages = ["a"]
+goos = "linux"
+goarch = "amd64"
+
+[[case]]
+name = "linux-386"
+packages = ["a"]
+goos = "linux"
+goarch = "386"
+
+[[case]]
+name = "linux-arm"
+packages = ["a"]
+goos = "linux"
+goarch = "arm"
+
+[[case]]
+name = "linux-mips64"
+packages = ["a"]
+goos = "linux"
+goarch = "mips64"
+
+[[case]]
+name = "linux-s390x"
+packages = ["a"]
+goos = "linux"
+goarch = "s390x"
+
+[[case]]
+name = "linux-ppc64"
+packages = ["a"]
+goos = "linux"
+goarch = "ppc64"
+
+# Upstream runs linux/mips, which skips asm8.s: its constraint is mipsle.
+[[case]]
+name = "linux-mipsle"
+packages = ["a"]
+goos = "linux"
+goarch = "mipsle"
+
+[[case]]
+name = "js-wasm"
+packages = ["a"]
+goos = "js"
+goarch = "wasm"
+
+[[case]]
+name = "linux-riscv64"
+packages = ["a"]
+goos = "linux"
+goarch = "riscv64"

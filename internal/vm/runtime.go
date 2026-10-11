@@ -159,6 +159,8 @@ func (r *Runtime) installGlobals() error {
 		native.Set("hostAnalyzer", r.hostAnalyzer),
 		native.Set("formatNode", r.formatNode),
 		native.Set("goroot", func() string { return build.Default.GOROOT }),
+		native.Set("goos", func() string { return build.Default.GOOS }),
+		native.Set("goarch", func() string { return build.Default.GOARCH }),
 		r.rt.Set("__tsk", native),
 	} {
 		if err != nil {

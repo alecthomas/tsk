@@ -111,6 +111,66 @@ translation of that code.
 | [`whitespace`](https://github.com/ultraware/whitespace) | MIT | Whitespace is a linter that checks for unnecessary newlines at the start and end of functions, if, for, etc. |
 | [`wrapcheck`](https://github.com/tomarrell/wrapcheck) | MIT | Checks that errors returned from external packages are wrapped. |
 
+## Vet analyzers
+
+golangci-lint runs these through its `govet` linter. Here each is a linter of
+its own, so `disable`, `//nolint`, and options name the analyzer, as in
+`[printf]`. They port the analyzers of
+[`golang.org/x/tools/go/analysis/passes`](https://pkg.go.dev/golang.org/x/tools/go/analysis/passes)
+v0.50.0, BSD-3-Clause, including those `go vet` does not run, so `go vet` is
+not needed alongside them. All of them run, unlike golangci-lint's `govet`,
+which leaves `atomicalign`, `deepequalerrors`, `fieldalignment`, `httpmux`,
+`nilness`, `reflectvaluecompare`, `shadow`, `sortslice`, and `unusedwrite` off
+by default.
+
+| Linter | Description |
+|---|---|
+| `appends` | Check for missing values after append. |
+| `asmdecl` | Report mismatches between assembly files and Go declarations. |
+| `assign` | Check for useless assignments. |
+| `atomic` | Check for common mistakes using the sync/atomic package. |
+| `atomicalign` | Check for non-64-bits-aligned arguments to sync/atomic functions. |
+| `bools` | Check for common mistakes involving boolean operators. |
+| `buildtag` | Check `//go:build` and `// +build` directives. |
+| `cgocall` | Detect some violations of the cgo pointer passing rules. Takes argument types from the cgo-processed files rather than type-checking the originals, so it can miss an argument cgo rewrites. |
+| `composites` | Check for unkeyed composite literals. |
+| `copylocks` | Check for locks erroneously passed by value. |
+| `deepequalerrors` | Check for calls of reflect.DeepEqual on error values. |
+| `defers` | Report common mistakes in defer statements. |
+| `directive` | Check Go toolchain directives such as `//go:debug`. |
+| `errorsas` | Report passing non-pointer or non-error values to errors.As. |
+| `fieldalignment` | Find structs that would use less memory if their fields were sorted. |
+| `framepointer` | Report assembly that clobbers the frame pointer before saving it. |
+| `hostport` | Check format of addresses passed to net.Dial. |
+| `httpmux` | Report using Go 1.22 enhanced ServeMux patterns in older Go versions. |
+| `httpresponse` | Check for mistakes using HTTP responses. |
+| `ifaceassert` | Detect impossible interface-to-interface type assertions. |
+| `inline` | Report calls to functions, and uses of constants and type aliases, marked `//go:fix inline`. Without upstream's inliner it suggests no fixes, and reports some calls the inliner would skip. |
+| `loopclosure` | Check references to loop variables from within nested functions. |
+| `lostcancel` | Check cancel func returned by context.WithCancel is called. |
+| `nilfunc` | Check for useless comparisons between functions and nil. |
+| `nilness` | Check for redundant or impossible nil comparisons. |
+| `printf` | Check consistency of Printf format strings and arguments. |
+| `reflectvaluecompare` | Check for comparing reflect.Value values with == or reflect.DeepEqual. |
+| `shadow` | Check for possible unintended shadowing of variables. |
+| `shift` | Check for shifts that equal or exceed the width of the integer. |
+| `sigchanyzer` | Check for unbuffered channel of os.Signal. |
+| `slog` | Check for invalid structured logging calls. |
+| `sortslice` | Check the argument type of sort.Slice. |
+| `stdmethods` | Check signature of methods of well-known interfaces. |
+| `stdversion` | Report uses of too-new standard library symbols. |
+| `stringintconv` | Check for string(int) conversions. |
+| `structtag` | Check that struct field tags conform to reflect.StructTag.Get. |
+| `testinggoroutine` | Report calls to (*testing.T).Fatal from goroutines started by a test. |
+| `tests` | Check for common mistaken usages of tests and examples. |
+| `timeformat` | Check for calls of (time.Time).Format or time.Parse with 2006-02-01. |
+| `unmarshal` | Report passing non-pointer or non-interface values to unmarshal. |
+| `unreachable` | Check for unreachable code. |
+| `unsafeptr` | Check for invalid conversions of uintptr to unsafe.Pointer. |
+| `unusedresult` | Check for unused results of calls to some functions. |
+| `unusedwrite` | Checks for unused writes. |
+| `waitgroup` | Check for misuses of sync.WaitGroup. |
+
 ## Not ported
 
 These golangci-lint linters are left out on purpose.
@@ -119,13 +179,13 @@ These golangci-lint linters are left out on purpose.
 |---|---|
 | `depguard`, `goheader`, `grouper`, `nonamedreturns` | GPL-3.0. A port would be a derived work, which this MIT-licensed library cannot include. |
 | `musttag`, `sloglint` | MPL-2.0. A port would have to stay under MPL-2.0, unlike the rest of this MIT-licensed library. |
-| `govet` | Its analyzers ship with Go; run `go vet`. |
 | `modernize` | Its analyzers ship with Go 1.26 and later; run `go fix -diff`. |
 | `gofmt`, `goimports` | Formatters rather than linters; run the tools themselves. |
 | `staticcheck`, `gocritic`, `gosec` | Large suites of many checks, too big to port; run the tools themselves. |
 | `gochecksumtype` | `sumtype` covers the same check. |
 | `arangolint`, `ginkgolinter`, `zerologlint` | Specific to one library. |
 | `unqueryvet` | About 12,000 lines of code, too big to port for one check. |
+| `findcall`, in `govet` | A demonstration analyzer that reports calls to a function by name. |
 
 golangci-lint itself is also GPL-3.0, so the ports follow each upstream
 linter's own code and match only golangci-lint's observable behaviour: its

@@ -42,6 +42,7 @@ func exposedPackages() []exposedPackage {
 			"AllowBinary", "ArchChar", "Directive", "FindOnly", "IgnoreVendor", "Import", "ImportComment",
 			"ImportDir", "ImportMode", "IsLocalImport", "MultiplePackageError", "NoGoError", "Package", "ToolDir",
 		}},
+		{path: "go/build/constraint"},
 		{path: "go/constant"},
 		{path: "go/parser", members: []string{
 			"AllErrors", "DeclarationErrors", "ImportsOnly", "Mode", "PackageClauseOnly", "ParseComments",
@@ -49,6 +50,7 @@ func exposedPackages() []exposedPackage {
 		}},
 		{path: "go/token"},
 		{path: "go/types"},
+		{path: "go/version"},
 		{path: "io/fs"},
 		{path: "os", members: []string{
 			"DirEntry", "ErrExist", "ErrNotExist", "ErrPermission", "FileInfo", "FileMode",

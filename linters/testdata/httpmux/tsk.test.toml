@@ -1,0 +1,11 @@
+# Upstream's test skips the Go version check, so the package is a go1.21 module here.
+[[case]]
+name = "default"
+dir = "src/a"
+packages = ["a"]
+
+# A go1.22 module is not checked.
+[[case]]
+name = "go122"
+dir = "src/go122"
+packages = ["go122"]

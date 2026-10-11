@@ -1,0 +1,9 @@
+[[case]]
+name = "default"
+packages = ["a"]
+
+[[case]]
+name = "funcs"
+packages = ["a", "typeparams"]
+[case.config]
+funcs = ["typeparams/userdefs.MustUse", "errors.New", "fmt.Errorf", "fmt.Sprintf", "fmt.Sprint"]

@@ -30,6 +30,31 @@ func standardLinters() []string {
 	return []string{"errcheck", "govet", "ineffassign", "staticcheck", "unused"}
 }
 
+// govet is golangci-lint's linter running go vet's analyzers, which tsk has
+// as separate analyzers.
+const govet = "govet"
+
+// vetAnalyzers returns the analyzers golangci-lint v2.14.0's govet can run.
+func vetAnalyzers() []string {
+	return []string{
+		"appends", "asmdecl", "assign", "atomic", "atomicalign", "bools", "buildtag", "cgocall", "composites",
+		"copylocks", "deepequalerrors", "defers", "directive", "errorsas", "fieldalignment", "findcall",
+		"framepointer", "hostport", "httpmux", "httpresponse", "ifaceassert", "inline", "loopclosure", "lostcancel",
+		"nilfunc", "nilness", "printf", "reflectvaluecompare", "shadow", "shift", "sigchanyzer", "slog", "sortslice",
+		"stdmethods", "stdversion", "stringintconv", "structtag", "testinggoroutine", "tests", "timeformat",
+		"unmarshal", "unreachable", "unsafeptr", "unusedresult", "unusedwrite", "waitgroup",
+	}
+}
+
+// offVetAnalyzers returns the analyzers govet does not run unless settings
+// choose them. It runs the rest: go vet's, and inline.
+func offVetAnalyzers() []string {
+	return []string{
+		"atomicalign", "deepequalerrors", "fieldalignment", "findcall", "httpmux", "nilness", "reflectvaluecompare",
+		"shadow", "sortslice", "unusedwrite",
+	}
+}
+
 // exhaustruct is the name of tsk's exhaustruct analyzer and of golangci-lint's
 // exhaustruct version 4.
 const exhaustruct = "exhaustruct"

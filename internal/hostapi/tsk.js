@@ -121,6 +121,14 @@ export function goroot() {
   return native.goroot();
 }
 
+export function goos() {
+  return native.goos();
+}
+
+export function goarch() {
+  return native.goarch();
+}
+
 // schema is inserted by the compiler from the call's config type argument.
 export function defineAnalyzer(schema, definition) {
   if (typeof schema !== "number") {

@@ -1,0 +1,16 @@
+# a_386.go and a_amd64.go build only on their architectures.
+[[case]]
+name = "default"
+packages = ["a"]
+
+[[case]]
+name = "linux-386"
+packages = ["a"]
+goos = "linux"
+goarch = "386"
+
+[[case]]
+name = "linux-amd64"
+packages = ["a"]
+goos = "linux"
+goarch = "amd64"

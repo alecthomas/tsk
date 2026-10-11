@@ -1,0 +1,10 @@
+[[case]]
+name = "default"
+packages = ["a"]
+
+# Not upstream: strict reports shadowing even where the outer variable is unused afterwards.
+[[case]]
+name = "strict"
+packages = ["strict"]
+[case.config]
+strict = true

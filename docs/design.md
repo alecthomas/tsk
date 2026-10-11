@@ -416,8 +416,9 @@ analyzers are not stored, so their errors are reported again. JSON output and
 - `console.debug`, `log`, `info`, `warn`, and `error`, written to tsk's
   log at the matching level and tagged with the analyzer and package during a
   run. The log level defaults to `error`; `--log-level` changes it.
-- `goroot()`, the Go installation `go env` reports, as `go/build`'s `Context`
-  is not exposed.
+- `goroot()`, `goos()`, and `goarch()`, the Go installation and target
+  platform `go env` reports, as `go/build`'s `Context` is not exposed. The
+  CLI copies them into `go/build`'s default context at startup.
 
 ### Drivers and distribution
 
@@ -434,7 +435,10 @@ Kong:
 - `test`: runs `analysistest` for each analyzer with
   `<scripts>/testdata/<analyzer>/`. An optional `tsk.test.toml` there
   lists `[[case]]` entries with a name, optional `dir`, package patterns, and
-  an inline config table.
+  an inline config table. A case with `goos` or `goarch` runs in a child
+  `tsk test` process with `GOOS` and `GOARCH` set, because `analysistest`
+  loads packages with the process's environment, which concurrent cases
+  share.
 - `check`: type-checks scripts and validates the config.
 - `init`: writes the declarations to `<scripts>/types/` and a matching
   `tsconfig.json`.

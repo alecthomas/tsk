@@ -219,7 +219,11 @@ func (c *converter) linters(linters map[string]any) error {
 	}
 	settings := table(linters, "settings")
 	for _, name := range slices.Sorted(maps.Keys(settings)) {
-		c.settings(name, table(settings, name))
+		if name == govet {
+			c.govetSettings(table(settings, name))
+			continue
+		}
+		c.settings("linters.settings."+name, name, table(settings, name))
 	}
 	c.exclusions(table(linters, "exclusions"))
 	for _, key := range slices.Sorted(maps.Keys(linters)) {
@@ -232,14 +236,20 @@ func (c *converter) linters(linters map[string]any) error {
 
 // selection converts which linters run. golangci-lint's default set, other
 // than all, becomes an explicit enable list; analyzers golangci-lint does not
-// know stay enabled.
+// know stay enabled. govet becomes the vet analyzers its settings select.
 func (c *converter) selection(section map[string]any) error {
 	enable := analyzerNames(list(section, "enable"))
 	disable := analyzerNames(list(section, "disable"))
+	vet := vetSelection(table(table(section, "settings"), govet))
 	mode, _ := section["default"].(string)
 	var base []string
 	switch mode {
 	case "all":
+		if slices.Contains(disable, govet) {
+			disable = append(disable, vetAnalyzers()...)
+		} else {
+			disable = append(disable, slices.DeleteFunc(vetAnalyzers(), func(name string) bool { return slices.Contains(vet, name) })...)
+		}
 		if names := c.known(disable); len(names) > 0 {
 			c.result.Settings["disable"] = names
 		}
@@ -253,11 +263,14 @@ func (c *converter) selection(section map[string]any) error {
 		return errors.Errorf("linters.default: unknown value %q", mode)
 	}
 	selected := slices.DeleteFunc(slices.Concat(base, enable), func(name string) bool { return slices.Contains(disable, name) })
+	if slices.Contains(selected, govet) {
+		selected = slices.Concat(slices.DeleteFunc(selected, func(name string) bool { return name == govet }), vet)
+	}
 	if missing := slices.DeleteFunc(slices.Clone(selected), c.isKnown); len(missing) > 0 {
 		slices.Sort(missing)
 		c.warnf("not available in tsk, so not enabled: %s", strings.Join(slices.Compact(missing), ", "))
 	}
-	known := golangciLinters()
+	known := slices.Concat(golangciLinters(), vetAnalyzers())
 	var run []string
 	for _, name := range slices.Sorted(maps.Keys(c.analyzers)) {
 		if !slices.Contains(known, name) || slices.Contains(selected, name) {
@@ -267,6 +280,40 @@ func (c *converter) selection(section map[string]any) error {
 	c.result.Settings["disable-all"] = true
 	c.result.Settings["enable"] = run
 	return nil
+}
+
+// The govet settings choosing which vet analyzers run.
+const (
+	vetEnable     = "enable"
+	vetDisable    = "disable"
+	vetEnableAll  = "enable-all"
+	vetDisableAll = "disable-all"
+)
+
+// vetSelection returns the vet analyzers golangci-lint's govet runs with the
+// given settings.
+func vetSelection(settings map[string]any) []string {
+	enable, disable := list(settings, vetEnable), list(settings, vetDisable)
+	enableAll, _ := settings[vetEnableAll].(bool)
+	disableAll, _ := settings[vetDisableAll].(bool)
+	var selected []string
+	for _, name := range vetAnalyzers() {
+		var on bool
+		switch {
+		case enableAll:
+			on = !slices.Contains(disable, name)
+		case slices.Contains(enable, name):
+			on = true
+		case slices.Contains(disable, name), disableAll:
+			on = false
+		default:
+			on = !slices.Contains(offVetAnalyzers(), name)
+		}
+		if on {
+			selected = append(selected, name)
+		}
+	}
+	return selected
 }
 
 func (c *converter) isKnown(name string) bool {
@@ -281,12 +328,30 @@ func (c *converter) known(names []string) []string {
 	return slices.Compact(known)
 }
 
-// settings converts one linter's settings into its analyzer's table.
-func (c *converter) settings(linter string, settings map[string]any) {
+// govetSettings converts each vet analyzer's settings into its own table. The
+// enable and disable settings are applied by selection.
+func (c *converter) govetSettings(settings map[string]any) {
+	for _, key := range slices.Sorted(maps.Keys(settings)) {
+		switch key {
+		case vetEnable, vetDisable, vetEnableAll, vetDisableAll:
+		case "settings":
+			analyzers := table(settings, key)
+			for _, name := range slices.Sorted(maps.Keys(analyzers)) {
+				c.settings("linters.settings.govet.settings."+name, name, table(analyzers, name))
+			}
+		default:
+			c.warnf("linters.settings.govet.%s is not imported: tsk has no equivalent", key)
+		}
+	}
+}
+
+// settings converts one linter's settings, found at path, into its
+// analyzer's table.
+func (c *converter) settings(path, linter string, settings map[string]any) {
 	name := analyzerName(linter)
 	analyzer, ok := c.analyzers[name]
 	if !ok {
-		c.warnf("linters.settings.%s is not imported: tsk has no %s analyzer", linter, linter)
+		c.warnf("%s is not imported: tsk has no %s analyzer", path, linter)
 		return
 	}
 	if name == "revive" {
@@ -310,7 +375,7 @@ func (c *converter) settings(linter string, settings map[string]any) {
 		}
 		// Each key is checked alone, so one that does not fit drops only itself.
 		if _, err := config.Resolve(name, shape, defaults, map[string]any{key: settings[key]}); err != nil {
-			c.warnf("linters.settings.%s.%s is not imported: %s", linter, key, err)
+			c.warnf("%s.%s is not imported: %s", path, key, err)
 			continue
 		}
 		kept[key] = settings[key]
@@ -415,6 +480,7 @@ func (c *converter) exclusions(exclusions map[string]any) {
 		case "rules":
 			for i, item := range array(exclusions, key) {
 				rule, _ := item.(map[string]any)
+				rule = c.vetRule(i, rule)
 				path, _ := rule["path"].(string)
 				names := analyzerNames(list(rule, "linters"))
 				if len(rule) == 2 && testFile(path) && len(names) > 0 {
@@ -442,6 +508,34 @@ func (c *converter) exclusions(exclusions map[string]any) {
 	if len(rules) > 0 {
 		c.result.Settings["exclude"] = rules
 	}
+}
+
+// vetRule rewrites an exclusion rule naming govet to name the vet analyzers.
+// govet's findings start with their analyzer's name, as in "printf: ...", and
+// tsk's do not, so a text pattern starting with a name narrows the rule to it.
+func (c *converter) vetRule(i int, rule map[string]any) map[string]any {
+	linters := list(rule, "linters")
+	if !slices.Contains(analyzerNames(linters), govet) {
+		return rule
+	}
+	out := maps.Clone(rule)
+	others := slices.DeleteFunc(slices.Clone(linters), func(name string) bool { return analyzerName(name) == govet })
+	text, _ := rule["text"].(string)
+	prefixed := regexp.MustCompile(`^(\^?)(\w+): ?(.*)$`).FindStringSubmatch(text)
+	if prefixed != nil && len(others) == 0 && slices.Contains(vetAnalyzers(), prefixed[2]) {
+		out["linters"] = []any{prefixed[2]}
+		if rest := prefixed[1] + prefixed[3]; rest != "" && rest != "^" {
+			out["text"] = rest
+		} else {
+			delete(out, "text")
+		}
+		return out
+	}
+	if text != "" {
+		c.warnf("linters.exclusions.rules[%d] %s: its text now applies to every vet analyzer, whose findings do not start with the analyzer's name in tsk", i, describe(rule))
+	}
+	out["linters"] = anys(slices.Concat(others, vetAnalyzers()))
+	return out
 }
 
 // exclusionRule converts one exclusion rule, keeping only the linters tsk

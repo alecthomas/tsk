@@ -5,10 +5,12 @@ package bindings
 import (
 	"go/ast"
 	"go/build"
+	"go/build/constraint"
 	"go/constant"
 	"go/parser"
 	"go/token"
 	"go/types"
+	"go/version"
 	"golang.org/x/mod/modfile"
 	"golang.org/x/tools/go/analysis/passes/buildssa"
 	"golang.org/x/tools/go/analysis/passes/ctrlflow"
@@ -168,6 +170,25 @@ func Packages() []Package {
 				"Package":              reflect.TypeFor[build.Package](),
 			},
 			ErrorTypes: []string{"MultiplePackageError", "NoGoError"},
+		},
+		{
+			Path: "go/build/constraint",
+			Funcs: map[string]any{
+				"GoVersion":      constraint.GoVersion,
+				"IsGoBuild":      constraint.IsGoBuild,
+				"IsPlusBuild":    constraint.IsPlusBuild,
+				"Parse":          constraint.Parse,
+				"PlusBuildLines": constraint.PlusBuildLines,
+			},
+			Types: map[string]reflect.Type{
+				"AndExpr":     reflect.TypeFor[constraint.AndExpr](),
+				"Expr":        reflect.TypeFor[constraint.Expr](),
+				"NotExpr":     reflect.TypeFor[constraint.NotExpr](),
+				"OrExpr":      reflect.TypeFor[constraint.OrExpr](),
+				"SyntaxError": reflect.TypeFor[constraint.SyntaxError](),
+				"TagExpr":     reflect.TypeFor[constraint.TagExpr](),
+			},
+			ErrorTypes: []string{"SyntaxError"},
 		},
 		{
 			Path: "go/constant",
@@ -518,6 +539,14 @@ func Packages() []Package {
 				"VarKind":          reflect.TypeFor[types.VarKind](),
 			},
 			ErrorTypes: []string{"ArgumentError", "Error"},
+		},
+		{
+			Path: "go/version",
+			Funcs: map[string]any{
+				"Compare": version.Compare,
+				"IsValid": version.IsValid,
+				"Lang":    version.Lang,
+			},
 		},
 		{
 			Path: "golang.org/x/mod/modfile",

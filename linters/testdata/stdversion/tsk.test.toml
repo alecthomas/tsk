@@ -1,0 +1,4 @@
+[[case]]
+name = "default"
+dir = "test"
+packages = ["example.com/basic", "example.com/despite", "example.com/mod20", "example.com/mod21", "example.com/mod22", "example.com/old"]

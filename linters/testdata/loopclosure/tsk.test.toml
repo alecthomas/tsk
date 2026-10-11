@@ -1,0 +1,16 @@
+# Upstream runs only go22, as the legacy expectations hold only before go1.22.
+# The legacy packages run here in a go1.21 module rather than in GOPATH mode.
+[[case]]
+name = "legacy"
+dir = "src"
+packages = ["legacy/a", "legacy/typeparams", "legacy/subtests"]
+
+[[case]]
+name = "go22"
+dir = "go22"
+packages = ["golang.org/fake/versions"]
+
+[[case]]
+name = "go18"
+dir = "go18"
+packages = ["golang.org/fake/versions"]

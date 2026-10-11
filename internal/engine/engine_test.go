@@ -3,8 +3,10 @@ package engine_test
 import (
 	"bytes"
 	"context"
+	"go/build"
 	"log/slog"
 	"path/filepath"
+	"regexp"
 	"strconv"
 	"strings"
 	"sync"
@@ -490,6 +492,33 @@ func TestFormatNode(t *testing.T) {
 		"example/example.go": "package example\n\n" +
 			"func f(a, b, c int) int {\n\treturn a + b*c // want `^a \\+ b\\*c \\| a \\+ b\\*c$`\n}\n\n" +
 			"func g() []int {\n\treturn []int{ // want `^\\[\\]int\\{1, 2\\} \\| \\[\\]int\\{\\n\\t1,\\n\\t2,\\n\\}$`\n\t\t1,\n\t\t2,\n\t}\n}\n",
+	})
+	assert.NoError(t, err)
+	defer cleanup()
+	analysistest.Run(t, dir, analyzers[0], "example")
+}
+
+const targetScript = `import { defineAnalyzer, goarch, goos } from "tsk";
+
+export default defineAnalyzer({
+  name: "target",
+  doc: "report the target platform at each file",
+  run(pass) {
+    for (const file of pass.files) {
+      pass.report({ pos: file.package, message: goos() + "/" + goarch() });
+    }
+  },
+});
+`
+
+// Scripts see the target platform that go/build's default context holds.
+func TestTarget(t *testing.T) {
+	e := load(t, map[string]string{"target.ts": targetScript})
+	analyzers, err := e.Analyzers(config.File{}, nil)
+	assert.NoError(t, err)
+	target := regexp.QuoteMeta(build.Default.GOOS + "/" + build.Default.GOARCH)
+	dir, cleanup, err := analysistest.WriteFiles(map[string]string{
+		"example/example.go": "package example // want `^" + target + "$`\n",
 	})
 	assert.NoError(t, err)
 	defer cleanup()

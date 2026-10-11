@@ -1,0 +1,15 @@
+[[case]]
+name = "default"
+packages = ["a", "b", "nofmt", "nonconst", "typeparams", "issue62595", "issue68744", "issue70572", "issue72850", "issue76616", "w"]
+[case.config]
+funcs = ["Warn", "Warnf"]
+
+[[case]]
+name = "nonconst-go123"
+dir = "nonconst_go123"
+packages = ["example.com/nonconst"]
+
+[[case]]
+name = "nonconst-go124"
+dir = "nonconst_go124"
+packages = ["example.com/nonconst"]

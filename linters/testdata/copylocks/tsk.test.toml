@@ -1,0 +1,13 @@
+[[case]]
+name = "default"
+packages = ["a", "typeparams", "issue67787", "unfortunate"]
+
+[[case]]
+name = "go22"
+dir = "go22"
+packages = ["golang.org/fake/forstmt"]
+
+[[case]]
+name = "go21"
+dir = "go21"
+packages = ["golang.org/fake/forstmt"]

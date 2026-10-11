@@ -44,6 +44,12 @@ declare module "tsk" {
   /** Returns the root of the Go installation that go env reports. */
   export function goroot(): string;
 
+  /** Returns the operating system packages are loaded for, as go env GOOS reports it. */
+  export function goos(): string;
+
+  /** Returns the architecture packages are loaded for, as go env GOARCH reports it. */
+  export function goarch(): string;
+
   /** A read-only view of a Go map. Keys keep Go identity. */
   export interface MapView<K, V> extends Iterable<[K, V]> {
     readonly size: number;

@@ -1,0 +1,44 @@
+# Fact expectations quote this port's fact values, which are JSON.
+# binding_false is left out: without the inliner, calls needing a binding
+# declaration are still reported, as binding_true expects.
+[[case]]
+name = "default"
+packages = ["a", "b"]
+
+[[case]]
+name = "rmimport"
+packages = ["rmimport"]
+
+[[case]]
+name = "binding_true"
+packages = ["binding_true"]
+
+[[case]]
+name = "issue76190"
+dir = "issue76190"
+packages = ["example.com/a", "example.com/b"]
+
+[[case]]
+name = "issue77610"
+dir = "issue77610"
+packages = ["example.com/a", "example.com/b", "example.com/c", "example.com/d"]
+
+[[case]]
+name = "issue78088"
+dir = "issue78088"
+packages = ["example.com/e", "example.com/f", "example.com/g", "example.com/h"]
+
+[[case]]
+name = "embedded_alias"
+dir = "embedded_alias"
+packages = ["example.com"]
+
+[[case]]
+name = "issue77844"
+dir = "issue77844"
+packages = ["example.com/main"]
+
+[[case]]
+name = "issue78994"
+dir = "issue78994"
+packages = ["example.com/a"]

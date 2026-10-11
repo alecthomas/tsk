@@ -8,6 +8,7 @@ import (
 	"log/slog"
 	"os"
 	"os/exec"
+	"slices"
 	"strconv"
 	"strings"
 
@@ -117,7 +118,23 @@ func (t testCommand) Run(ctx context.Context, log *slog.Logger, c *project.Confi
 	if err != nil {
 		return errors.WithStack(err)
 	}
-	return errors.WithStack(scripttest.RunAll(p.Engine(), analyzers, p.Dir(), os.Stdout, t.Config))
+	return errors.WithStack(scripttest.RunAll(p.Engine(), analyzers, p.Dir(), os.Stdout, t.Config, isolateCase(ctx)))
+}
+
+// isolateCase reruns this command for one case in a new process, whose
+// environment selects the case's target platform.
+func isolateCase(ctx context.Context) scripttest.Isolate {
+	return func(name string, env []string) ([]byte, error) {
+		executable, err := os.Executable()
+		if err != nil {
+			return nil, errors.Wrap(err, "find tsk")
+		}
+		args := append(slices.Clone(os.Args[1:]), "--json", "--case="+name)
+		command := exec.CommandContext(ctx, executable, args...)
+		command.Env = append(os.Environ(), env...)
+		out, err := command.Output()
+		return out, errors.Wrapf(err, "run case %s", name)
+	}
 }
 
 type checkCommand struct{}
@@ -238,13 +255,16 @@ func main() {
 	cacheConfig, err := config.Library.Resolve(userCache)
 	kctx.FatalIfErrorf(err)
 	log := logger.New(config.Log, os.Stderr)
-	// Scripts find the standard library through go/build, whose GOROOT is the
-	// one tsk was built with, or empty with -trimpath. Use the user's toolchain,
-	// which also follows GOTOOLCHAIN.
-	if out, err := exec.CommandContext(ctx, "go", "env", "GOROOT").Output(); err == nil {
-		build.Default.GOROOT = strings.TrimSpace(string(out))
+	// Scripts find the standard library and the target platform through
+	// go/build, whose GOROOT is the one tsk was built with, or empty with
+	// -trimpath. Use the user's toolchain, which also follows GOTOOLCHAIN, and
+	// its target, which also follows the go env file as packages are loaded.
+	if out, err := exec.CommandContext(ctx, "go", "env", "GOROOT", "GOOS", "GOARCH").Output(); err == nil {
+		if lines := strings.Split(strings.TrimSpace(string(out)), "\n"); len(lines) == 3 {
+			build.Default.GOROOT, build.Default.GOOS, build.Default.GOARCH = lines[0], lines[1], lines[2]
+		}
 	} else {
-		log.Debug("Could not find GOROOT", "error", err)
+		log.Debug("Could not read the Go environment", "error", err)
 	}
 	results := None[*lint.Cache]()
 	if dir, ok := cacheConfig.Results().Get(); ok {

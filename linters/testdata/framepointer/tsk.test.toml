@@ -1,0 +1,19 @@
+# Upstream checks only the host. These cases cover each platform with
+# assembly here; asm_amd64.s expects findings, so only linux and darwin apply.
+[[case]]
+name = "linux-amd64"
+packages = ["a"]
+goos = "linux"
+goarch = "amd64"
+
+[[case]]
+name = "darwin-amd64"
+packages = ["a"]
+goos = "darwin"
+goarch = "amd64"
+
+[[case]]
+name = "darwin-arm64"
+packages = ["a"]
+goos = "darwin"
+goarch = "arm64"

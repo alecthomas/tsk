@@ -335,7 +335,8 @@ by key, while arrays replace. `pass.config` holds the result and is read-only.
 
 Scripts import Go packages by their import paths:
 
-- `go/ast`, `go/constant`, `go/token`, and `go/types`
+- `go/ast`, `go/build/constraint`, `go/constant`, `go/token`, `go/types`, and
+  `go/version`
 - `golang.org/x/tools/go/ast/edge`, `golang.org/x/tools/go/ast/inspector`,
   `golang.org/x/tools/go/ssa`, and `golang.org/x/tools/go/types/typeutil`
 - `go/build` without `Context`, `go/parser` without `parseDir`, and
@@ -378,8 +379,10 @@ literals.
 Scripts may read files only while a linter runs. `tsk` records each read for
 the package being analysed, so its cached findings are reused only while those
 files are unchanged. For the same reason, do not keep what you read for one
-package in module state to use for another. `goroot()` from `tsk` returns the
-Go installation's root, in place of `go/build`'s `Context`.
+package in module state to use for another. In place of `go/build`'s
+`Context`, `goroot()` from `tsk` returns the Go installation's root, and
+`goos()` and `goarch()` return the platform packages are loaded for, as
+`go env` reports them.
 
 #### Traversing syntax
 
@@ -531,4 +534,6 @@ message = "return an error instead"
 
 Each case needs a `name` and package patterns. `config` sets options as in
 `.tsk/config.toml`, and `dir` points the case at a subdirectory of the test data,
-such as a separate module.
+such as a separate module. `goos` and `goarch` load the packages for another
+platform, as setting `GOOS` and `GOARCH` would, for test data with
+platform-specific files.
