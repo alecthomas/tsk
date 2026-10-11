@@ -42,7 +42,7 @@ translation of that code.
 | [`errname`](https://github.com/Antonboom/errname) | MIT | Check that sentinel errors are prefixed with Err and error types are suffixed with Error. |
 | [`errorlint`](https://codeberg.org/polyfloyd/go-errorlint) | MIT | Find code that will fail on errors wrapped as Go 1.13 introduced. |
 | [`exhaustive`](https://github.com/nishanths/exhaustive) | BSD-2-Clause | Check exhaustiveness of enum switch statements and map literals. |
-| [`exhaustruct`](https://github.com/GaijinEntertainment/go-exhaustruct) | MIT | Checks if all structure fields are initialized. |
+| [`exhaustruct`](https://github.com/GaijinEntertainment/go-exhaustruct) | MIT | Checks if all structure fields are initialized. Ports version 5, which golangci-lint calls `exhaustruct_v5`. |
 | [`exptostd`](https://github.com/ldez/exptostd) | Apache-2.0 | Detect functions from golang.org/x/exp/ that can be replaced by std functions. |
 | [`fatcontext`](https://github.com/Crocmagnon/fatcontext) | MIT | Detect nested contexts in loops and function literals. |
 | [`forbidigo`](https://github.com/ashanbrown/forbidigo) | Apache-2.0 | Forbid identifiers. |

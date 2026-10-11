@@ -16,6 +16,7 @@ require (
 	github.com/lmittmann/tint v1.2.0
 	github.com/microsoft/TypeScript/tsc/shim/typescript v0.0.0-00010101000000-000000000000
 	github.com/pelletier/go-toml/v2 v2.4.3
+	go.yaml.in/yaml/v3 v3.0.5
 	golang.org/x/mod v0.41.0
 	golang.org/x/sync v0.23.0
 	golang.org/x/term v0.46.0

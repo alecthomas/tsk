@@ -19,6 +19,7 @@ import (
 
 	"github.com/alecthomas/tsk/internal/config"
 	"github.com/alecthomas/tsk/internal/docs"
+	"github.com/alecthomas/tsk/internal/golangci"
 	"github.com/alecthomas/tsk/internal/library"
 	"github.com/alecthomas/tsk/internal/lint"
 	"github.com/alecthomas/tsk/internal/logger"
@@ -37,7 +38,7 @@ type cli struct {
 	Init  initCommand  `cmd:"" help:"Write declarations and tsconfig.json for editors into the scripts directory."`
 	// Named for the command because the embedded project.Config owns the
 	// Config field name.
-	ConfigCommand configCommand `cmd:"" name:"config" help:"Print a .tsk/config.toml documenting every analyzer and config option, set to their defaults."`
+	ConfigCommand configCommand `cmd:"" name:"config" help:"Print a documented config file, or import one from golangci-lint."`
 	List          listCommand   `cmd:"" help:"List every analyzer, whether it is enabled, and where it is defined."`
 	Get           getCommand    `cmd:"" help:"Add or update linter libraries, and pin every import in the lock file."`
 	Sync          syncCommand   `cmd:"" help:"Download every locked linter library missing from the cache."`
@@ -141,10 +142,35 @@ func (initCommand) Run(ctx context.Context, c *project.Config, cache *library.Ca
 }
 
 type configCommand struct {
+	Show   configShowCommand   `cmd:"" default:"withargs" help:"Print a .tsk/config.toml documenting every analyzer and config option, set to their defaults."`
+	Import configImportCommand `cmd:"" help:"Write the config file from a golangci-lint v2 config, keeping its imports and replace."`
+}
+
+type configShowCommand struct {
 	Analyzers []string `arg:"" optional:"" help:"Analyzers to describe. Defaults to all."`
 }
 
-func (d configCommand) Run(ctx context.Context, log *slog.Logger, c *project.Config, cache *library.Cache) error {
+type configImportCommand struct {
+	golangci.Config `embed:""`
+}
+
+func (i configImportCommand) Run(ctx context.Context, log *slog.Logger, c *project.Config, cache *library.Cache) error {
+	dir, err := os.Getwd()
+	if err != nil {
+		return errors.Wrap(err, "find working directory")
+	}
+	p, err := project.Load(ctx, log, *c, cache)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+	analyzers, err := p.Describe(nil)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+	return errors.WithStack(golangci.Import(log, os.Stderr, i.Config, dir, c.Config, analyzers))
+}
+
+func (d configShowCommand) Run(ctx context.Context, log *slog.Logger, c *project.Config, cache *library.Cache) error {
 	p, err := project.Load(ctx, log, *c, cache)
 	if err != nil {
 		return errors.WithStack(err)
