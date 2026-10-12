@@ -95,7 +95,11 @@ func Run(ctx context.Context, logger *slog.Logger, a Analysis, lookup Option[*Lo
 	for action := range graph.All() {
 		switch {
 		case action.Err != nil:
-			fmt.Fprintf(&failures, "%s: %v\n", action.Analyzer.Name, action.Err)
+			// Analysers skip ill-typed packages, whose load errors are already
+			// printed, so their failures would only repeat them once per analyser.
+			if !action.Package.IllTyped {
+				fmt.Fprintf(&failures, "%s: %v\n", action.Analyzer.Name, action.Err)
+			}
 			failed[action.Package.ID] = true
 		case action.IsRoot:
 			findings[action.Package.ID] = append(findings[action.Package.ID], resolve(action)...)
@@ -270,11 +274,21 @@ func NeedFacts(analyzers []*analysis.Analyzer) bool {
 	return false
 }
 
-// printErrors mirrors packages.PrintErrors, which only writes to os.Stderr.
+// printErrors mirrors packages.PrintErrors, which only writes to os.Stderr. A
+// file in several packages, such as foo and its test variant, errs once in each,
+// so equal errors print once.
 func printErrors(w io.Writer, pkgs []*packages.Package) (count int) {
 	modules := map[*packages.Module]bool{}
+	printed := map[string]bool{}
 	for pkg := range packages.Postorder(pkgs) {
+		typeErrors := slices.ContainsFunc(pkg.Errors, func(err packages.Error) bool { return err.Kind == packages.TypeError })
 		for _, err := range pkg.Errors {
+			// Compiling for export data repeats the type checker's errors as list
+			// errors.
+			if printed[err.Error()] || (typeErrors && err.Kind == packages.ListError) {
+				continue
+			}
+			printed[err.Error()] = true
 			fmt.Fprintln(w, err) //nolint:errcheck // Output is best effort.
 			count++
 		}

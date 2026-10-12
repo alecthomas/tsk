@@ -138,6 +138,38 @@ func TestRunLintsOnlyTestVariant(t *testing.T) {
 	assert.Equal(t, "sub/sub.go:1:9: files=2 (files)\nsub/sub_test.go:1:9: files=2 (files)\n", stderr.String())
 }
 
+func TestRunReportsLoadErrorsOnce(t *testing.T) {
+	dir := t.TempDir()
+	assert.NoError(t, os.WriteFile(filepath.Join(dir, "go.mod"), []byte("module example.com/broken\n\ngo 1.24\n"), 0o600))
+	assert.NoError(t, os.WriteFile(filepath.Join(dir, "broken.go"), []byte("package broken\n\nvar A = undefined\n"), 0o600))
+	assert.NoError(t, os.WriteFile(filepath.Join(dir, "broken_test.go"), []byte("package broken\n"), 0o600))
+	factsAnalyzer := funcsAnalyzer()
+	factsAnalyzer.FactTypes = []analysis.Fact{new(fact)}
+	tests := []struct {
+		Name     string
+		Analyzer *analysis.Analyzer
+	}{
+		// Without facts, dependencies load from export data, which go list
+		// compiles.
+		{Name: "ExportData", Analyzer: funcsAnalyzer()},
+		{Name: "Source", Analyzer: factsAnalyzer},
+	}
+	for _, test := range tests {
+		t.Run(test.Name, func(t *testing.T) {
+			var stdout, stderr bytes.Buffer
+			config := lint.Config{Packages: []string{"./..."}, Context: -1, Test: true}
+			code, err := lint.Run(t.Context(), slog.New(slog.DiscardHandler), analyzers(test.Analyzer), None[*lint.Lookup](), config, dir, &stdout, &stderr)
+			assert.NoError(t, err)
+			assert.Equal(t, 1, code)
+			assert.Equal(t, filepath.Join(dir, "broken.go")+":3:9: undefined: undefined\n", stderr.String())
+		})
+	}
+}
+
+type fact struct{}
+
+func (*fact) AFact() {}
+
 func TestRunText(t *testing.T) {
 	dir, err := filepath.Abs("testdata")
 	assert.NoError(t, err)
