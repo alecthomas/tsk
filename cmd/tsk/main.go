@@ -224,7 +224,7 @@ func (l listCommand) Run(ctx context.Context, log *slog.Logger, c *project.Confi
 }
 
 type getCommand struct {
-	Libraries []library.Import `arg:"" optional:"" help:"Libraries to add or update, as repository[@version][//dir]. Without a version, the highest semver tag or the default branch. Without libraries, only reconcile the lock file with the config's imports."`
+	Libraries []library.Import `arg:"" optional:"" help:"Libraries to add or update, as repository[@version][//dir]. Without a version, the highest semver tag or the default branch. Without libraries, update every import to its latest version, except one whose version was edited by hand."`
 }
 
 func (g getCommand) Run(ctx context.Context, log *slog.Logger, c *project.Config, cache *library.Cache) error {

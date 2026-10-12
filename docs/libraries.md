@@ -87,8 +87,9 @@ project configures its analyzers.
 - `tsk get [<repository>[@<version>][//<dir>]...]` adds or updates the named
   libraries in `imports`, resolves every import against its repository,
   rewrites the lock file, and downloads missing snapshots. Without arguments
-  it only reconciles the lock file with `imports`, so a removed import is
-  dropped. An import without a version resolves to the highest semver tag, or
+  it updates every import to its latest version and drops removed imports. An
+  import whose version was edited by hand keeps that version, with a notice,
+  so hand edits stay safe. An import without a version resolves to the highest semver tag, or
   the default branch when there is none. Each changed library prints the analyzers the change adds or
   removes, because an update can enable new linters.
 - `tsk sync` downloads every locked snapshot missing from the cache, for CI

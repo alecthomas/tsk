@@ -168,20 +168,25 @@ func TestGet(t *testing.T) {
 	assert.Equal(t, 1, len(described))
 	assert.Equal(t, "github.com/acme/linters/lib@"+first, described[0].Source)
 
-	assert.Equal(t, "", get(), "an unchanged lock reports nothing")
-	assert.Equal(t, "update github.com/acme/linters@v1.0.0//lib ("+first+") => v1.1.0 ("+second+")\n  + two\n", get("github.com/acme/linters//lib"))
+	assert.Equal(t, "update github.com/acme/linters@v1.0.0//lib ("+first+") => v1.1.0 ("+second+")\n  + two\n", get(), "without requests, everything updates")
 	assert.Contains(t, readConfig(), `"github.com/acme/linters@v1.1.0//lib"`)
+	assert.Equal(t, "", get(), "an unchanged lock reports nothing")
 
-	// A version edited by hand fails to load until tsk get pins it.
+	// A version edited by hand fails to load until tsk get pins it, which
+	// keeps it rather than updating it.
 	assert.NoError(t, os.WriteFile(c.Config, []byte(`imports = ["github.com/acme/linters@v1.0.0//lib"]`), 0o600))
 	_, err = project.Load(t.Context(), logger, c, cache)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "github.com/acme/linters@v1.0.0//lib is locked as github.com/acme/linters@v1.1.0//lib")
-	assert.Equal(t, "update github.com/acme/linters@v1.1.0//lib ("+second+") => v1.0.0 ("+first+")\n  - two\n", get())
+	assert.Equal(t, "keep github.com/acme/linters@v1.0.0//lib, edited by hand\n"+
+		"update github.com/acme/linters@v1.1.0//lib ("+second+") => v1.0.0 ("+first+")\n  - two\n", get())
+	assert.Equal(t, `imports = ["github.com/acme/linters@v1.0.0//lib"]`, readConfig())
+
+	assert.Equal(t, "update github.com/acme/linters@v1.0.0//lib ("+first+") => v1.1.0 ("+second+")\n  + two\n", get("github.com/acme/linters//lib"))
 
 	// A removed import is dropped from the lock file.
 	assert.NoError(t, os.WriteFile(c.Config, nil, 0o600))
-	assert.Equal(t, "remove github.com/acme/linters@v1.0.0//lib ("+first+")\n  - one\n", get())
+	assert.Equal(t, "remove github.com/acme/linters@v1.1.0//lib ("+second+")\n  - one\n  - two\n", get())
 	lock, err := library.LoadLock(c.LockFile())
 	assert.NoError(t, err)
 	assert.Equal(t, library.Lock{}, lock)

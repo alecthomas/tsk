@@ -19,11 +19,11 @@ import (
 )
 
 // Get adds requested imports to the config file or changes their versions,
-// then pins every import that is not replaced in the lock file. Requested
-// imports are resolved again; others keep their locked commit unless their
-// version changed. Each library the lock file adds, changes, or drops is
-// reported to out with the analyzers the change adds or removes, because an
-// update can enable new linters. c must be resolved.
+// then pins every import that is not replaced in the lock file. Without
+// requests, every import updates to its latest version, as pin describes.
+// Each library the lock file adds, changes, or drops is reported to out with
+// the analyzers the change adds or removes, because an update can enable new
+// linters. c must be resolved.
 func Get(ctx context.Context, logger *slog.Logger, c Config, cache *library.Cache, requests []library.Import, out io.Writer) error {
 	text, err := os.ReadFile(c.Config)
 	if err != nil && !errors.Is(err, os.ErrNotExist) {
@@ -58,7 +58,7 @@ func Get(ctx context.Context, logger *slog.Logger, c Config, cache *library.Cach
 			}
 			continue
 		}
-		locked, err := pin(ctx, cache, previous, imported, requested(requests, imported.Path()))
+		locked, err := pin(ctx, cache, previous, imported, requested(requests, imported.Path()), len(requests) == 0, out)
 		if err != nil {
 			return err
 		}
@@ -68,7 +68,7 @@ func Get(ctx context.Context, logger *slog.Logger, c Config, cache *library.Cach
 	if err := reportChanges(ctx, logger, cache, previous, lock, out); err != nil {
 		return err
 	}
-	if len(requests) > 0 {
+	if !slices.Equal(imports, file.Imports) {
 		updated, err := config.SetImports(text, imports)
 		if err != nil {
 			return errors.Wrapf(err, "%s", c.Config)
@@ -87,11 +87,21 @@ func requested(requests []library.Import, path string) bool {
 	return slices.ContainsFunc(requests, func(request library.Import) bool { return request.Path() == path })
 }
 
-// pin keeps an import's locked commit while the import is unchanged, unless
-// it was requested, and otherwise resolves the version again.
-func pin(ctx context.Context, cache *library.Cache, previous library.Lock, imported library.Import, requested bool) (library.Locked, error) {
-	if old, wasLocked := previous.Find(imported.Path()); wasLocked && !requested && old.Import() == imported {
+// pin resolves a requested import's version. With updateAll, an import still
+// matching its lock entry resolves to the latest version, while one edited by
+// hand keeps its version, reported to out, because the edit is the user's
+// choice. Otherwise an unchanged import keeps its locked commit.
+func pin(ctx context.Context, cache *library.Cache, previous library.Lock, imported library.Import, requested, updateAll bool, out io.Writer) (library.Locked, error) {
+	old, wasLocked := previous.Find(imported.Path())
+	unchanged := wasLocked && old.Import() == imported
+	switch {
+	case requested:
+	case unchanged && updateAll:
+		imported.Version = None[string]()
+	case unchanged:
 		return old, nil
+	case updateAll && wasLocked:
+		fmt.Fprintf(out, "keep %s, edited by hand\n", imported) //nolint:errcheck // Output is best effort.
 	}
 	locked, err := cache.Resolve(ctx, imported)
 	return locked, errors.WithStack(err)
