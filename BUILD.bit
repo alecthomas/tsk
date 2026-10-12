@@ -88,12 +88,13 @@ explicit bump = exec {
     # .svu.yml keeps breaking changes to a minor bump while the major is 0.
     next="$(svu next)"
     if [ "$next" = "$current" ]; then
-      echo "Nothing to release since $current" >&2
-      exit 1
+      echo "::info::Nothing to release since $current"
+      exit 0
     fi
     git tag --annotate "$next" --message "Release $next"
     # A tag left behind by a failed push would block the retry.
     git push origin "$next" || { git tag --delete "$next"; exit 1; }
+    echo "::success::Released $next"
   EOL
   resolve = "git rev-parse HEAD"
 }
