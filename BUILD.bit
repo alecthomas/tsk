@@ -84,6 +84,12 @@ gen = exec {
 explicit bump = exec {
   command = <<-EOL
     set -eu
+    # Only release commits that have landed, so every tag is reachable from master.
+    git fetch --quiet origin master
+    if ! git merge-base --is-ancestor HEAD origin/master; then
+      echo "::error::HEAD is not on origin/master"
+      exit 1
+    fi
     current="$(svu current)"
     # .svu.yml keeps breaking changes to a minor bump while the major is 0.
     next="$(svu next)"
