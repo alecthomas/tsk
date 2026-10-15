@@ -11,6 +11,7 @@ turn on others with `enable`. `tsk config` documents each linter's options.
 | Linter | Reports |
 |---|---|
 | `encapsulation` | Private-field access and construction outside a struct's API. |
+| `lockguard` | Fields of structs with a mutex, and variables after one, accessed without holding it when they change after construction. |
 | `nolintlint` | Ill-formed or insufficient `//nolint` directives. An original implementation of golangci-lint's nolintlint, which is GPL-3.0, with its options and messages, except that unused directives are not reported. |
 | `optionalnil` | `nil` used to mean "no value" where an option type could be used. |
 | `sumtype` | Type switches on sealed interfaces that miss a variant. |

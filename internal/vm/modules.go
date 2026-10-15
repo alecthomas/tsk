@@ -122,6 +122,8 @@ func (m *Modules) load(name string) (*sobek.SourceTextModuleRecord, error) {
 // relative specifiers to scripts in the importing script's source. Library
 // scripts may import only within their own library. Sobek links the whole
 // graph with the entry module's resolver.
+//
+//nolint:lockguard // Linking in NewModules loads every module; later resolves only read.
 func (m *Modules) resolve(referencing any, specifier string) (sobek.ModuleRecord, error) {
 	record, _ := referencing.(sobek.ModuleRecord)
 	referrer, known := m.names[record]
