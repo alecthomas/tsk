@@ -143,7 +143,7 @@ func (d *declarer) errorType(object *types.TypeName, named *types.Named) error {
 		d.line("    [Symbol.iterator](): Iterator<" + element + ">;")
 		reserved["length"], reserved["at"] = true, true
 	case *types.Map:
-		return errors.Errorf("error type %s is a map, which has no class form", object.Name())
+		return errors.Errorf("error type %q is a map, which has no class form", object.Name())
 	}
 	if err := d.members(object, named, structure, reserved); err != nil {
 		return err
@@ -160,7 +160,7 @@ func (d *declarer) members(object *types.TypeName, named *types.Named, structure
 		for _, field := range promotedFields(structure) {
 			name := naming.Member(field.Name())
 			if names[name] {
-				return errors.Errorf("field %s collides with another member", field.Name())
+				return errors.Errorf("field %q collides with another member", field.Name())
 			}
 			names[name] = true
 			d.line("    readonly " + name + ": " + d.tsType(field.Type()) + ";")
@@ -173,7 +173,7 @@ func (d *declarer) members(object *types.TypeName, named *types.Named, structure
 		}
 		name := naming.Member(method.Name())
 		if names[name] {
-			return errors.Errorf("method %s collides with another member", method.Name())
+			return errors.Errorf("method %q collides with another member", method.Name())
 		}
 		names[name] = true
 		d.line("    " + name + d.signature(method.Signature()) + ";")

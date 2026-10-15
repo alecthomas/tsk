@@ -445,13 +445,13 @@ func structOf(t reflect.Type) (reflect.Type, bool) {
 
 func (b *bridge) define(object *sobek.Object, name string, value sobek.Value) {
 	if err := object.DefineDataProperty(name, value, sobek.FLAG_FALSE, sobek.FLAG_FALSE, sobek.FLAG_FALSE); err != nil {
-		panic(b.typeError("define %s: %v", name, err))
+		panic(b.typeError("define %q: %v", name, err))
 	}
 }
 
 func (b *bridge) accessor(object *sobek.Object, name string, getter func(sobek.FunctionCall) sobek.Value) {
 	if err := object.DefineAccessorProperty(name, b.rt.ToValue(getter), nil, sobek.FLAG_FALSE, sobek.FLAG_TRUE); err != nil {
-		panic(b.typeError("define %s: %v", name, err))
+		panic(b.typeError("define %q: %v", name, err))
 	}
 }
 
@@ -1035,7 +1035,7 @@ func (b *bridge) boundGetter(name string, function reflect.Value) func(sobek.Fun
 	return func(call sobek.FunctionCall) sobek.Value {
 		receiver, isObject := call.This.(*sobek.Object)
 		if !isObject {
-			panic(b.typeError("%s needs a receiver", name))
+			panic(b.typeError("%q needs a receiver", name))
 		}
 		key := boundKey{receiver: receiver, name: name}
 		if cached, ok := b.current.bound[key]; ok {

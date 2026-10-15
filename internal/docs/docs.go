@@ -88,7 +88,7 @@ func TOML(w io.Writer, analyzers []Analyzer, options Options) error {
 		r.line(r.bold("[" + analyzer.Name + "]"))
 		config, _ := analyzer.Config.Get()
 		if err := r.properties(object, config.Defaults); err != nil {
-			return errors.Wrapf(err, "analyzer %s", analyzer.Name)
+			return errors.Wrapf(err, "analyzer %q", analyzer.Name)
 		}
 	}
 	return r.writeTo(w)
@@ -160,7 +160,7 @@ func (r *renderer) settings() error {
 	for _, setting := range config.Settings() {
 		rendered, err := encode(setting.Default)
 		if err != nil {
-			return errors.Wrapf(err, "setting %s", setting.Key)
+			return errors.Wrapf(err, "setting %q", setting.Key)
 		}
 		r.line("")
 		r.indented("# ", setting.Doc, r.dim)

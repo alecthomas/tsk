@@ -101,12 +101,12 @@ func (c *Cache) Resolve(ctx context.Context, imported Import) (Locked, error) {
 	}
 	commit, err := git(ctx, mirror, "rev-parse", "--verify", "--quiet", version+"^{commit}")
 	if err != nil {
-		return Locked{}, errors.Errorf("%s has no version %s", repository, version)
+		return Locked{}, errors.Errorf("%q has no version %q", repository, version)
 	}
 	if dir != "" {
 		// A peel suffix would be read as part of the path, so check the type.
 		if kind, err := git(ctx, mirror, "cat-file", "-t", commit+":"+dir); err != nil || kind != "tree" {
-			return Locked{}, errors.Errorf("%s has no directory %s at %s", repository, dir, version)
+			return Locked{}, errors.Errorf("%q has no directory %q at %q", repository, dir, version)
 		}
 	}
 	return Locked{Repository: repository, Version: version, Dir: dir, Commit: commit}, nil
@@ -142,7 +142,7 @@ func (c *Cache) Snapshot(ctx context.Context, locked Locked) (string, error) {
 	}
 	defer os.RemoveAll(staging) //nolint:errcheck // Gone after a successful rename.
 	if err := extract(ctx, mirror, locked.Commit, locked.Dir, staging); err != nil {
-		return "", errors.Wrapf(err, "extract %s", locked)
+		return "", errors.Wrapf(err, "extract %q", locked)
 	}
 	if err := os.MkdirAll(filepath.Dir(snapshot), 0o750); err != nil {
 		return "", errors.Wrap(err, "create snapshot directory")
@@ -259,7 +259,7 @@ func untar(input io.Reader, dir, staging string) error {
 			continue
 		}
 		if !filepath.IsLocal(name) {
-			return errors.Errorf("archive entry %s escapes the library", header.Name)
+			return errors.Errorf("archive entry %q escapes the library", header.Name)
 		}
 		if err := writeFile(filepath.Join(staging, filepath.FromSlash(name)), reader); err != nil {
 			return err
@@ -280,9 +280,9 @@ func writeFile(path string, content io.Reader) error {
 	_, err = io.Copy(file, content)
 	closeErr := file.Close()
 	if err != nil {
-		return errors.Wrapf(err, "write %s", path)
+		return errors.Wrapf(err, "write %q", path)
 	}
-	return errors.Wrapf(closeErr, "write %s", path)
+	return errors.Wrapf(closeErr, "write %q", path)
 }
 
 // git runs git in dir and returns its trimmed output.
@@ -329,7 +329,7 @@ func lockFile(path string) (unlock func(), err error) {
 	}
 	if err := syscall.Flock(int(file.Fd()), syscall.LOCK_EX); err != nil {
 		_ = file.Close() //nolint:errcheck // The lock error explains the failure.
-		return nil, errors.Wrapf(err, "lock %s", path)
+		return nil, errors.Wrapf(err, "lock %q", path)
 	}
 	return func() {
 		_ = file.Close() //nolint:errcheck // Closing releases the lock; nothing was written.

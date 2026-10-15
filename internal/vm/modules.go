@@ -111,7 +111,7 @@ func (m *Modules) load(name string) (*sobek.SourceTextModuleRecord, error) {
 	}
 	record, err := sobek.ParseModule(name, m.sources[name], m.resolve)
 	if err != nil {
-		return nil, errors.Wrapf(err, "parse module %s", name)
+		return nil, errors.Wrapf(err, "parse module %q", name)
 	}
 	m.records[name] = record
 	m.names[record] = name
@@ -138,16 +138,16 @@ func (m *Modules) resolve(referencing any, specifier string) (sobek.ModuleRecord
 		}
 		name := path.Clean(specifier)
 		if _, ok := m.program.Library(name); !ok {
-			return nil, errors.Errorf("%s imports unknown module %q", referrer, specifier)
+			return nil, errors.Errorf("%q imports unknown module %q", referrer, specifier)
 		}
 		if m.program.IsLibrary(source) {
-			return nil, errors.Errorf("%s imports %q by path; a library may import only its own scripts, by relative path", referrer, specifier)
+			return nil, errors.Errorf("%q imports %q by path; a library may import only its own scripts, by relative path", referrer, specifier)
 		}
 		return m.loadScript(referrer, specifier, name)
 	}
 	name := path.Join(path.Dir(referrer), specifier)
 	if !strings.HasPrefix(name, source+"/") {
-		return nil, errors.Errorf("%s imports %q outside its source", referrer, specifier)
+		return nil, errors.Errorf("%q imports %q outside its source", referrer, specifier)
 	}
 	return m.loadScript(referrer, specifier, name)
 }
@@ -160,5 +160,5 @@ func (m *Modules) loadScript(referrer, specifier, name string) (sobek.ModuleReco
 			return m.load(candidate)
 		}
 	}
-	return nil, errors.Errorf("%s imports %q, which is not a script", referrer, specifier)
+	return nil, errors.Errorf("%q imports %q, which is not a script", referrer, specifier)
 }

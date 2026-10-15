@@ -61,9 +61,9 @@ func TestCheckImports(t *testing.T) {
 	}{
 		{name: "Distinct", imports: []string{"github.com/acme/a@v1", "github.com/acme/ab@v1"}},
 		{name: "Siblings", imports: []string{"github.com/acme/a@v1//x", "github.com/acme/a@v1//y"}},
-		{name: "Twice", imports: []string{"github.com/acme/a@v1", "github.com/acme/a@v2"}, error: "github.com/acme/a is imported twice"},
-		{name: "SamePath", imports: []string{"github.com/acme/a@v1//x", "github.com/acme/a/x@v1"}, error: "github.com/acme/a/x is imported twice"},
-		{name: "Nested", imports: []string{"github.com/acme/a@v1//x", "github.com/acme/a@v1"}, error: "imports github.com/acme/a@v1//x and github.com/acme/a@v1 overlap; import only one of them"},
+		{name: "Twice", imports: []string{"github.com/acme/a@v1", "github.com/acme/a@v2"}, error: `"github.com/acme/a" is imported twice`},
+		{name: "SamePath", imports: []string{"github.com/acme/a@v1//x", "github.com/acme/a/x@v1"}, error: `"github.com/acme/a/x" is imported twice`},
+		{name: "Nested", imports: []string{"github.com/acme/a@v1//x", "github.com/acme/a@v1"}, error: `imports "github.com/acme/a@v1//x" and "github.com/acme/a@v1" overlap; import only one of them`},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
@@ -86,10 +86,10 @@ func TestLockCheck(t *testing.T) {
 		error   string
 	}{
 		{name: "Matches", imports: []string{"github.com/acme/a@v1//x"}},
-		{name: "Unlocked", imports: []string{"github.com/acme/a@v1//x", "github.com/acme/b@v1"}, error: "github.com/acme/b@v1 is not locked"},
-		{name: "VersionChanged", imports: []string{"github.com/acme/a@v2//x"}, error: "github.com/acme/a@v2//x is locked as github.com/acme/a@v1//x"},
-		{name: "RepositoryChanged", imports: []string{"github.com/acme/a/x@v1"}, error: "github.com/acme/a/x@v1 is locked as github.com/acme/a@v1//x"},
-		{name: "Removed", imports: nil, error: "github.com/acme/a@v1//x is locked but not imported"},
+		{name: "Unlocked", imports: []string{"github.com/acme/a@v1//x", "github.com/acme/b@v1"}, error: `"github.com/acme/b@v1" is not locked`},
+		{name: "VersionChanged", imports: []string{"github.com/acme/a@v2//x"}, error: `"github.com/acme/a@v2//x" is locked as "github.com/acme/a@v1//x"`},
+		{name: "RepositoryChanged", imports: []string{"github.com/acme/a/x@v1"}, error: `"github.com/acme/a/x@v1" is locked as "github.com/acme/a@v1//x"`},
+		{name: "Removed", imports: nil, error: `"github.com/acme/a@v1//x" is locked but not imported`},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {

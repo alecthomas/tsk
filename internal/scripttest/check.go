@@ -248,7 +248,7 @@ func parseExpectations(text string) (lineDelta int, expects []expectation, err e
 		case scanner.Ident:
 			name := sc.TokenText()
 			if tok = sc.Scan(); tok != ':' {
-				return 0, nil, errors.Errorf("got %s after %s, want ':'", scanner.TokenString(tok), name)
+				return 0, nil, errors.Errorf("got %s after %q, want ':'", scanner.TokenString(tok), name)
 			}
 			rx, err := scanRegexp(sc.Scan())
 			if err != nil {

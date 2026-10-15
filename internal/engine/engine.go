@@ -135,7 +135,7 @@ func (e *Engine) checkGroups() error {
 			return errors.Errorf("group %q is not an identifier", group)
 		}
 		if slices.Contains(names, group) {
-			return errors.Errorf("group %s has the name of an analyzer", group)
+			return errors.Errorf("group %q has the name of an analyzer", group)
 		}
 	}
 	return nil
@@ -154,7 +154,7 @@ func (e *Engine) Describe() ([]docs.Analyzer, error) {
 		if metadata.Schema >= 0 {
 			var defaults any
 			if err := json.Unmarshal(metadata.Defaults, &defaults); err != nil {
-				return nil, errors.Wrapf(err, "analyzer %s: decode config defaults", metadata.Name)
+				return nil, errors.Wrapf(err, "analyzer %q: decode config defaults", metadata.Name)
 			}
 			analyzer.Config = Some(docs.Config{Shape: e.program.Schemas[metadata.Schema], Defaults: defaults})
 		}
@@ -235,7 +235,7 @@ func (e *Engine) Analyzers(file config.File, mainModules []string) ([]*analysis.
 				required, ok = hostAnalyzers()[requirement.Name]
 			}
 			if !ok {
-				return nil, errors.Errorf("analyzer %s requires unknown analyzer %s", metadata.Name, requirement.Name)
+				return nil, errors.Errorf("analyzer %q requires unknown analyzer %q", metadata.Name, requirement.Name)
 			}
 			analyzer.Requires = append(analyzer.Requires, required)
 			environments[metadata.Name].Analyzers[requirement.Name] = required
@@ -256,7 +256,7 @@ func (e *Engine) Analyzers(file config.File, mainModules []string) ([]*analysis.
 func (e *Engine) checkNames(file config.File) error {
 	for _, name := range slices.Sorted(maps.Keys(file.Tables)) {
 		if !slices.Contains(e.Names(), name) {
-			return errors.Errorf("table %s names an unknown analyzer", name)
+			return errors.Errorf("table [%s] configures unknown analyzer %q", name, name)
 		}
 	}
 	known := e.Selectable()
@@ -267,7 +267,7 @@ func (e *Engine) checkNames(file config.File) error {
 	for key, names := range lists {
 		for _, name := range names {
 			if !slices.Contains(known, name) {
-				return errors.Errorf("%s names unknown analyzer or group %s", key, name)
+				return errors.Errorf("%s names unknown analyzer or group %q", key, name)
 			}
 		}
 	}
@@ -289,7 +289,7 @@ func (e *Engine) factTypes() (map[string]map[string]reflect.Type, error) {
 		assigned[metadata.Name] = map[string]reflect.Type{}
 		for _, fact := range metadata.Facts {
 			if _, duplicate := assigned[metadata.Name][fact]; duplicate {
-				return nil, errors.Errorf("analyzer %s declares fact %s twice", metadata.Name, fact)
+				return nil, errors.Errorf("analyzer %q declares fact %q twice", metadata.Name, fact)
 			}
 			assigned[metadata.Name][fact] = pooled[0]
 			pooled = pooled[1:]
@@ -305,14 +305,14 @@ func (e *Engine) resolveConfig(metadata vm.Metadata, table map[string]any) (json
 	}
 	var defaults any
 	if err := json.Unmarshal(metadata.Defaults, &defaults); err != nil {
-		return nil, errors.Wrapf(err, "analyzer %s: decode config defaults", metadata.Name)
+		return nil, errors.Wrapf(err, "analyzer %q: decode config defaults", metadata.Name)
 	}
 	resolved, err := config.Resolve(metadata.Name, shape, defaults, table)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
 	data, err := json.Marshal(resolved)
-	return data, errors.Wrapf(err, "analyzer %s: encode config", metadata.Name)
+	return data, errors.Wrapf(err, "analyzer %q: encode config", metadata.Name)
 }
 
 // loadTimer logs, once, how long the driver took to load packages: from when

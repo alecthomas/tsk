@@ -86,7 +86,7 @@ func (p *passBinding) bind(handle *sobek.Object) (*sobek.Object, error) {
 	}
 	for name, value := range properties {
 		if err := pass.Set(name, value); err != nil {
-			return nil, errors.Wrapf(err, "bind pass.%s", name)
+			return nil, errors.Wrapf(err, "bind %q", "pass."+name)
 		}
 	}
 	return pass, nil
@@ -157,7 +157,7 @@ func (p *passBinding) resultOf(call sobek.FunctionCall) sobek.Value {
 	name := call.Argument(0).ToObject(p.rt).Get("name").String()
 	analyzer, ok := p.env.Analyzers[name]
 	if !ok {
-		panic(p.bridge.typeError("analyzer %s is not required by %s", name, p.pass.Analyzer.Name))
+		panic(p.bridge.typeError("analyzer %q is not required by %q", name, p.pass.Analyzer.Name))
 	}
 	result := p.pass.ResultOf[analyzer]
 	raw, isScript := result.(json.RawMessage)
@@ -184,7 +184,7 @@ func (p *passBinding) factType(value sobek.Value) reflect.Type {
 	name := value.ToObject(p.rt).Get("name").String()
 	t, ok := p.env.Facts[name]
 	if !ok {
-		panic(p.bridge.typeError("fact %s is not declared by analyzer %s", name, p.pass.Analyzer.Name))
+		panic(p.bridge.typeError("fact %q is not declared by analyzer %q", name, p.pass.Analyzer.Name))
 	}
 	return t
 }

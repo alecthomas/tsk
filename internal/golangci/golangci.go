@@ -46,7 +46,7 @@ func Import(log *slog.Logger, warnings io.Writer, c Config, dir, path string, an
 		return errors.WithStack(err)
 	}
 	if !c.Force && !onlyImports(existing) {
-		return errors.Errorf("%s has settings besides imports and replace; pass --force to replace it", path)
+		return errors.Errorf("%q has settings besides imports and replace; pass --force to replace it", path)
 	}
 	golangci, err := read(source)
 	if err != nil {
@@ -84,7 +84,7 @@ func find(dir string) (string, error) {
 			return path, nil
 		}
 	}
-	return "", errors.Errorf("no golangci-lint config in %s; name one, such as tsk config import .golangci.yml", dir)
+	return "", errors.Errorf("no golangci-lint config in %q; name one, such as tsk config import .golangci.yml", dir)
 }
 
 // onlyImports reports whether a config file sets nothing but imports and
@@ -111,7 +111,7 @@ func read(path string) (map[string]any, error) {
 		err = yaml.Unmarshal(data, &decoded)
 	}
 	if err != nil {
-		return nil, errors.Wrapf(err, "parse %s", path)
+		return nil, errors.Wrapf(err, "parse %q", path)
 	}
 	root, ok := normalise(decoded).(map[string]any)
 	if !ok {

@@ -26,17 +26,17 @@ func ParseImport(text string) (Import, error) {
 	rest, dir, hasDir := strings.Cut(text, "//")
 	repository, version, hasVersion := strings.Cut(rest, "@")
 	if err := checkRepository(repository); err != nil {
-		return Import{}, errors.Wrapf(err, "import %s", text)
+		return Import{}, errors.Wrapf(err, "import %q", text)
 	}
 	if hasDir {
 		if err := checkDir(dir); err != nil {
-			return Import{}, errors.Wrapf(err, "import %s", text)
+			return Import{}, errors.Wrapf(err, "import %q", text)
 		}
 	}
 	imported := Import{Repository: repository, Version: None[string](), Dir: dir}
 	if hasVersion {
 		if err := checkVersion(version); err != nil {
-			return Import{}, errors.Wrapf(err, "import %s", text)
+			return Import{}, errors.Wrapf(err, "import %q", text)
 		}
 		imported.Version = Some(version)
 	}
@@ -149,9 +149,9 @@ func CheckImports(imports []Import) error {
 		for _, b := range imports[i+1:] {
 			switch {
 			case a.Path() == b.Path():
-				return errors.Errorf("%s is imported twice", a.Path())
+				return errors.Errorf("%q is imported twice", a.Path())
 			case strings.HasPrefix(b.Path(), a.Path()+"/"), strings.HasPrefix(a.Path(), b.Path()+"/"):
-				return errors.Errorf("imports %s and %s overlap; import only one of them", a, b)
+				return errors.Errorf("imports %q and %q overlap; import only one of them", a, b)
 			}
 		}
 	}

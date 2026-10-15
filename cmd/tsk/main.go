@@ -133,7 +133,7 @@ func isolateCase(ctx context.Context) scripttest.Isolate {
 		command := exec.CommandContext(ctx, executable, args...)
 		command.Env = append(os.Environ(), env...)
 		out, err := command.Output()
-		return out, errors.Wrapf(err, "run case %s", name)
+		return out, errors.Wrapf(err, "run case %q", name)
 	}
 }
 

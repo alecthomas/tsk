@@ -128,8 +128,8 @@ func TestResolve(t *testing.T) {
 		{name: "Branch", imported: repository + "@main", expected: library.Locked{Repository: repository, Version: "main", Commit: head}},
 		{name: "ShortCommit", imported: repository + "@" + first[:10], expected: library.Locked{Repository: repository, Version: first[:10], Commit: first}},
 		{name: "LatestBranch", imported: "git.example.com/acme/untagged", expected: library.Locked{Repository: "git.example.com/acme/untagged", Version: "main", Commit: untagged}},
-		{name: "UnknownVersion", imported: repository + "@v9.0.0", error: "github.com/acme/linters has no version v9.0.0"},
-		{name: "MissingDirectory", imported: repository + "@v1.0.0//missing", error: "github.com/acme/linters has no directory missing at v1.0.0"},
+		{name: "UnknownVersion", imported: repository + "@v9.0.0", error: `"github.com/acme/linters" has no version "v9.0.0"`},
+		{name: "MissingDirectory", imported: repository + "@v1.0.0//missing", error: `"github.com/acme/linters" has no directory "missing" at "v1.0.0"`},
 	}
 	cache, _ := newCache(t)
 	for _, test := range tests {

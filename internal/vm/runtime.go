@@ -310,7 +310,7 @@ func (r *Runtime) registerAnalyzer(call sobek.FunctionCall) sobek.Value {
 		earlier, _ := r.program.Source(previous.module)
 		later, _ := r.program.Source(module)
 		if earlier != later && r.program.IsLibrary(earlier) && r.program.IsLibrary(later) {
-			panic(r.bridge.typeError("analyzer %s is defined by both libraries %s and %s", key, earlier, later))
+			panic(r.bridge.typeError("analyzer %q is defined by both libraries %q and %q", key, earlier, later))
 		}
 		r.overridden = append(r.overridden, key)
 	} else {
@@ -381,7 +381,7 @@ func (r *Runtime) packageObject(pkg bindings.Package) *sobek.Object {
 		if slices.Contains(pkg.ErrorVars, name) {
 			sentinel, ok := value().(error)
 			if !ok || sentinel == nil {
-				panic(b.typeError("error variable %s is nil", name))
+				panic(b.typeError("error variable %q is nil", name))
 			}
 			class, err := b.sentinelClass(name, sentinel)
 			if err != nil {
@@ -449,7 +449,7 @@ func (r *Runtime) trackedFuncs() map[string]any {
 func (r *Runtime) currentReads(function string) inputs.Reads {
 	reads, ok := r.reads.Get()
 	if !ok {
-		panic(r.bridge.typeError("%s reads the file system, which scripts may do only while an analyzer runs", function))
+		panic(r.bridge.typeError("%q reads the file system, which scripts may do only while an analyzer runs", function))
 	}
 	return reads
 }
@@ -527,37 +527,37 @@ type Metadata struct {
 func (r *Runtime) Metadata(name string) (Metadata, error) {
 	found, known := r.definitions[name]
 	if !known {
-		return Metadata{}, errors.Errorf("unknown analyzer %s", name)
+		return Metadata{}, errors.Errorf("unknown analyzer %q", name)
 	}
 	object := found.object
 	metadata := Metadata{Name: name, Schema: found.schema, Module: found.module}
 	var err error
 	if metadata.Doc, err = r.stringProperty(object, "doc", true); err != nil {
-		return Metadata{}, errors.Errorf("analyzer %s: %v", name, err)
+		return Metadata{}, errors.Errorf("analyzer %q: %v", name, err)
 	}
 	if metadata.URL, err = r.stringProperty(object, "url", false); err != nil {
-		return Metadata{}, errors.Errorf("analyzer %s: %v", name, err)
+		return Metadata{}, errors.Errorf("analyzer %q: %v", name, err)
 	}
 	if _, ok := sobek.AssertFunction(object.Get("run")); !ok {
-		return Metadata{}, errors.Errorf("analyzer %s: run must be a function", name)
+		return Metadata{}, errors.Errorf("analyzer %q: run must be a function", name)
 	}
 	metadata.RunDespiteErrors = !isAbsent(object.Get("runDespiteErrors")) && object.Get("runDespiteErrors").ToBoolean()
 	metadata.IgnoresNolint = !isAbsent(object.Get("nolint")) && !object.Get("nolint").ToBoolean()
 	metadata.SkipTests = !isAbsent(object.Get("tests")) && !object.Get("tests").ToBoolean()
 	metadata.EnabledByDefault = isAbsent(object.Get("enabledByDefault")) || object.Get("enabledByDefault").ToBoolean()
 	if metadata.Group, err = r.stringProperty(object, "group", false); err != nil {
-		return Metadata{}, errors.Errorf("analyzer %s: %v", name, err)
+		return Metadata{}, errors.Errorf("analyzer %q: %v", name, err)
 	}
 	scope, err := r.stringProperty(object, "scope", false)
 	if err != nil {
-		return Metadata{}, errors.Errorf("analyzer %s: %v", name, err)
+		return Metadata{}, errors.Errorf("analyzer %q: %v", name, err)
 	}
 	switch scope {
 	case "", "module":
 	case "all":
 		metadata.AllPackages = true
 	default:
-		return Metadata{}, errors.Errorf("analyzer %s: scope must be \"module\" or \"all\", not %q", name, scope)
+		return Metadata{}, errors.Errorf("analyzer %q: scope must be \"module\" or \"all\", not %q", name, scope)
 	}
 	for _, handle := range r.bridge.objects(object.Get("requires")) {
 		if host, ok := r.hosts[handle]; ok {
@@ -575,7 +575,7 @@ func (r *Runtime) Metadata(name string) (Metadata, error) {
 	} else {
 		text, err := r.helpers.stringify(defaults)
 		if err != nil {
-			return Metadata{}, errors.Errorf("analyzer %s: config is not JSON: %s", name, describeException(err))
+			return Metadata{}, errors.Errorf("analyzer %q: config is not JSON: %s", name, describeException(err))
 		}
 		metadata.Defaults = json.RawMessage(text.String())
 	}
@@ -586,12 +586,12 @@ func (r *Runtime) stringProperty(object *sobek.Object, name string, required boo
 	value := object.Get(name)
 	if isAbsent(value) {
 		if required {
-			return "", errors.Errorf("%s is required", name)
+			return "", errors.Errorf("%q is required", name)
 		}
 		return "", nil
 	}
 	if !isString(value) {
-		return "", errors.Errorf("%s must be a string", name)
+		return "", errors.Errorf("%q must be a string", name)
 	}
 	return value.String(), nil
 }
@@ -620,14 +620,14 @@ func describeException(value any) string {
 func (r *Runtime) Run(name string, env Environment) (result json.RawMessage, err error) {
 	found, ok := r.definitions[name]
 	if !ok {
-		return nil, errors.Errorf("unknown analyzer %s", name)
+		return nil, errors.Errorf("unknown analyzer %q", name)
 	}
 	run, ok := sobek.AssertFunction(found.object.Get("run"))
 	if !ok {
-		return nil, errors.Errorf("analyzer %s: run must be a function", name)
+		return nil, errors.Errorf("analyzer %q: run must be a function", name)
 	}
 	if env.Recorder == nil {
-		return nil, errors.Errorf("analyzer %s: no recorder", name)
+		return nil, errors.Errorf("analyzer %q: no recorder", name)
 	}
 	r.bridge.beginPass()
 	defer r.bridge.endPass()

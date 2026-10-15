@@ -87,7 +87,7 @@ func TestResolveErrors(t *testing.T) {
 
 func TestResolveWithoutConfig(t *testing.T) {
 	_, err := config.Resolve("optionalnil", nil, nil, map[string]any{"strict": true})
-	assert.EqualError(t, err, "optionalnil.strict: analyzer optionalnil has no config")
+	assert.EqualError(t, err, `optionalnil.strict: analyzer "optionalnil" has no config`)
 }
 
 func TestEnabled(t *testing.T) {
@@ -124,7 +124,7 @@ func TestEnabled(t *testing.T) {
 		{Name: "SelectDisableWinsOverEnable", Selection: config.Selection{Enable: []string{"a"}, Disable: []string{"a"}}, Enabled: []string{"b"}},
 		{Name: "SelectDisableAllDisableWinsOverEnable", Selection: config.Selection{DisableAll: true, Enable: []string{"a", "b"}, Disable: []string{"a"}}, Enabled: []string{"b"}},
 		{Name: "EnableAllWithDisableAll", Text: "enable-all = true\ndisable-all = true", Error: "test.toml: enable-all and disable-all cannot both be true"},
-		{Name: "EnableAndDisable", Text: "enable = [\"a\"]\ndisable = [\"a\"]", Error: "test.toml: a is in both enable and disable"},
+		{Name: "EnableAndDisable", Text: "enable = [\"a\"]\ndisable = [\"a\"]", Error: `test.toml: "a" is in both enable and disable`},
 		{Name: "DisableAllNotBool", Text: `disable-all = "yes"`, Error: "test.toml:1:15: toml: cannot decode TOML string"},
 	}
 	// a and c are in group g; c is off by default.

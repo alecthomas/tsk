@@ -61,7 +61,7 @@ func LoadLock(path string) (Lock, error) {
 	}
 	var lock Lock
 	if err := toml.NewDecoder(bytes.NewReader(data)).DisallowUnknownFields().Decode(&lock); err != nil {
-		return Lock{}, errors.Wrapf(err, "parse %s", path)
+		return Lock{}, errors.Wrapf(err, "parse %q", path)
 	}
 	for _, locked := range lock.Imports {
 		// Every field is passed to git or names a cache directory.
@@ -96,14 +96,14 @@ func (l Lock) Check(imports []Import) error {
 		locked, ok := l.Find(imported.Path())
 		switch {
 		case !ok:
-			return errors.Errorf("%s is not locked", imported)
+			return errors.Errorf("%q is not locked", imported)
 		case locked.Import() != imported:
-			return errors.Errorf("%s is locked as %s", imported, locked.Import())
+			return errors.Errorf("%q is locked as %q", imported, locked.Import())
 		}
 	}
 	for _, locked := range l.Imports {
 		if !slices.ContainsFunc(imports, func(imported Import) bool { return imported.Path() == locked.Path() }) {
-			return errors.Errorf("%s is locked but not imported", locked.Import())
+			return errors.Errorf("%q is locked but not imported", locked.Import())
 		}
 	}
 	return nil
@@ -122,7 +122,7 @@ func (l Locked) check() error {
 		return errors.Wrapf(err, "%s", l.Repository)
 	}
 	if !isCommit(l.Commit) {
-		return errors.Errorf("%s has invalid commit %q", l.Repository, l.Commit)
+		return errors.Errorf("%q has invalid commit %q", l.Repository, l.Commit)
 	}
 	return nil
 }

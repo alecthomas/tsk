@@ -127,7 +127,7 @@ func (s *Store) key(dir string, patterns []string, facts bool) (string, error) {
 		return nil
 	})
 	if err != nil {
-		return "", errors.Wrapf(err, "hash %s", dir)
+		return "", errors.Wrapf(err, "hash %q", dir)
 	}
 	return hex.EncodeToString(h.Sum(nil)), nil
 }
@@ -138,7 +138,7 @@ func readManifest(path string) (manifest, error) {
 	if err != nil {
 		return m, errors.WithStack(err)
 	}
-	return m, errors.Wrapf(json.Unmarshal(data, &m), "read %s", path)
+	return m, errors.Wrapf(json.Unmarshal(data, &m), "read %q", path)
 }
 
 // prepare lists the packages matching patterns in dir, with the go command,
@@ -159,10 +159,10 @@ func (s *Store) prepare(dir string, patterns []string, facts bool) (manifest, er
 	cfg := &packages.Config{Mode: mode, Dir: dir, Tests: true, Env: append(os.Environ(), env...)}
 	roots, err := packages.Load(cfg, patterns...)
 	if err != nil {
-		return m, errors.Wrapf(err, "load %s", patterns)
+		return m, errors.Wrapf(err, "load %q", patterns)
 	}
 	if len(roots) == 0 {
-		return m, errors.Errorf("no packages matched %s", patterns)
+		return m, errors.Errorf("no packages matched %q", patterns)
 	}
 	isRoot := map[*packages.Package]bool{}
 	for _, pkg := range roots {
@@ -302,14 +302,14 @@ func (s *Store) typeCheck(m manifest) ([]*packages.Package, error) {
 	importExport := func(id string) (*types.Package, error) {
 		export, ok := m.Exports[id]
 		if !ok {
-			return nil, errors.Errorf("no metadata for %s", id)
+			return nil, errors.Errorf("no metadata for %q", id)
 		}
 		if pkg, ok := exported[export.PkgPath]; ok && pkg.Complete() {
 			return pkg, nil
 		}
 		blob, ok := export.Blob.Get()
 		if !ok {
-			return nil, errors.Errorf("no export data for %s: %s", id, strings.Join(export.Errors, "; "))
+			return nil, errors.Errorf("no export data for %q: %s", id, strings.Join(export.Errors, "; "))
 		}
 		f, err := os.Open(s.blobPath(blob))
 		if err != nil {
@@ -318,10 +318,10 @@ func (s *Store) typeCheck(m manifest) ([]*packages.Package, error) {
 		defer f.Close() //nolint:errcheck // Read only.
 		r, err := gcexportdata.NewReader(f)
 		if err != nil {
-			return nil, errors.Wrapf(err, "read export data for %s", id)
+			return nil, errors.Wrapf(err, "read export data for %q", id)
 		}
 		pkg, err := gcexportdata.Read(r, fset, exported, export.PkgPath)
-		return pkg, errors.Wrapf(err, "read export data for %s", id)
+		return pkg, errors.Wrapf(err, "read export data for %q", id)
 	}
 	loaded := map[string]*packages.Package{}
 	var roots []*packages.Package
@@ -348,7 +348,7 @@ func (s *Store) typeCheck(m manifest) ([]*packages.Package, error) {
 			}
 			id, ok := stored.Imports[path]
 			if !ok {
-				return nil, errors.Errorf("no metadata for %s", path)
+				return nil, errors.Errorf("no metadata for %q", path)
 			}
 			if imported, ok := loaded[id]; ok {
 				return imported.Types, nil

@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"slices"
+	"strconv"
 	"testing"
 
 	"github.com/alecthomas/assert/v2"
@@ -427,6 +428,6 @@ lines = 100
 
 	// The file now has settings of its own, which only --force replaces.
 	err = golangci.Import(log, &warnings, golangci.Config{}, dir, path, analyzers())
-	assert.EqualError(t, err, path+" has settings besides imports and replace; pass --force to replace it")
+	assert.EqualError(t, err, strconv.Quote(path)+" has settings besides imports and replace; pass --force to replace it")
 	assert.NoError(t, golangci.Import(log, &warnings, golangci.Config{Force: true}, dir, path, analyzers()))
 }

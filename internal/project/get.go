@@ -54,7 +54,7 @@ func Get(ctx context.Context, logger *slog.Logger, c Config, cache *library.Cach
 		// A replaced import loads from its directory, so it has nothing to pin.
 		if _, replaced := file.Replacement(imported); replaced {
 			if _, hasVersion := imported.Version.Get(); !hasVersion {
-				return errors.Errorf("%s is replaced, so its latest version cannot be resolved; give a version", imported)
+				return errors.Errorf("%q is replaced, so its latest version cannot be resolved; give a version", imported)
 			}
 			continue
 		}
@@ -163,7 +163,7 @@ func analyzerNames(ctx context.Context, logger *slog.Logger, cache *library.Cach
 	}
 	e, err := engine.Load(ctx, logger, []compile.Source{{Name: locked.Path(), FS: os.DirFS(dir), Library: true}})
 	if err != nil {
-		return nil, errors.Wrapf(err, "load %s", locked)
+		return nil, errors.Wrapf(err, "load %q", locked)
 	}
 	return e.Names(), nil
 }

@@ -87,7 +87,7 @@ func Compile(ctx context.Context, sources []Source) (*Program, error) {
 		}
 		code, diagnostics := ts.Transpile(ctx, name, source)
 		if len(diagnostics) > 0 {
-			return nil, errors.Errorf("transpile %s: %s", name, strings.Join(diagnostics, "; "))
+			return nil, errors.Errorf("transpile %q: %s", name, strings.Join(diagnostics, "; "))
 		}
 		module := strings.TrimPrefix(name, "/")
 		compiled.Modules[module] = code
@@ -101,7 +101,7 @@ func checkNames(sources []Source) error {
 	for i, a := range sources {
 		for _, b := range sources[i+1:] {
 			if a.Name == b.Name || strings.HasPrefix(a.Name, b.Name+"/") || strings.HasPrefix(b.Name, a.Name+"/") {
-				return errors.Errorf("script sources %s and %s overlap", a.Name, b.Name)
+				return errors.Errorf("script sources %q and %q overlap", a.Name, b.Name)
 			}
 		}
 	}
@@ -162,11 +162,11 @@ func readSource(source Source, files map[string]string) ([]string, error) {
 	var scripts []string
 	err := fs.WalkDir(source.FS, ".", func(name string, entry fs.DirEntry, err error) error {
 		if err != nil {
-			return errors.Wrapf(err, "read %s scripts", source.Name)
+			return errors.Wrapf(err, "read %q scripts", source.Name)
 		}
 		switch {
 		case entry.Type()&fs.ModeSymlink != 0:
-			return errors.Errorf("%s/%s is a symbolic link", source.Name, name)
+			return errors.Errorf("%q is a symbolic link", source.Name+"/"+name)
 		case entry.IsDir() && (entry.Name() == "testdata" || entry.Name() == "types"):
 			return fs.SkipDir
 		case entry.IsDir() || path.Ext(name) != scriptExtension:
@@ -174,7 +174,7 @@ func readSource(source Source, files map[string]string) ([]string, error) {
 		}
 		data, err := fs.ReadFile(source.FS, name)
 		if err != nil {
-			return errors.Wrapf(err, "read %s/%s", source.Name, name)
+			return errors.Wrapf(err, "read %q", source.Name+"/"+name)
 		}
 		virtual := "/" + source.Name + "/" + name
 		files[virtual] = string(data)
@@ -205,7 +205,7 @@ func insertSchemas(program *ts.Program, compiled *Program, name, source string) 
 		if len(call.TypeArguments) > 0 {
 			shape, err := program.Describe(call.TypeArguments[0])
 			if err != nil {
-				return "", errors.Errorf("%s: config type %s: %v", call.Location, program.TypeString(call.TypeArguments[0]), err)
+				return "", errors.Errorf("%s: config type %q: %v", call.Location, program.TypeString(call.TypeArguments[0]), err)
 			}
 			if err := config.ValidateShape(shape); err != nil {
 				return "", errors.Errorf("%s: config type: %v", call.Location, err)

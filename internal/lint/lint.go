@@ -141,7 +141,7 @@ func load(ctx context.Context, analyzers []*analysis.Analyzer, c Config, dir str
 		return nil, errors.Wrap(err, "load packages")
 	}
 	if len(initial) == 0 {
-		return nil, errors.Errorf("%s matched no packages", strings.Join(c.Packages, " "))
+		return nil, errors.Errorf("%q matched no packages", strings.Join(c.Packages, " "))
 	}
 	return initial, nil
 }

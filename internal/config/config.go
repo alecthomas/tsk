@@ -188,11 +188,11 @@ func (f File) checkReplace() error {
 		_, hasVersion := replaced.Version.Get()
 		switch {
 		case hasVersion:
-			return errors.Errorf("replace %s: write the import without a version, as %s", key, replaceKey(replaced))
+			return errors.Errorf("replace %q: write the import without a version, as %q", key, replaceKey(replaced))
 		case f.Replace[key] == "":
-			return errors.Errorf("replace %s: empty directory", key)
+			return errors.Errorf("replace %q: empty directory", key)
 		case !slices.ContainsFunc(f.Imports, func(imported library.Import) bool { return replaceKey(imported) == key }):
-			return errors.Errorf("replace %s: not imported", key)
+			return errors.Errorf("replace %q: not imported", key)
 		}
 	}
 	return nil
@@ -235,13 +235,13 @@ func Parse(name, text string) (File, error) {
 		}
 		table, ok := raw[key].(map[string]any)
 		if !ok {
-			return File{}, errors.Errorf("%s: %s must be a table named after an analyzer", name, key)
+			return File{}, errors.Errorf("%s: %q must be a table named after an analyzer", name, key)
 		}
 		file.Tables[key] = table
 	}
 	for _, imported := range file.Imports {
 		if _, ok := imported.Version.Get(); !ok {
-			return File{}, errors.Errorf("%s: import %s needs a version; tsk get adds the latest", name, imported)
+			return File{}, errors.Errorf("%s: import %q needs a version; tsk get adds the latest", name, imported)
 		}
 	}
 	if err := library.CheckImports(file.Imports); err != nil {
@@ -259,7 +259,7 @@ func Parse(name, text string) (File, error) {
 	}
 	for _, both := range file.Enable {
 		if slices.Contains(file.Disable, both) {
-			return File{}, errors.Errorf("%s: %s is in both enable and disable", name, both)
+			return File{}, errors.Errorf("%s: %q is in both enable and disable", name, both)
 		}
 	}
 	return file, nil
@@ -273,7 +273,7 @@ func decodeError(name string, err error) error {
 		row, column := decode.Position()
 		return errors.Errorf("%s:%d:%d: %s", name, row, column, decode.Error())
 	}
-	return errors.Wrapf(err, "parse %s", name)
+	return errors.Wrapf(err, "parse %q", name)
 }
 
 // ValidateShape reports property names that cannot map to TOML keys.
@@ -299,7 +299,7 @@ func keys(object ts.ObjectShape) (map[string]ts.Property, error) {
 			return nil, errors.WithStack(err)
 		}
 		if other, duplicate := properties[key]; duplicate {
-			return nil, errors.Errorf("properties %s and %s both map to TOML key %q", other.Name, property.Name, key)
+			return nil, errors.Errorf("properties %q and %q both map to TOML key %q", other.Name, property.Name, key)
 		}
 		if err := ValidateShape(property.Shape); err != nil {
 			return nil, err
@@ -317,7 +317,7 @@ func Resolve(analyzer string, shape ts.Shape, defaults any, table map[string]any
 	if !ok {
 		if len(table) > 0 {
 			key := slices.Sorted(maps.Keys(table))[0]
-			return nil, errors.Errorf("%s.%s: analyzer %s has no config", analyzer, key, analyzer)
+			return nil, errors.Errorf("%s.%s: analyzer %q has no config", analyzer, key, analyzer)
 		}
 		return map[string]any{}, nil
 	}

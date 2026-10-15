@@ -36,7 +36,7 @@ func NewProgram(ctx context.Context, files map[string]string, roots []string) (*
 	tree := fstest.MapFS{}
 	for name, text := range files {
 		if !strings.HasPrefix(name, "/") {
-			return nil, errors.Errorf("program file %s is not absolute", name)
+			return nil, errors.Errorf("program file %q is not absolute", name)
 		}
 		tree[strings.TrimPrefix(name, "/")] = &fstest.MapFile{Data: []byte(text)}
 	}
@@ -111,7 +111,7 @@ func programDiagnostics(ctx context.Context, program *compiler.Program) (diagnos
 func (p *Program) Calls(file, declarationFile, function string) ([]Call, error) {
 	source := p.program.GetSourceFile(file)
 	if source == nil {
-		return nil, errors.Errorf("%s is not in the program", file)
+		return nil, errors.Errorf("%q is not in the program", file)
 	}
 	var calls []Call
 	var visit func(node *ast.Node) bool
@@ -152,7 +152,7 @@ func (p *Program) Describe(t *Type) (Shape, error) {
 
 func (p *Program) describe(t *Type, ancestors []*Type) (Shape, error) {
 	if slices.Contains(ancestors, t) {
-		return nil, errors.Errorf("recursive type %s is not supported", p.checker.TypeToString(t))
+		return nil, errors.Errorf("recursive type %q is not supported", p.checker.TypeToString(t))
 	}
 	ancestors = append(ancestors, t)
 	flags := t.Flags()
@@ -178,7 +178,7 @@ func (p *Program) describe(t *Type, ancestors []*Type) (Shape, error) {
 	case flags&checker.TypeFlagsObject != 0:
 		return p.describeObject(t, ancestors)
 	}
-	return nil, errors.Errorf("type %s is not supported", p.checker.TypeToString(t))
+	return nil, errors.Errorf("type %q is not supported", p.checker.TypeToString(t))
 }
 
 // describeUnion accepts string literal unions.
@@ -194,7 +194,7 @@ func (p *Program) describeUnion(members []*Type) (Shape, error) {
 			value, _ := member.AsLiteralType().Value().(string)
 			values = append(values, value)
 		default:
-			return nil, errors.Errorf("union member %s is not a string literal", p.checker.TypeToString(member))
+			return nil, errors.Errorf("union member %q is not a string literal", p.checker.TypeToString(member))
 		}
 	}
 	switch {
@@ -219,13 +219,13 @@ func (p *Program) describeObject(t *Type, ancestors []*Type) (Shape, error) {
 	}
 	if checker.IsTupleType(t) || len(c.GetSignaturesOfType(t, checker.SignatureKindCall)) > 0 ||
 		len(c.GetSignaturesOfType(t, checker.SignatureKindConstruct)) > 0 {
-		return nil, errors.Errorf("type %s is not supported", c.TypeToString(t))
+		return nil, errors.Errorf("type %q is not supported", c.TypeToString(t))
 	}
 	properties := c.GetPropertiesOfType(t)
 	indexes := c.GetIndexInfosOfType(t)
 	if len(indexes) > 0 {
 		if len(properties) > 0 || len(indexes) > 1 || indexes[0].KeyType().Flags()&checker.TypeFlagsString == 0 {
-			return nil, errors.Errorf("type %s mixes properties and index signatures", c.TypeToString(t))
+			return nil, errors.Errorf("type %q mixes properties and index signatures", c.TypeToString(t))
 		}
 		element, err := p.describe(indexes[0].ValueType(), ancestors)
 		if err != nil {
@@ -236,11 +236,11 @@ func (p *Program) describeObject(t *Type, ancestors []*Type) (Shape, error) {
 	object := ObjectShape{}
 	for _, symbol := range properties {
 		if symbol.Flags&ast.SymbolFlagsProperty == 0 {
-			return nil, errors.Errorf("member %s of %s is not a property", symbol.Name, c.TypeToString(t))
+			return nil, errors.Errorf("member %q of %q is not a property", symbol.Name, c.TypeToString(t))
 		}
 		shape, err := p.describe(c.GetTypeOfSymbol(symbol), ancestors)
 		if err != nil {
-			return nil, errors.Wrapf(err, "property %s", symbol.Name)
+			return nil, errors.Wrapf(err, "property %q", symbol.Name)
 		}
 		object.Properties = append(object.Properties, Property{
 			Name:     symbol.Name,

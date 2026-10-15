@@ -99,7 +99,7 @@ export default defineAnalyzer({ name: message.length > 0 ? "main" : "", doc: "",
 				{Name: "github.com/acme/a", Library: true, FS: mapFS(map[string]string{"one.ts": oneScript})},
 				{Name: "github.com/acme/b", Library: true, FS: mapFS(map[string]string{"one.ts": oneScript})},
 			},
-			error: "analyzer one is defined by both libraries github.com/acme/a and github.com/acme/b",
+			error: `analyzer "one" is defined by both libraries "github.com/acme/a" and "github.com/acme/b"`,
 		},
 		{
 			name: "LibraryImportsLibrary",
@@ -109,7 +109,7 @@ export default defineAnalyzer({ name: message.length > 0 ? "main" : "", doc: "",
 export const copied = message;
 `})},
 			},
-			error: `github.com/acme/b/main.ts imports "github.com/acme/a/helper" by path; a library may import only its own scripts, by relative path`,
+			error: `github.com/acme/b/main.ts" imports "github.com/acme/a/helper" by path; a library may import only its own scripts, by relative path`,
 		},
 		{
 			name: "NestedSources",
@@ -117,7 +117,7 @@ export const copied = message;
 				{Name: "github.com/acme/a", Library: true, FS: mapFS(nil)},
 				{Name: "github.com/acme/a/x", Library: true, FS: mapFS(nil)},
 			},
-			error: "script sources github.com/acme/a and github.com/acme/a/x overlap",
+			error: `script sources "github.com/acme/a" and "github.com/acme/a/x" overlap`,
 		},
 	}
 	for _, test := range tests {
@@ -292,7 +292,7 @@ func TestDisableAllEnable(t *testing.T) {
 	}
 	assert.Equal(t, []string{"chatty"}, names)
 	_, err = e.Analyzers(config.File{DisableAll: true, Enable: []string{"missing"}}, nil)
-	assert.EqualError(t, err, "enable names unknown analyzer or group missing")
+	assert.EqualError(t, err, `enable names unknown analyzer or group "missing"`)
 }
 
 const ssaScript = `import { defineAnalyzer } from "tsk";
@@ -465,7 +465,7 @@ export default defineAnalyzer({ name: "early", doc: "", run() {} });
 `
 	_, err := engine.Load(context.Background(), slog.New(slog.DiscardHandler), []compile.Source{{Name: "project", FS: mapFS(map[string]string{"early.ts": script})}})
 	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "os.getwd reads the file system, which scripts may do only while an analyzer runs")
+	assert.Contains(t, err.Error(), `"os.getwd" reads the file system, which scripts may do only while an analyzer runs`)
 }
 
 const formatScript = `import { defineAnalyzer, formatNode } from "tsk";
@@ -752,7 +752,7 @@ func TestInvalidGroups(t *testing.T) {
 		Error   string
 	}{
 		{Name: "NotIdentifier", Scripts: map[string]string{"a.ts": groupScript("a", `group: "bad-name",`)}, Error: `group "bad-name" is not an identifier`},
-		{Name: "AnalyzerName", Scripts: map[string]string{"a.ts": groupScript("a", `group: "b",`), "b.ts": groupScript("b", "")}, Error: "group b has the name of an analyzer"},
+		{Name: "AnalyzerName", Scripts: map[string]string{"a.ts": groupScript("a", `group: "b",`), "b.ts": groupScript("b", "")}, Error: `group "b" has the name of an analyzer`},
 	}
 	for _, test := range tests {
 		t.Run(test.Name, func(t *testing.T) {
@@ -765,13 +765,19 @@ func TestInvalidGroups(t *testing.T) {
 func TestExclusionNamesUnknownAnalyzer(t *testing.T) {
 	e := load(t, map[string]string{"files.ts": filesScript("")})
 	_, err := e.Analyzers(config.File{Exclude: []config.Exclusion{{Linters: []string{"missing"}, Text: "x"}}}, nil)
-	assert.EqualError(t, err, "exclude[0].linters names unknown analyzer or group missing")
+	assert.EqualError(t, err, `exclude[0].linters names unknown analyzer or group "missing"`)
+}
+
+func TestTableNamesUnknownAnalyzer(t *testing.T) {
+	e := load(t, map[string]string{"files.ts": filesScript("")})
+	_, err := e.Analyzers(config.File{Tables: map[string]map[string]any{"missing": {}}}, nil)
+	assert.EqualError(t, err, `table [missing] configures unknown analyzer "missing"`)
 }
 
 func TestSkipTestsNamesUnknownAnalyzer(t *testing.T) {
 	e := load(t, map[string]string{"files.ts": filesScript("")})
 	_, err := e.Analyzers(config.File{SkipTests: []string{"missing"}}, nil)
-	assert.EqualError(t, err, "skip-tests names unknown analyzer or group missing")
+	assert.EqualError(t, err, `skip-tests names unknown analyzer or group "missing"`)
 }
 
 const documentedScript = `import { defineAnalyzer } from "tsk";

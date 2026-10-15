@@ -153,7 +153,7 @@ export default defineAnalyzer({ name: "zero", doc: "zero linter", group: "g", en
 	assert.NoError(t, err)
 	assert.Equal(t, []string{"zero"}, selected)
 	_, err = p.Selected(config.TestSelection{Enable: []string{"four"}})
-	assert.EqualError(t, err, "--enable names unknown analyzer or group four")
+	assert.EqualError(t, err, `--enable names unknown analyzer or group "four"`)
 	selected, err = p.Selected(config.TestSelection{Analyzers: []string{"two", "g"}, Enable: []string{"three"}})
 	assert.NoError(t, err)
 	assert.Equal(t, []string{"three", "two", "zero"}, selected)
@@ -161,7 +161,7 @@ export default defineAnalyzer({ name: "zero", doc: "zero linter", group: "g", en
 	assert.NoError(t, err)
 	assert.Equal(t, []string{"one"}, selected)
 	_, err = p.Selected(config.TestSelection{Analyzers: []string{"four"}})
-	assert.EqualError(t, err, "unknown analyzer or group four")
+	assert.EqualError(t, err, `unknown analyzer or group "four"`)
 
 	assert.NoError(t, p.Select(config.LintSelection{Enable: []string{"one"}, Disable: []string{"three"}}))
 	analyzers, err := p.Analyzers()
@@ -171,5 +171,5 @@ export default defineAnalyzer({ name: "zero", doc: "zero linter", group: "g", en
 		names = append(names, analyzer.Name)
 	}
 	assert.Equal(t, []string{"one", "two"}, names)
-	assert.EqualError(t, p.Select(config.LintSelection{Disable: []string{"four"}}), "--disable names unknown analyzer or group four")
+	assert.EqualError(t, p.Select(config.LintSelection{Disable: []string{"four"}}), `--disable names unknown analyzer or group "four"`)
 }

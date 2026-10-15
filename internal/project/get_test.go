@@ -125,7 +125,7 @@ replace = { "git.example.com/unpublished//lib" = "../local" }
 	unversioned, err := library.ParseImport("git.example.com/unpublished//lib")
 	assert.NoError(t, err)
 	err = project.Get(t.Context(), logger, c, cache, []library.Import{unversioned}, &out)
-	assert.EqualError(t, err, "git.example.com/unpublished//lib is replaced, so its latest version cannot be resolved; give a version")
+	assert.EqualError(t, err, `"git.example.com/unpublished//lib" is replaced, so its latest version cannot be resolved; give a version`)
 }
 
 func TestGet(t *testing.T) {
@@ -177,7 +177,7 @@ func TestGet(t *testing.T) {
 	assert.NoError(t, os.WriteFile(c.Config, []byte(`imports = ["github.com/acme/linters@v1.0.0//lib"]`), 0o600))
 	_, err = project.Load(t.Context(), logger, c, cache)
 	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "github.com/acme/linters@v1.0.0//lib is locked as github.com/acme/linters@v1.1.0//lib")
+	assert.Contains(t, err.Error(), `"github.com/acme/linters@v1.0.0//lib" is locked as "github.com/acme/linters@v1.1.0//lib"`)
 	assert.Equal(t, "keep github.com/acme/linters@v1.0.0//lib, edited by hand\n"+
 		"update github.com/acme/linters@v1.1.0//lib ("+second+") => v1.0.0 ("+first+")\n  - two\n", get())
 	assert.Equal(t, `imports = ["github.com/acme/linters@v1.0.0//lib"]`, readConfig())

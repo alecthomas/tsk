@@ -161,14 +161,14 @@ func libraryDirs(ctx context.Context, c Config, file config.File, cache *library
 		return nil, errors.WithStack(err)
 	}
 	if err := lock.Check(pinned(file)); err != nil {
-		return nil, errors.Wrapf(err, "%s does not match the imports in %s; run tsk get", c.LockFile(), c.Config)
+		return nil, errors.Wrapf(err, "%q does not match the imports in %q; run tsk get", c.LockFile(), c.Config)
 	}
 	found := make([]libraryDir, 0, len(file.Imports))
 	for _, imported := range file.Imports {
 		if replacement, replaced := file.Replacement(imported); replaced {
 			dir, err := replacementDir(c, replacement)
 			if err != nil {
-				return nil, errors.Wrapf(err, "replace %s", imported)
+				return nil, errors.Wrapf(err, "replace %q", imported)
 			}
 			found = append(found, libraryDir{imported: imported, dir: dir, locked: None[library.Locked]()})
 			continue
@@ -205,7 +205,7 @@ func replacementDir(c Config, dir string) (string, error) {
 		return "", errors.WithStack(err)
 	}
 	if !info.IsDir() {
-		return "", errors.Errorf("%s is not a directory", dir)
+		return "", errors.Errorf("%q is not a directory", dir)
 	}
 	return dir, nil
 }
@@ -256,7 +256,7 @@ func (p *Project) Selected(s config.TestSelection) ([]string, error) {
 	known := p.engine.Selectable()
 	for _, name := range s.Analyzers {
 		if !slices.Contains(known, name) {
-			return nil, errors.Errorf("unknown analyzer or group %s", name)
+			return nil, errors.Errorf("unknown analyzer or group %q", name)
 		}
 	}
 	file := config.File{}.SelectTest(s)
@@ -280,7 +280,7 @@ func (p *Project) checkSelection(s config.Selection) error {
 	}{{"--disable", s.Disable}, {"--enable", s.Enable}} {
 		for _, name := range flag.names {
 			if !slices.Contains(known, name) {
-				return errors.Errorf("%s names unknown analyzer or group %s", flag.name, name)
+				return errors.Errorf("%s names unknown analyzer or group %q", flag.name, name)
 			}
 		}
 	}
@@ -312,7 +312,7 @@ func (p *Project) Describe(names []string) ([]docs.Analyzer, error) {
 	known := p.engine.Names()
 	for _, name := range names {
 		if !slices.Contains(known, name) {
-			return nil, errors.Errorf("unknown analyzer %s", name)
+			return nil, errors.Errorf("unknown analyzer %q", name)
 		}
 	}
 	selected := make([]docs.Analyzer, 0, len(described))

@@ -65,14 +65,14 @@ func Cases(dir string) ([]Case, error) {
 		return []Case{{Name: "default", Packages: []string{"./..."}}}, nil
 	}
 	if err != nil {
-		return nil, errors.Wrapf(err, "read %s", path)
+		return nil, errors.Wrapf(err, "read %q", path)
 	}
 	var file struct {
 		Case []Case `toml:"case"`
 	}
 	// Unknown keys are errors, so a misspelt case field is not ignored.
 	if err := toml.NewDecoder(bytes.NewReader(data)).DisallowUnknownFields().Decode(&file); err != nil {
-		return nil, errors.Wrapf(err, "read %s", path)
+		return nil, errors.Wrapf(err, "read %q", path)
 	}
 	for i, c := range file.Case {
 		if c.Name == "" || len(c.Packages) == 0 {
@@ -89,11 +89,11 @@ func Run(t Testing, e *engine.Engine, store *Store, analyzer, dir string, c Case
 	// Test data is all first-party, so no package is skipped.
 	analyzers, err := e.Analyzers(file, nil)
 	if err != nil {
-		return errors.Wrapf(err, "case %s", c.Name)
+		return errors.Wrapf(err, "case %q", c.Name)
 	}
 	found, ok := find(analyzers, analyzer)
 	if !ok {
-		return errors.Errorf("unknown analyzer %s", analyzer)
+		return errors.Errorf("unknown analyzer %q", analyzer)
 	}
 	// GOPATH-style test data needs an absolute path.
 	absolute, err := filepath.Abs(filepath.Join(dir, c.Dir))
@@ -177,7 +177,7 @@ func RunAll(e *engine.Engine, store *Store, analyzers []string, scripts string, 
 	}
 	total := maps.Clone(remaining)
 	if len(all) == 0 {
-		return errors.Errorf("no testdata found under %s", filepath.Join(scripts, "testdata"))
+		return errors.Errorf("no testdata found under %q", filepath.Join(scripts, "testdata"))
 	}
 	// Each case builds its own analyzers, and the engine's runtime pool is
 	// safe to share, so cases are independent. Each owns its recorder.
@@ -271,7 +271,7 @@ func runIsolated(isolate Isolate, ac *analyzerCase) error {
 	if exit := (*exec.ExitError)(nil); errors.As(runErr, &exit) {
 		stderr = exit.Stderr
 	}
-	return errors.Errorf("case %s: no result from its process: %v\n%s", name, runErr, stderr)
+	return errors.Errorf("case %q: no result from its process: %v\n%s", name, runErr, stderr)
 }
 
 // report writes a case's result, with its failures if any, to out.

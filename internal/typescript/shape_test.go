@@ -97,6 +97,6 @@ define<{ f: () => void }>({ name: "b", config: { f() {} } });
 	}}), shape)
 	_, err = program.Describe(calls[1].TypeArguments[0])
 	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "property f: ")
-	assert.Contains(t, err.Error(), "type () => void is not supported")
+	assert.Contains(t, err.Error(), `property "f": `)
+	assert.Contains(t, err.Error(), `type "() => void" is not supported`)
 }

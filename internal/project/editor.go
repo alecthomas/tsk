@@ -42,7 +42,7 @@ func WriteEditorFiles(ctx context.Context, c Config, cache *library.Cache) error
 	}
 	for _, name := range slices.Sorted(maps.Keys(declarations)) {
 		if err := os.WriteFile(filepath.Join(types, name), []byte(declarations[name]), 0o600); err != nil {
-			return errors.Wrapf(err, "write %s", name)
+			return errors.Wrapf(err, "write %q", name)
 		}
 	}
 	tsconfig, err := json.MarshalIndent(map[string]any{
