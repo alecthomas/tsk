@@ -144,6 +144,17 @@ func (c *Cache) Flush() {
 	}()
 }
 
+// Visit's closure is reported where it reads order, as its creation has no position.
+func (c *Cache) Visit(visit func(func() int)) {
+	visit(func() int {
+		return c.count() // want `^"Cache.order" read without locking "Cache.mu" \(via count\)$`
+	})
+}
+
+func (c *Cache) count() int {
+	return len(c.order)
+}
+
 func (c *Cache) clearLocked() {
 	c.order = nil
 }

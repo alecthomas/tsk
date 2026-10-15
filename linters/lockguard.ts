@@ -607,7 +607,7 @@ class FunctionChecker {
       const goroutine = instr.referrers()?.some((ref) => ref?.$type === "Go" && ref.call.value === instr);
       if (!goroutine) {
         const fn = instr.fn as ssa.Function;
-        this.requireCallee(fn, { args: [], frees: instr.bindings.map((binding) => this.path(binding)) }, instr.pos(), state, false);
+        this.requireCallee(fn, { args: [], frees: instr.bindings.map((binding) => this.path(binding)) }, null, state, false);
       }
       return;
     }
@@ -622,16 +622,19 @@ class FunctionChecker {
     // Anonymous functions without free variables are plain values.
     for (const operand of instr.operands([])) {
       if (operand?.$type === "Function" && operand.parent() !== null && !(isCall(instr) && instr.call.value === operand)) {
-        this.requireCallee(operand, { args: [], frees: [] }, instr.pos(), state, false);
+        this.requireCallee(operand, { args: [], frees: [] }, null, state, false);
       }
     }
   }
 
-  private requireCallee(callee: ssa.Function, site: Site, pos: token.Pos, state: State, goroutine: boolean): void {
+  // requireCallee applies a callee's requirements at pos. A null pos keeps each
+  // requirement's own position, for closures whose creation has no position.
+  private requireCallee(callee: ssa.Function, site: Site, at: token.Pos | null, state: State, goroutine: boolean): void {
     const name = callee.parent() === null ? [callee.name()] : [];
     for (const requirement of this.checker.requirements(callee)) {
       const path = substitute(requirement.path, site.args, site.frees);
       const chain = [...name, ...requirement.chain];
+      const pos = at ?? requirement.pos;
       if (path === null) {
         // The callee's value cannot be named here, so the requirement cannot be met.
         this.finding({ ...requirement, chain, pos }, goroutine);
