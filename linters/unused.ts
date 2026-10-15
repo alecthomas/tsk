@@ -1,7 +1,7 @@
 import * as ast from "go/ast";
 import * as token from "go/token";
 import * as types from "go/types";
-import { defineAnalyzer, type Pass } from "tsk";
+import { defineAnalyzer, type Pass, walkType } from "tsk";
 
 interface Config {
   /** Count writing to a field as using it. */
@@ -1336,55 +1336,28 @@ function unify(x: types.Type | null, y: types.Type | null, unifier: Map<types.Ty
 // typeParamsOf returns the type parameters occurring in a type.
 function typeParamsOf(t: types.Type | null): types.TypeParam[] {
   const seen = new Set<types.TypeParam>();
-  const visit = (t0: types.Type | null) => {
-    const u = types.unalias(t0);
-    switch (u?.$type) {
-      case "TypeParam":
-        seen.add(u);
-        break;
-      case "Array":
-      case "Chan":
-      case "Slice":
-      case "Pointer":
-        visit(u.elem());
-        break;
-      case "Map":
-        visit(u.key());
-        visit(u.elem());
-        break;
-      case "Named": {
-        if (u.origin() === u) {
-          const tps = u.typeParams();
-          for (let i = 0; i < (tps?.len() ?? 0); i++) {
-            visit(tps!.at(i));
+  walkType(
+    t,
+    (t) => {
+      switch (t.$type) {
+        case "TypeParam":
+          seen.add(t);
+          return false;
+        case "Named":
+          // A generic declaration mentions its type parameters, and an instance
+          // its type arguments.
+          if (t.origin() === t) {
+            for (const tp of t.typeParams()?.typeParams() ?? []) {
+              seen.add(tp!);
+            }
+            return false;
           }
-        } else {
-          const args = u.typeArgs();
-          for (let i = 0; i < (args?.len() ?? 0); i++) {
-            visit(args!.at(i));
-          }
-        }
-        break;
+          return true;
+        case "Interface":
+          return false;
       }
-      case "Signature":
-        for (const tuple of [u.params(), u.results()]) {
-          for (let i = 0; i < (tuple?.len() ?? 0); i++) {
-            visit(tuple!.at(i)!.type());
-          }
-        }
-        break;
-      case "Struct":
-        for (let i = 0; i < u.numFields(); i++) {
-          visit(u.field(i)!.type());
-        }
-        break;
-      case "Tuple":
-        for (let i = 0; i < u.len(); i++) {
-          visit(u.at(i)!.type());
-        }
-        break;
-    }
-  };
-  visit(t);
+    },
+    { types: [types.TypeParam, types.Named, types.Interface] },
+  );
   return [...seen];
 }

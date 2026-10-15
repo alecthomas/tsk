@@ -6,7 +6,7 @@ import * as types from "go/types";
 import * as edge from "golang.org/x/tools/go/ast/edge";
 import type * as inspector from "golang.org/x/tools/go/ast/inspector";
 import * as typeutil from "golang.org/x/tools/go/types/typeutil";
-import { defineAnalyzer, defineFact, formatNode, type Pass } from "tsk";
+import { defineAnalyzer, defineFact, formatNode, type Pass, walkType } from "tsk";
 import { inspect } from "tsk/passes";
 import { before } from "./internal/goversion";
 import { coreType, deref } from "./internal/typeparams";
@@ -528,59 +528,27 @@ function canImport(from: string, to: string): boolean {
 // named, and alias types, and type parameters. Names may repeat.
 function typenames(t: types.Type | null): types.TypeName[] {
   const tns: types.TypeName[] = [];
-  const visit = (t: types.Type | null): void => {
-    if (t === null) {
-      return;
-    }
+  const options = { types: [types.Basic, types.Named, types.Alias, types.TypeParam] };
+  const visit = (t: types.Basic | types.Named | types.Alias | types.TypeParam): boolean => {
     switch (t.$type) {
       case "Basic":
         tns.push(types.Universe!.lookup(t.name()) as types.TypeName);
-        break;
-      case "Named":
+        return false;
       case "Alias":
+        // Only the alias's name and type arguments appear, not its right-hand side.
         tns.push(t.obj()!);
         for (const arg of t.typeArgs()?.types() ?? []) {
-          visit(arg);
+          walkType(arg, visit, options);
         }
-        break;
+        return false;
+      case "Named":
+        tns.push(t.obj()!);
+        return true;
       case "TypeParam":
         tns.push(t.obj()!);
-        break;
-      case "Pointer":
-      case "Slice":
-      case "Array":
-      case "Chan":
-        visit(t.elem());
-        break;
-      case "Map":
-        visit(t.key());
-        visit(t.elem());
-        break;
-      case "Struct":
-        for (let i = 0; i < t.numFields(); i++) {
-          visit(t.field(i)!.type());
-        }
-        break;
-      case "Signature":
-        // Receivers and type parameters cannot appear in a type expression.
-        visit(t.params());
-        visit(t.results());
-        break;
-      case "Interface":
-        for (let i = 0; i < t.numEmbeddeds(); i++) {
-          visit(t.embeddedType(i));
-        }
-        for (let i = 0; i < t.numExplicitMethods(); i++) {
-          visit(t.explicitMethod(i)!.type());
-        }
-        break;
-      case "Tuple":
-        for (let i = 0; i < t.len(); i++) {
-          visit(t.at(i)!.type());
-        }
-        break;
+        return false;
     }
   };
-  visit(t);
+  walkType(t, visit, options);
   return tns;
 }
