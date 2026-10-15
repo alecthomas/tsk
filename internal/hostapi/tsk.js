@@ -117,6 +117,10 @@ export function formatNode(node, fset) {
   return native.formatNode(node, fset);
 }
 
+export function walkType(type, visit, options) {
+  native.walkType(type, visit, options?.exported === true, options?.types);
+}
+
 export function goroot() {
   return native.goroot();
 }

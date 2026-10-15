@@ -499,6 +499,54 @@ func TestFormatNode(t *testing.T) {
 	analysistest.Run(t, dir, analyzers[0], "example")
 }
 
+const walkTypeScript = `import { defineAnalyzer, walkType } from "tsk";
+import * as types from "go/types";
+
+export default defineAnalyzer({
+  name: "walktype",
+  doc: "report the types each declaration mentions",
+  run(pass) {
+    const qualifier = types.relativeTo(pass.pkg);
+    for (const name of pass.pkg.scope()!.names()) {
+      const object = pass.pkg.scope()!.lookup(name)!;
+      const visited: string[] = [];
+      walkType(object.type(), (type) => {
+        visited.push(types.typeString(type, qualifier));
+        if (type.$type === "Basic") {
+          return false;
+        }
+        return type.$type === "Named" && type.obj()?.pkg() === pass.pkg ? "declaration" : true;
+      }, { exported: true });
+      pass.report({ pos: object.pos(), message: visited.join(", ") });
+      const named: string[] = [];
+      walkType(object.type(), (type) => {
+        named.push(types.typeString(type, qualifier));
+        return type.obj()?.pkg() === pass.pkg ? "declaration" : true;
+      }, { exported: true, types: [types.Named, types.Alias] });
+      pass.report({ pos: object.pos(), message: "named: " + named.join(", ") });
+    }
+  },
+});
+`
+
+// walkType follows the script's choice of descent, calls back only for selected
+// types, and ends on recursive types.
+func TestWalkType(t *testing.T) {
+	e := load(t, map[string]string{"walktype.ts": walkTypeScript})
+	analyzers, err := e.Analyzers(config.File{}, nil)
+	assert.NoError(t, err)
+	dir, cleanup, err := analysistest.WriteFiles(map[string]string{
+		"example/example.go": "package example\n\n" +
+			"type Node struct { // want `^Node, struct\\{Next \\*Node; value int\\}, \\*Node, Node, func\\(\\) error, error$` `^named: Node, Node, error$`\n" +
+			"\tNext  *Node\n\tvalue int\n}\n\n" +
+			"func (Node) Err() error { return nil }\n\n" +
+			"type S[T interface{ ~[]T }] []T // want `^S\\[T interface\\{~\\[\\]T\\}\\], T, interface\\{~\\[\\]T\\}, ~\\[\\]T, \\[\\]T, T, \\[\\]T, T$` `^named: S\\[T interface\\{~\\[\\]T\\}\\]$`\n",
+	})
+	assert.NoError(t, err)
+	defer cleanup()
+	analysistest.Run(t, dir, analyzers[0], "example")
+}
+
 const targetScript = `import { defineAnalyzer, goarch, goos } from "tsk";
 
 export default defineAnalyzer({
