@@ -10,6 +10,7 @@ import (
 	"go/format"
 	"go/parser"
 	"go/token"
+	"go/types"
 	"io/fs"
 	"log/slog"
 	"os"
@@ -26,6 +27,7 @@ import (
 	"github.com/alecthomas/tsk/internal/compile"
 	"github.com/alecthomas/tsk/internal/inputs"
 	"github.com/alecthomas/tsk/internal/naming"
+	"github.com/alecthomas/tsk/internal/typewalk"
 )
 
 // Runtime is one sobek runtime with every module evaluated. It is confined to
@@ -158,6 +160,7 @@ func (r *Runtime) installGlobals() error {
 		native.Set("registerAnalyzer", r.registerAnalyzer),
 		native.Set("hostAnalyzer", r.hostAnalyzer),
 		native.Set("formatNode", r.formatNode),
+		native.Set("walkType", r.walkType),
 		native.Set("goroot", func() string { return build.Default.GOROOT }),
 		native.Set("goos", func() string { return build.Default.GOOS }),
 		native.Set("goarch", func() string { return build.Default.GOARCH }),
@@ -226,6 +229,57 @@ func (r *Runtime) formatNode(call sobek.FunctionCall) sobek.Value {
 		panic(r.bridge.goError(err))
 	}
 	return r.rt.ToValue(out.String())
+}
+
+// walkType walks a type with typewalk, calling the script's visit function for
+// each type it selects. An exception visit throws unwinds the walk to the script.
+func (r *Runtime) walkType(call sobek.FunctionCall) sobek.Value {
+	visit, ok := sobek.AssertFunction(call.Argument(1))
+	if !ok {
+		panic(r.bridge.typeError("walkType requires a visit function"))
+	}
+	t, ok := r.goArgument(call.Argument(0)).(types.Type)
+	if !ok {
+		return sobek.Undefined()
+	}
+	selected := r.typeFilter(call.Argument(3))
+	typewalk.Walk(t, call.Argument(2).ToBoolean(), func(t types.Type) typewalk.Action {
+		// Unselected types are walked through in Go, saving a call into the script.
+		if filter, ok := selected.Get(); ok && !filter[reflect.TypeOf(t)] {
+			return typewalk.Components
+		}
+		result, err := visit(sobek.Undefined(), r.bridge.wrap(reflect.ValueOf(t)))
+		if err != nil {
+			panic(err)
+		}
+		switch result.Export() {
+		case false:
+			return typewalk.Skip
+		case true:
+			return typewalk.Components
+		case "declaration":
+			return typewalk.Declaration
+		}
+		panic(r.bridge.typeError(`walkType's visit must return true, false, or "declaration", not %s`, result))
+	})
+	return sobek.Undefined()
+}
+
+// typeFilter returns the dynamic types a list of type tokens stands for, or
+// None, selecting every type, when the list is absent.
+func (r *Runtime) typeFilter(value sobek.Value) Option[map[reflect.Type]bool] {
+	if isAbsent(value) {
+		return None[map[reflect.Type]bool]()
+	}
+	list, err := r.bridge.unwrap(value, reflect.TypeFor[[]types.Type]())
+	if err != nil {
+		panic(r.bridge.typeError("walkType types: %v", err))
+	}
+	filter := map[reflect.Type]bool{}
+	for i := range list.Len() {
+		filter[list.Index(i).Elem().Type()] = true
+	}
+	return Some(filter)
 }
 
 // goArgument returns the Go value a wrapped argument holds, or nil.

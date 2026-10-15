@@ -421,6 +421,36 @@ for (const cursor of root.preorder(ast.Ident).filter(pass.typesInfo.isNil)) {
 A JavaScript callback, as `ast.inspect` takes, runs once per node, so prefer
 the inspector for large traversals.
 
+#### Walking types
+
+`walkType(type, visit, options?)` from `tsk` calls `visit` on a `types.Type`
+and then, depth first, on every type it mentions: elements, keys, parameters
+and results, fields, methods, embedded types, union terms, constraints, and
+type arguments. `visit` decides how far to go:
+
+- `false` skips the type's components.
+- `true` visits them. A named type's components are its type arguments.
+- `"declaration"` also visits a named type's type parameters, underlying type,
+  and methods.
+
+Each constraint and named type's declaration is walked once, so recursive
+types such as `type node struct{ next *node }` end. Pass `{ exported: true }`
+to skip unexported struct fields and methods. Embedded fields are kept, as
+their members are promoted.
+
+Each call to `visit` crosses from Go into JavaScript. To call it only for some
+kinds of type, list their type tokens in `types`. Other types are walked as if
+`visit` returned `true`, and `visit`'s parameter narrows to the listed types:
+
+```ts
+walkType(object.type(), (type) => {
+  if (type.obj()?.pkg() !== pass.pkg) {
+    return false; // Only its name is part of this declaration.
+  }
+  return "declaration";
+}, { exported: true, types: [types.Named, types.Alias] });
+```
+
 #### Facts
 
 Facts carry what a linter learns about a package to the packages that import

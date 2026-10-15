@@ -41,6 +41,24 @@ declare module "tsk" {
    */
   export function formatNode(node: ast.Node, fset?: token.FileSet): string;
 
+  /** Calls visit on type and, depth first, on each type it mentions. Recursive types end. */
+  export function walkType<K extends TypeToken<types.Type> = TypeToken<types.Type>>(
+    type: types.Type | null,
+    visit: (type: K["$token"]) => WalkTypeAction,
+    options?: WalkTypeOptions<K>,
+  ): void;
+
+  /** false skips a type's parts; true visits them, a named type's being its type arguments.
+   * "declaration" also visits a named type's type parameters, underlying type, and methods. */
+  export type WalkTypeAction = boolean | "declaration";
+
+  export interface WalkTypeOptions<K extends TypeToken<types.Type> = TypeToken<types.Type>> {
+    /** Skips unexported struct fields and methods, keeping embedded fields, whose members are promoted. */
+    readonly exported?: boolean;
+    /** Calls visit only for these kinds of type, as in [types.Named], visiting the parts of others. */
+    readonly types?: readonly K[];
+  }
+
   /** Returns the root of the Go installation that go env reports. */
   export function goroot(): string;
 

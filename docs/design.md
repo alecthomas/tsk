@@ -437,6 +437,12 @@ analyzers are not stored, so their errors are reported again. JSON output and
 - `console.debug`, `log`, `info`, `warn`, and `error`, written to tsk's
   log at the matching level and tagged with the analyzer and package during a
   run. The log level defaults to `error`; `--log-level` changes it.
+- `walkType(type, visit, options?)`, which walks the types a `types.Type`
+  mentions in Go and calls `visit` for each, since go/types has no walker and
+  x/tools keeps its own internal. `visit` chooses whether to descend; each
+  constraint and named declaration is walked once, so recursive types end.
+  A `types` list of type tokens limits which types call `visit`, so the
+  others never cross into JavaScript.
 - `goroot()`, `goos()`, and `goarch()`, the Go installation and target
   platform `go env` reports, as `go/build`'s `Context` is not exposed. The
   CLI copies them into `go/build`'s default context at startup.
