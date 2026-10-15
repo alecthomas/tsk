@@ -139,6 +139,22 @@ func (f File) SelectLint(s LintSelection) File {
 	return f.Select(s.Selection)
 }
 
+// TestSelection is a Selection for test, which can also name the only
+// analyzers to test.
+type TestSelection struct {
+	Selection `embed:""`
+	Analyzers []string `arg:"" optional:"" help:"Analyzers and groups to test, as if by --disable-all and --enable. Defaults to all."`
+}
+
+// SelectTest returns the config with a test selection applied over it.
+func (f File) SelectTest(s TestSelection) File {
+	if len(s.Analyzers) > 0 {
+		s.DisableAll = true
+		s.Enable = slices.Concat(s.Analyzers, s.Enable)
+	}
+	return f.Select(s.Selection)
+}
+
 // Select returns the config with a selection applied over it. --disable wins
 // over --enable, which wins over --disable-all and the config file's lists.
 func (f File) Select(s Selection) File {

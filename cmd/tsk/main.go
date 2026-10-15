@@ -105,8 +105,8 @@ func (l lintCommand) flagArgs() []string {
 }
 
 type testCommand struct {
-	config.Selection  `embed:""`
-	scripttest.Config `embed:""`
+	config.TestSelection `embed:""`
+	scripttest.Config    `embed:""`
 }
 
 func (t testCommand) Run(ctx context.Context, log *slog.Logger, c *project.Config, cache *library.Cache, store *scripttest.Store) error {
@@ -114,7 +114,7 @@ func (t testCommand) Run(ctx context.Context, log *slog.Logger, c *project.Confi
 	if err != nil {
 		return errors.WithStack(err)
 	}
-	analyzers, err := p.Selected(t.Selection)
+	analyzers, err := p.Selected(t.TestSelection)
 	if err != nil {
 		return errors.WithStack(err)
 	}

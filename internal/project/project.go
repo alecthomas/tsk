@@ -249,11 +249,17 @@ func (p *Project) Select(s config.LintSelection) error {
 
 // Selected returns the analyzers a selection picks from every analyzer,
 // including those off by default, ignoring the config file, as tsk test does.
-func (p *Project) Selected(s config.Selection) ([]string, error) {
-	if err := p.checkSelection(s); err != nil {
+func (p *Project) Selected(s config.TestSelection) ([]string, error) {
+	if err := p.checkSelection(s.Selection); err != nil {
 		return nil, err
 	}
-	file := config.File{}.Select(s)
+	known := p.engine.Selectable()
+	for _, name := range s.Analyzers {
+		if !slices.Contains(known, name) {
+			return nil, errors.Errorf("unknown analyzer or group %s", name)
+		}
+	}
+	file := config.File{}.SelectTest(s)
 	var selected []string
 	for _, linter := range p.engine.Linters() {
 		// Only a linter's own name turns it on when off by default, so treat
