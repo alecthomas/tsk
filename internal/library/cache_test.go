@@ -150,7 +150,7 @@ func TestResolve(t *testing.T) {
 func TestSnapshot(t *testing.T) {
 	root := remotes(t)
 	const repository = "github.com/Acme/linters"
-	commit(t, root, repository, map[string]string{"lib/a.ts": "a", "lib/sub/b.ts": "b", "other.ts": "other"})
+	commit(t, root, repository, map[string]string{"lib/a.ts": "a", "lib/sub/b.ts": "b", "other.ts": "other", ".tsk/c.ts": "c"})
 	assert.NoError(t, os.Symlink("a.ts", filepath.Join(root, repository, "lib", "link.ts")))
 	first := commit(t, root, repository, nil)
 	cache, dir := newCache(t)
@@ -167,6 +167,14 @@ func TestSnapshot(t *testing.T) {
 	assert.Equal(t, os.FileMode(0o444), info.Mode().Perm())
 	mirror := filepath.Join(dir, "git", "github.com", "!acme", "linters.git")
 	assert.Equal(t, "blob:none", run(t, mirror, "config", "remote.origin.partialclonefilter"))
+
+	// A directory whose name starts with a dot resolves and extracts alike.
+	hidden, err := cache.Resolve(t.Context(), library.Import{Repository: repository, Version: Some("main"), Dir: ".tsk"})
+	assert.NoError(t, err)
+	snapshot, err = cache.Snapshot(t.Context(), hidden)
+	assert.NoError(t, err)
+	assert.Equal(t, filepath.Join(dir, "src", "github.com", "!acme", "linters", ".tsk@"+first), snapshot)
+	assert.Equal(t, map[string]string{"c.ts": "c"}, readTree(t, snapshot))
 
 	// A commit the mirror lacks is fetched.
 	second := commit(t, root, repository, map[string]string{"lib/a.ts": "changed"})

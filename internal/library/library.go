@@ -99,14 +99,16 @@ func checkDir(dir string) error {
 }
 
 // checkElements accepts the characters Go allows in module paths. A leading
-// "-" or "." is rejected so no element can be read as a git option or be ".".
+// "-" could be read as a git option, and "." or ".." would escape the path.
 func checkElements(path string) error {
 	for element := range strings.SplitSeq(path, "/") {
-		if element == "" {
+		switch {
+		case element == "":
 			return errors.Errorf("%q has an empty path element", path)
-		}
-		if element[0] == '-' || element[0] == '.' {
-			return errors.Errorf("path element %q cannot start with %q", element, element[0])
+		case element == "." || element == "..":
+			return errors.Errorf("path element %q is not allowed", element)
+		case element[0] == '-':
+			return errors.Errorf("path element %q cannot start with '-'", element)
 		}
 		for _, r := range element {
 			if !isAlphanumeric(r) && !strings.ContainsRune("-._~", r) {

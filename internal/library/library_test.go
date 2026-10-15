@@ -29,7 +29,14 @@ func TestParseImport(t *testing.T) {
 		{name: "HostOnly", text: "github.com", error: `repository "github.com" must be a host name followed by a path`},
 		{name: "URL", text: "https://github.com/acme/linters", error: `repository "https:" must be a host name followed by a path`},
 		{name: "BadCharacter", text: "github.com/acme/lin ters", error: `path element "lin ters" contains ' '`},
-		{name: "DotElement", text: "github.com/acme/linters//../x", error: `path element ".." cannot start with '.'`},
+		{name: "DotDir", text: "github.com/acme/linters@v1.2.0//.tsk", expected: library.Import{Repository: "github.com/acme/linters", Version: Some("v1.2.0"), Dir: ".tsk"}},
+		{name: "DotRepository", text: "github.com/acme/.github//lint", expected: library.Import{Repository: "github.com/acme/.github", Version: None[string](), Dir: "lint"}},
+		{name: "CurrentDir", text: "github.com/acme/linters//.", error: `path element "." is not allowed`},
+		{name: "ParentDir", text: "github.com/acme/linters//..", error: `path element ".." is not allowed`},
+		{name: "LeadingParentDir", text: "github.com/acme/linters//../x", error: `path element ".." is not allowed`},
+		{name: "InnerParentDir", text: "github.com/acme/linters//a/../b", error: `path element ".." is not allowed`},
+		{name: "ParentRepository", text: "github.com/acme/../linters", error: `path element ".." is not allowed`},
+		{name: "OptionDir", text: "github.com/acme/linters//-x", error: `path element "-x" cannot start with '-'`},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
