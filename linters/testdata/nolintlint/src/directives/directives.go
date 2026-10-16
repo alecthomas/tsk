@@ -6,6 +6,8 @@ var b = 1 /* want "^directive `//nolint because` should match `//nolint because\
 
 var c = 1 /* want "^directive `//nolint:errcheck,` should match `//nolint\\[:<comma-separated-linters>\\] \\[// <explanation>\\]`$" */ //nolint:errcheck,
 
+var l = 1 /* want "^directive `//nolint:errcheck because` should match `//nolint\\[:<comma-separated-linters>\\] \\[// <explanation>\\]`$" */ //nolint:errcheck because
+
 var d = 1 /* want "^directive `//  nolint because` should be written without leading space as `//nolint because`$" "^directive `//  nolint because` should match `// nolint because\\[:<comma-separated-linters>\\] \\[// <explanation>\\]`$" */ //  nolint because
 
 // Well-formed directives.

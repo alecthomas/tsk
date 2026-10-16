@@ -34,6 +34,7 @@ enable = [
   'nilnesserr',
   'nilness',
   'noctx',
+  'nolintlint',
   'nosprintfhostport',
   'reassign',
   'rowserrcheck',
