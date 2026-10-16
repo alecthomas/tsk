@@ -372,7 +372,7 @@ func printFindings(w io.Writer, byPackage map[string][]finding, loadCode int, fa
 	for _, f := range all {
 		printPosition(&out, f.Pos, f.End, fmt.Sprintf("%s (%s)", f.Message, f.Analyzer), contextLines, dir)
 		for _, info := range f.Related {
-			printPosition(&out, info.Pos, info.End, "\t"+info.Message, contextLines, dir)
+			printPosition(&out, info.Pos, info.End, fmt.Sprintf("%s (%s)", info.Message, f.Analyzer), contextLines, dir)
 		}
 	}
 	if _, err := w.Write(out.Bytes()); err != nil {

@@ -2,7 +2,7 @@ import * as ast from "go/ast";
 import * as token from "go/token";
 import * as types from "go/types";
 import type * as ssa from "golang.org/x/tools/go/ssa";
-import { defineAnalyzer, defineFact, type Pass } from "tsk";
+import { defineAnalyzer, defineFact, type Pass, type RelatedInformation } from "tsk";
 import { buildssa, inspect } from "tsk/passes";
 
 // Guarded marks a field or package-level variable that may change after
@@ -35,8 +35,10 @@ construction in init functions. Writes in test files do not count.
 
 Functions need no annotations. A function that accesses a guarded value
 without taking its lock passes the requirement on to its callers. It is
-reported where it can go no further: in exported functions, functions used as
-values or run as goroutines, and functions without callers.`,
+checked where it can go no further: in exported functions, functions used as
+values or run as goroutines, and functions without callers. A failed check is
+reported at the access, with the calls that led to it. Accesses that miss the
+same lock through the same function are reported together.`,
   requires: [inspect, buildssa],
   facts: [guardedBy],
   run(pass) {
@@ -161,8 +163,8 @@ const lockOps = new Map<string, { acquire: Mode | null }>([
 
 // Requirement is what a function needs of its callers, found at pos. A "lock"
 // requirement needs the lock at path held. A "write" requirement needs the
-// value at path to be under construction. chain names the callees between pos
-// and the access.
+// value at path to be under construction. access is where the value is
+// accessed, and chain names the callees between pos and the access.
 interface Requirement {
   kind: "lock" | "write";
   path: string;
@@ -172,6 +174,7 @@ interface Requirement {
   target: string;
   lockName: string;
   pos: token.Pos;
+  access: token.Pos;
   chain: string[];
 }
 
@@ -257,14 +260,29 @@ function sameSummary(a: Summary | undefined, b: Summary): boolean {
 }
 
 function message(requirement: Requirement, goroutine: boolean): string {
-  const via = requirement.chain.length > 0 ? ` (via ${requirement.chain.join(" -> ")})` : "";
   if (requirement.kind === "write") {
-    return `"${requirement.target}" written after construction, but no mutex is declared before it${via}`;
+    return `"${requirement.target}" written after construction, but no mutex is declared before it`;
   }
   const verb = requirement.mode === "w" ? "written" : "read";
+  return `"${requirement.target}" ${verb} ${withoutLock(requirement, goroutine)}`;
+}
+
+function withoutLock(requirement: Requirement, goroutine: boolean): string {
   const locking = requirement.mode === "w" && requirement.rw ? "write-locking" : "locking";
   const where = goroutine ? " in a new goroutine" : "";
-  return `"${requirement.target}" ${verb} without ${locking} "${requirement.lockName}"${where}${via}`;
+  return `without ${locking} "${requirement.lockName}"${where}`;
+}
+
+function via(chain: string[]): string {
+  return chain.length > 0 ? ` (via ${chain.join(" -> ")})` : "";
+}
+
+// LockGroup collects the accesses that miss one lock from one entry, keyed by
+// access, and the calls that reach them, keyed by position.
+interface LockGroup {
+  goroutine: boolean;
+  accesses: Map<string, Requirement>;
+  calls: Map<token.Pos, Requirement>;
 }
 
 // Access is a field or variable an instruction reaches. base is the path of
@@ -290,6 +308,13 @@ class Checker {
   // writes holds the writes after construction to each value whose writes
   // are tracked, in the order found.
   private readonly writes = new Map<types.Object, Requirement[]>();
+  // reports holds the write findings by access and message, so an access
+  // reached from several calls is reported once, listing each call.
+  private readonly reports = new Map<string, { pos: token.Pos; message: string; related: RelatedInformation[] }>();
+  // groups holds the lock findings by lock and entry: the function called
+  // without the lock, or the one accessing directly. One missing lock is then
+  // one finding, however many accesses and calls it affects.
+  private readonly groups = new Map<string, LockGroup>();
 
   constructor(
     private readonly pass: Pass<unknown>,
@@ -306,6 +331,12 @@ class Checker {
     this.phase = "lock";
     this.summaries.clear();
     this.solve();
+    for (const report of this.reports.values()) {
+      this.pass.report(report);
+    }
+    for (const group of this.groups.values()) {
+      this.reportGroup(group);
+    }
   }
 
   private solve(): void {
@@ -327,7 +358,7 @@ class Checker {
       for (const requirement of summary.requirements.values()) {
         // Package-level variables are under construction in init functions.
         if (!(requirement.kind === "write" && requirement.path.startsWith("g:") && isInit(fn))) {
-          this.finding(requirement, false);
+          this.finding(requirement, false, fn);
         }
       }
     }
@@ -344,15 +375,15 @@ class Checker {
     for (const [object, writes] of this.writes) {
       if (this.guard(object)?.lock === "") {
         for (const write of writes) {
-          this.pass.report({ pos: write.pos, message: message(write, false) });
+          this.report(write, message(write, false), []);
         }
       }
     }
   }
 
   // finding records a requirement that cannot propagate: a write after
-  // construction, or a lock not held.
-  finding(requirement: Requirement, goroutine: boolean): void {
+  // construction, or a lock not held, found in fn.
+  finding(requirement: Requirement, goroutine: boolean, fn: ssa.Function): void {
     if (requirement.kind === "write") {
       // Tests often set up values directly, so they do not make them mutable.
       if (!this.pass.fset.position(requirement.pos).filename.endsWith("_test.go")) {
@@ -360,11 +391,64 @@ class Checker {
       }
       return;
     }
-    const write = this.writes.get(requirement.object)?.[0];
+    const entry = requirement.chain.length > 0 ? `call:${requirement.chain[0]}` : `func:${fn.pos()}`;
+    const key = `${requirement.lockName}|${goroutine}|${entry}`;
+    let group = this.groups.get(key);
+    if (group === undefined) {
+      group = { goroutine, accesses: new Map(), calls: new Map() };
+      this.groups.set(key, group);
+    }
+    const access = `${requirement.access}|${requirement.target}`;
+    const existing = group.accesses.get(access);
+    if (existing === undefined || (existing.mode === "r" && requirement.mode === "w")) {
+      group.accesses.set(access, requirement);
+    }
+    if (requirement.pos !== requirement.access && !group.calls.has(requirement.pos)) {
+      group.calls.set(requirement.pos, requirement);
+    }
+  }
+
+  // report queues a write finding at the requirement's access, followed by
+  // each call through which it was reached.
+  private report(requirement: Requirement, message: string, related: RelatedInformation[]): void {
+    const key = `${requirement.access}|${message}`;
+    let report = this.reports.get(key);
+    if (report === undefined) {
+      report = { pos: requirement.access, message, related };
+      this.reports.set(key, report);
+    }
+    if (requirement.pos !== requirement.access && !report.related.some((info) => info.pos === requirement.pos)) {
+      report.related.push({ pos: requirement.pos, message: `"${requirement.target}" written after construction${via(requirement.chain)}` });
+    }
+  }
+
+  // reportGroup reports a group at its first access in the entry, rather than
+  // in a callee, with the other accesses and the calls as related lines.
+  // Each related line names the lock, so it reads on its own.
+  private reportGroup(group: LockGroup): void {
+    const accesses = [...group.accesses.values()].sort((a, b) => a.chain.length - b.chain.length || a.access - b.access);
+    const first = accesses[0];
+    const single = accesses.length === 1;
+    // The strictest access decides how callers must lock.
+    const strictest = accesses.find((access) => access.mode === "w" && access.rw) ?? first;
+    const calls = [...group.calls.values()].map((call) => {
+      const [callee, ...rest] = call.chain;
+      const name = callee === undefined ? "" : `"${callee}" `;
+      return { pos: call.pos, message: `${name}called ${withoutLock(strictest, group.goroutine)}${single ? via(rest) : ""}` };
+    });
+    const write = this.writes.get(first.object)?.[0];
+    const written =
+      !single || write === undefined || write.access === first.access
+        ? []
+        : [{ pos: write.access, message: `"${write.target}" is written after construction here` }];
     this.pass.report({
-      pos: requirement.pos,
-      message: message(requirement, goroutine),
-      ...(write === undefined ? {} : { related: [{ pos: write.pos, message: `"${write.target}" is written after construction here` }] }),
+      pos: first.access,
+      message: message(first, group.goroutine),
+      related: [
+        ...written,
+        ...accesses.slice(1).map((access) => ({ pos: access.access, message: message(access, group.goroutine) + via(access.chain.slice(1)) })),
+        ...calls,
+      ],
     });
   }
 
@@ -470,7 +554,7 @@ class FunctionChecker {
     this.summary.fresh = this.fresh ?? [];
     if (this.reporting) {
       for (const { requirement, goroutine } of this.findings.values()) {
-        this.checker.finding(requirement, goroutine);
+        this.checker.finding(requirement, goroutine, this.fn);
       }
     }
     return this.summary;
@@ -586,7 +670,7 @@ class FunctionChecker {
     if (mode === null) {
       return;
     }
-    const requirement = { object: access.object, target: access.target, pos, chain: [] };
+    const requirement = { object: access.object, target: access.target, pos, access: pos, chain: [] };
     if (this.checker.phase === "write") {
       if (mode === "w" && this.checker.tracksWrites(access.object)) {
         this.require({ ...requirement, kind: "write", path: access.base, mode, rw: false, lockName: "" }, state, false);
@@ -761,11 +845,11 @@ class FunctionChecker {
   }
 }
 
-// siteKey identifies a requirement by site. Lock requirements at one site
-// merge by lock; write requirements are kept per value, as each one matters.
+// siteKey identifies a requirement by site and access, as each access is
+// reported. Write requirements are also kept per value, as each one matters.
 function siteKey(requirement: Requirement): string {
   const value = requirement.kind === "write" ? `|${requirement.target}` : "";
-  return `${requirement.kind}|${requirement.path}|${requirement.pos}${value}`;
+  return `${requirement.kind}|${requirement.path}|${requirement.pos}|${requirement.access}${value}`;
 }
 
 // Site maps a callee's parameters and free variables to the caller's paths.

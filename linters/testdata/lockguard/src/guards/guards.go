@@ -85,7 +85,7 @@ func (c *Cache) Put(key, value string) {
 }
 
 func (c *Cache) putLocked(key, value string) {
-	if _, ok := c.entries[key]; !ok {
+	if _, ok := c.entries[key]; !ok { // want `^"Cache.entries" read without locking "Cache.mu"$`
 		c.order = append(c.order, key)
 	}
 	c.entries[key] = value
@@ -102,7 +102,7 @@ func (c *Cache) Reset() {
 }
 
 func (c *Cache) Store(key, value string) {
-	c.insert(key, value) // want `^"Cache.order" written without write-locking "Cache.mu" \(via insert -> putLocked\)$`
+	c.insert(key, value)
 }
 
 func (c *Cache) insert(key, value string) {
@@ -138,25 +138,39 @@ func (c *Cache) Sorted() []string {
 func (c *Cache) Flush() {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	go c.clearLocked() // want `^"Cache.order" written without write-locking "Cache.mu" in a new goroutine \(via clearLocked\)$`
-	go func() { // want `^"Cache.entries" read without locking "Cache.mu" in a new goroutine$`
-		_ = c.entries["x"]
+	go c.clearLocked()
+	go func() {
+		_ = c.entries["x"] // want `^"Cache.entries" read without locking "Cache.mu" in a new goroutine$`
 	}()
 }
 
-// Visit's closure is reported where it reads order, as its creation has no position.
 func (c *Cache) Visit(visit func(func() int)) {
 	visit(func() int {
-		return c.count() // want `^"Cache.order" read without locking "Cache.mu" \(via count\)$`
+		return c.count()
 	})
 }
 
 func (c *Cache) count() int {
-	return len(c.order)
+	return len(c.order) // want `^"Cache.order" read without locking "Cache.mu"$`
+}
+
+func (c *Cache) Finish() {
+	c.finish()
+}
+
+func (c *Cache) Abort() {
+	c.finish()
+}
+
+// finish's accesses miss the same lock from the same calls, so are reported once.
+func (c *Cache) finish() {
+	c.order = nil // want `^"Cache.order" written without write-locking "Cache.mu"$`
+	c.entries = nil
+	_ = c.count()
 }
 
 func (c *Cache) clearLocked() {
-	c.order = nil
+	c.order = nil // want `^"Cache.order" written without write-locking "Cache.mu" in a new goroutine$`
 }
 
 func (c *Cache) Callback() func() {

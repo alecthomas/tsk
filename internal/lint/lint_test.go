@@ -27,7 +27,11 @@ func funcsAnalyzer() *analysis.Analyzer {
 			for _, file := range pass.Files {
 				for _, decl := range file.Decls {
 					if fn, ok := decl.(*ast.FuncDecl); ok {
-						pass.Reportf(fn.Name.Pos(), "function %s", fn.Name.Name)
+						pass.Report(analysis.Diagnostic{
+						Pos:     fn.Name.Pos(),
+						Message: "function " + fn.Name.Name,
+						Related: []analysis.RelatedInformation{{Pos: fn.Type.Func, Message: "declared here"}},
+					})
 					}
 				}
 			}
@@ -190,12 +194,12 @@ func TestRunText(t *testing.T) {
 		Want    string
 	}{
 		// The generated test main's functions are not reported.
-		{Name: "NoContext", Context: -1, Want: "sub/sub.go:3:6: function A (funcs)\n" +
-			"sub/sub.go:5:6: function B (funcs)\n" +
-			"sub/sub_test.go:5:6: function TestC (funcs)\n"},
-		{Name: "Context", Context: 0, Want: "sub/sub.go:3:6: function A (funcs)\n3\tfunc A() {}\n" +
-			"sub/sub.go:5:6: function B (funcs)\n5\tfunc B() {}\n" +
-			"sub/sub_test.go:5:6: function TestC (funcs)\n5\tfunc TestC(t *testing.T) {}\n"},
+		{Name: "NoContext", Context: -1, Want: "sub/sub.go:3:6: function A (funcs)\nsub/sub.go:3:1: declared here (funcs)\n" +
+			"sub/sub.go:5:6: function B (funcs)\nsub/sub.go:5:1: declared here (funcs)\n" +
+			"sub/sub_test.go:5:6: function TestC (funcs)\nsub/sub_test.go:5:1: declared here (funcs)\n"},
+		{Name: "Context", Context: 0, Want: "sub/sub.go:3:6: function A (funcs)\n3\tfunc A() {}\nsub/sub.go:3:1: declared here (funcs)\n3\tfunc A() {}\n" +
+			"sub/sub.go:5:6: function B (funcs)\n5\tfunc B() {}\nsub/sub.go:5:1: declared here (funcs)\n5\tfunc B() {}\n" +
+			"sub/sub_test.go:5:6: function TestC (funcs)\n5\tfunc TestC(t *testing.T) {}\nsub/sub_test.go:5:1: declared here (funcs)\n5\tfunc TestC(t *testing.T) {}\n"},
 	}
 	for _, test := range tests {
 		t.Run(test.Name, func(t *testing.T) {
