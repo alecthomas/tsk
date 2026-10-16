@@ -1,0 +1,93 @@
+# tsk config. See https://github.com/alecthomas/tsk#configuration.
+#
+# - `tsk` lints ./... with the linters enabled below.
+# - `tsk list` lists every linter and whether it is enabled.
+# - `tsk config <linter>` prints a linter's options, set to their defaults.
+# - `tsk get` updates the imported libraries and pins them in lock.toml.
+# - Linters written for this repository go in .tsk/<name>.ts.
+
+# Libraries of linters, pinned in lock.toml.
+imports = []
+
+# Run only the linters listed in enable, so updating a library never turns on
+# new ones.
+disable-all = true
+
+enable = [
+  # Bugs.
+  'asasalint',
+  'bidichk',
+  'bodyclose',
+  'copyloopvar',
+  'durationcheck',
+  'errcheck',
+  'errorlint',
+  'exhaustive',
+  'fatcontext',
+  'gocheckcompilerdirectives',
+  'govet',
+  'ineffassign',
+  'lockguard',
+  'loggercheck',
+  'makezero',
+  'nilerr',
+  'nilnesserr',
+  'nilness',
+  'noctx',
+  'nosprintfhostport',
+  'reassign',
+  'rowserrcheck',
+  'spancheck',
+  'sqlclosecheck',
+  'sumtype',
+  'tparallel',
+  'unused',
+  'wastedassign',
+  # Style and simplification.
+  'asciicheck',
+  'canonicalheader',
+  'errname',
+  'exptostd',
+  'goprintffuncname',
+  'intrange',
+  'iotamixing',
+  'mirror',
+  'nilnil',
+  'perfsprint',
+  'predeclared',
+  'recvcheck',
+  'testableexamples',
+  'unconvert',
+  'unparam',
+  'usestdlibvars',
+  'usetesting',
+  # Stricter linters to consider. Each enforces a convention, so enable one
+  # when the codebase follows it.
+  # 'dupl',             # Duplicated code.
+  # 'encapsulation',    # Private fields used outside their type's methods.
+  # 'forbidigo',        # Forbidden identifiers and packages, as configured.
+  # 'funlen',           # Long functions.
+  # 'gochecknoglobals', # Package-level variables.
+  # 'goconst',          # Repeated strings that could be constants.
+  # 'godot',            # Comments that do not end in a period.
+  # 'nakedret',         # Naked returns.
+  # 'optionalnil',      # nil used as an absent value instead of an option type.
+  # 'shadow',           # Shadowed variables.
+  # 'wrapcheck',        # Errors from other packages returned unwrapped.
+]
+
+# Drop these linters' findings in _test.go files.
+skip-tests = [
+  'bodyclose',
+  'noctx',
+]
+
+# Drop findings matching a rule. Each rule names linters, and any of path,
+# path-except, text, and source, as regular expressions.
+# [[exclude]]
+# linters = ['errcheck']
+# text = 'Close'
+
+# Each linter's options go in a table named after it.
+[exhaustive]
+default-signifies-exhaustive = true

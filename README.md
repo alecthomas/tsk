@@ -42,12 +42,22 @@ cd tsk
 go build -o ~/go/bin/tsk ./cmd/tsk
 ```
 
-Optionally Install linters from [libraries](#Libraries):
+Then set up your repository:
 
 ```sh
-tsk add github.com/alecthomas/tsk//linters
+tsk init
 ```
 
+This writes `.tsk/config.toml`, importing the linters of
+[`tsk`'s own library](#libraries) with a recommended set enabled. If the
+repository has a golangci-lint config, the config is converted from it instead.
+`tsk init` then adds instructions for coding agents, telling them to enforce
+the conventions you ask for with linters, and a `tsk` skill showing them how.
+These go in `CLAUDE.md` and `.claude/skills/` if the repository has a
+`CLAUDE.md`, and otherwise in `AGENTS.md` and `.agents/skills/`. Finally, it
+lists how many findings each linter has, so you can turn off those you do not
+want. Running it again updates the instructions and skill, and keeps your
+config.
 
 ## Quick start
 
@@ -121,7 +131,8 @@ These libraries are known to work with `tsk`. Add one with `tsk get
 | `tsk [lint] [packages...]` | Lints packages with every enabled linter. `--fix` applies suggested fixes, `--diff` prints them instead, `--json` emits JSON, `-c N` shows N lines of context, and `--no-test` skips test files. `--enable`, `--disable`, `--disable-all`, and `--enable-all` choose linters over the config file. |
 | `tsk test` | Runs each linter, including those off by default, against its test data. `--enable`, `--disable`, and `--disable-all` choose which linters. See [Writing tests](#writing-tests). |
 | `tsk check` | Type-checks scripts and validates `.tsk/config.toml`. |
-| `tsk init` | Writes the script declarations to `.tsk/types/` and a `tsconfig.json` to `.tsk/`, for editor completion and type checking. |
+| `tsk init` | Sets up a repository, as [Install](#install) describes. |
+| `tsk editor` | Writes the script declarations to `.tsk/types/` and a `tsconfig.json` to `.tsk/`, for editor completion and type checking. |
 | `tsk config [linters...]` | Prints a `.tsk/config.toml` documenting each linter and option, set to its default. |
 | `tsk list` | Lists every linter, whether it is enabled, its group, where it is defined, and its summary. `--json` prints a JSON array instead, with each linter's full documentation and URL. |
 | `tsk get [libraries...]` | Adds or updates [libraries](#using-libraries) and pins them in `.tsk/lock.toml`. |
@@ -244,7 +255,7 @@ safe.
 Your scripts can import a library's scripts by its repository and directory
 joined, as in `import { helper } from "github.com/acme/linters/strict/helper"`.
 A library's scripts can import each other only by relative paths, not other
-libraries. Rerun `tsk init` after `tsk get`, so your editor finds library
+libraries. Rerun `tsk editor` after `tsk get`, so your editor finds library
 scripts.
 
 To write a library, put scripts and their `testdata/` in a directory of a git

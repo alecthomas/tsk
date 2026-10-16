@@ -35,9 +35,9 @@ type Config struct {
 func Import(log *slog.Logger, warnings io.Writer, c Config, dir, path string, analyzers []docs.Analyzer) error {
 	source := c.File
 	if source == "" {
-		found, err := find(dir)
-		if err != nil {
-			return err
+		found, ok := Find(dir)
+		if !ok {
+			return errors.Errorf("no golangci-lint config in %q; name one, such as tsk config import .golangci.yml", dir)
 		}
 		source = found
 	}
@@ -77,14 +77,16 @@ func Import(log *slog.Logger, warnings io.Writer, c Config, dir, path string, an
 	return nil
 }
 
-func find(dir string) (string, error) {
+// Find returns the path of the golangci-lint config in dir, trying each name
+// golangci-lint accepts in turn.
+func Find(dir string) (path string, found bool) {
 	for _, name := range configNames() {
 		path := filepath.Join(dir, name)
 		if _, err := os.Stat(path); err == nil {
-			return path, nil
+			return path, true
 		}
 	}
-	return "", errors.Errorf("no golangci-lint config in %q; name one, such as tsk config import .golangci.yml", dir)
+	return "", false
 }
 
 // onlyImports reports whether a config file sets nothing but imports and

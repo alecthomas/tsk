@@ -128,6 +128,17 @@ func TestRunCache(t *testing.T) {
 	assert.Equal(t, 1, runs, "scripts changed")
 }
 
+func TestCount(t *testing.T) {
+	dir, err := filepath.Abs("testdata")
+	assert.NoError(t, err)
+	var stderr bytes.Buffer
+	config := lint.Config{Packages: []string{"./..."}, Context: -1, Test: true}
+	counts, err := lint.Count(t.Context(), []*analysis.Analyzer{funcsAnalyzer(), filesAnalyzer()}, config, dir, &stderr)
+	assert.NoError(t, err)
+	assert.Equal(t, map[string]int{"funcs": 3, "files": 2}, counts)
+	assert.Equal(t, "", stderr.String())
+}
+
 func TestRunLintsOnlyTestVariant(t *testing.T) {
 	dir, err := filepath.Abs("testdata")
 	assert.NoError(t, err)

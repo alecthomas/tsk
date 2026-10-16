@@ -25,6 +25,7 @@ import (
 	"github.com/alecthomas/tsk/internal/library"
 	"github.com/alecthomas/tsk/internal/lint"
 	"github.com/alecthomas/tsk/internal/logger"
+	"github.com/alecthomas/tsk/internal/onboard"
 	"github.com/alecthomas/tsk/internal/project"
 	"github.com/alecthomas/tsk/internal/scripttest"
 )
@@ -36,10 +37,11 @@ type cli struct {
 
 	Version kong.VersionFlag `help:"Print the version and exit."`
 
-	Lint  lintCommand  `cmd:"" default:"withargs" help:"Lint packages with every enabled analyzer."`
-	Test  testCommand  `cmd:"" help:"Run each analyzer against the testdata beside its scripts."`
-	Check checkCommand `cmd:"" help:"Type-check scripts and validate the config file."`
-	Init  initCommand  `cmd:"" help:"Write declarations and tsconfig.json for editors into the scripts directory."`
+	Lint   lintCommand   `cmd:"" default:"withargs" help:"Lint packages with every enabled analyzer."`
+	Test   testCommand   `cmd:"" help:"Run each analyzer against the testdata beside its scripts."`
+	Check  checkCommand  `cmd:"" help:"Type-check scripts and validate the config file."`
+	Init   initCommand   `cmd:"" help:"Set up tsk in a repository, with a config file and instructions for coding agents."`
+	Editor editorCommand `cmd:"" help:"Write declarations and tsconfig.json for editors into the scripts directory."`
 	// Named for the command because the embedded project.Config owns the
 	// Config field name.
 	ConfigCommand configCommand `cmd:"" name:"config" help:"Print a documented config file, or import one from golangci-lint."`
@@ -157,7 +159,13 @@ func (checkCommand) Run(ctx context.Context, log *slog.Logger, c *project.Config
 
 type initCommand struct{}
 
-func (initCommand) Run(ctx context.Context, c *project.Config, cache *library.Cache) error {
+func (initCommand) Run(ctx context.Context, log *slog.Logger, c *project.Config, cache *library.Cache) error {
+	return errors.WithStack(onboard.Init(ctx, log, *c, cache, os.Stdout))
+}
+
+type editorCommand struct{}
+
+func (editorCommand) Run(ctx context.Context, c *project.Config, cache *library.Cache) error {
 	return errors.WithStack(project.WriteEditorFiles(ctx, *c, cache))
 }
 

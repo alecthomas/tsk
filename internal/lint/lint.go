@@ -130,6 +130,32 @@ func runJSON(ctx context.Context, a Analysis, c Config, dir string, stdout, stde
 	return exitCode, errors.Wrap(graph.PrintJSON(stdout), "print JSON")
 }
 
+// Count lints c.Packages in dir without the cache, and returns the number of
+// findings from each analyzer. Load errors and analyzer failures go to stderr.
+func Count(ctx context.Context, analyzers []*analysis.Analyzer, c Config, dir string, stderr io.Writer) (map[string]int, error) {
+	initial, err := load(ctx, analyzers, c, dir)
+	if err != nil {
+		return nil, err
+	}
+	printErrors(stderr, initial)
+	graph, err := checker.Analyze(analyzers, lintedPackages(initial), nil)
+	if err != nil {
+		return nil, errors.Wrap(err, "analyze packages")
+	}
+	counts := map[string]int{}
+	for action := range graph.All() {
+		switch {
+		case action.Err != nil:
+			if !action.Package.IllTyped {
+				fmt.Fprintf(stderr, "%s: %v\n", action.Analyzer.Name, action.Err) //nolint:errcheck // Failures are best effort.
+			}
+		case action.IsRoot && len(action.Diagnostics) > 0:
+			counts[action.Analyzer.Name] += len(action.Diagnostics)
+		}
+	}
+	return counts, nil
+}
+
 // load loads c.Packages with syntax for analysis.
 func load(ctx context.Context, analyzers []*analysis.Analyzer, c Config, dir string) ([]*packages.Package, error) {
 	mode := packages.LoadSyntax | packages.NeedModule

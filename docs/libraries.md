@@ -167,9 +167,10 @@ This changes the loader in three places:
 - The TypeScript program resolves library paths the same way, through `paths`
   mappings onto each library's virtual directory.
 
-`tsk init` writes the same `paths` mappings into `tsconfig.json`, pointing at
+`tsk editor` writes the same `paths` mappings into `tsconfig.json`, pointing at
 the snapshots in the cache, so editors resolve library imports. Those paths are
-specific to the machine, and `tsk init` must be rerun after `tsk get`.
+specific to the machine, so `tsk init` ignores the file in git, and `tsk editor`
+must be rerun after `tsk get`.
 
 ## Security
 
