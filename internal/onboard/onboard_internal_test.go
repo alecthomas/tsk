@@ -80,16 +80,14 @@ func TestWriteInstructions(t *testing.T) {
 		name string
 		// setup prepares the repository root.
 		setup func(t *testing.T, root string)
-		// instructions and skill are the files written.
-		instructions string
-		skill        string
-		expected     map[string]string
+		// written lists the files written, in order.
+		written  []string
+		expected map[string]string
 	}{
 		{
-			name:         "CreatesAgentsFile",
-			setup:        func(*testing.T, string) {},
-			instructions: "AGENTS.md",
-			skill:        ".agents/skills/tsk/SKILL.md",
+			name:    "CreatesAgentsFile",
+			setup:   func(*testing.T, string) {},
+			written: []string{"AGENTS.md", ".agents/skills/tsk/SKILL.md"},
 			expected: map[string]string{
 				"AGENTS.md":                  section,
 				".agents/skills/tsk/SKILL.md": skill,
@@ -101,10 +99,24 @@ func TestWriteInstructions(t *testing.T) {
 				t.Helper()
 				assert.NoError(t, os.WriteFile(filepath.Join(root, "CLAUDE.md"), []byte("# Rules\n"), 0o600))
 			},
-			instructions: "CLAUDE.md",
-			skill:        ".claude/skills/tsk/SKILL.md",
+			written: []string{"CLAUDE.md", ".claude/skills/tsk/SKILL.md"},
 			expected: map[string]string{
 				"CLAUDE.md":                   "# Rules\n\n" + section,
+				".claude/skills/tsk/SKILL.md": skill,
+			},
+		},
+		{
+			name: "WritesBothFiles",
+			setup: func(t *testing.T, root string) {
+				t.Helper()
+				assert.NoError(t, os.WriteFile(filepath.Join(root, "AGENTS.md"), []byte("# Agents\n"), 0o600))
+				assert.NoError(t, os.WriteFile(filepath.Join(root, "CLAUDE.md"), []byte("# Claude\n"), 0o600))
+			},
+			written: []string{"AGENTS.md", ".agents/skills/tsk/SKILL.md", "CLAUDE.md", ".claude/skills/tsk/SKILL.md"},
+			expected: map[string]string{
+				"AGENTS.md":                   "# Agents\n\n" + section,
+				".agents/skills/tsk/SKILL.md": skill,
+				"CLAUDE.md":                   "# Claude\n\n" + section,
 				".claude/skills/tsk/SKILL.md": skill,
 			},
 		},
@@ -115,11 +127,11 @@ func TestWriteInstructions(t *testing.T) {
 				assert.NoError(t, os.WriteFile(filepath.Join(root, "AGENTS.md"), []byte("# Rules\n"), 0o600))
 				assert.NoError(t, os.Symlink("AGENTS.md", filepath.Join(root, "CLAUDE.md")))
 			},
-			instructions: "CLAUDE.md",
-			skill:        ".claude/skills/tsk/SKILL.md",
+			written: []string{"AGENTS.md", ".agents/skills/tsk/SKILL.md", ".claude/skills/tsk/SKILL.md"},
 			expected: map[string]string{
 				"AGENTS.md":                   "# Rules\n\n" + section,
 				"CLAUDE.md":                   "# Rules\n\n" + section,
+				".agents/skills/tsk/SKILL.md": skill,
 				".claude/skills/tsk/SKILL.md": skill,
 			},
 		},
@@ -128,11 +140,13 @@ func TestWriteInstructions(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			root := t.TempDir()
 			test.setup(t, root)
-			assert.NoError(t, writeInstructions(root, io.Discard))
-			// Running again must change nothing.
 			var out strings.Builder
 			assert.NoError(t, writeInstructions(root, &out))
-			assert.Equal(t, "keep "+test.instructions+"\nkeep "+test.skill+"\n", out.String())
+			assert.Equal(t, report("write", test.written), out.String())
+			// Running again must change nothing.
+			out.Reset()
+			assert.NoError(t, writeInstructions(root, &out))
+			assert.Equal(t, report("keep", test.written), out.String())
 			actual := map[string]string{}
 			for name := range test.expected {
 				data, err := os.ReadFile(filepath.Join(root, name))
@@ -142,6 +156,15 @@ func TestWriteInstructions(t *testing.T) {
 			assert.Equal(t, test.expected, actual)
 		})
 	}
+}
+
+// report returns the lines init prints when it does action to each file.
+func report(action string, files []string) string {
+	var lines strings.Builder
+	for _, file := range files {
+		lines.WriteString(action + " " + file + "\n")
+	}
+	return lines.String()
 }
 
 func TestIgnoreEditorFiles(t *testing.T) {

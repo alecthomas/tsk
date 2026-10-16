@@ -16,6 +16,7 @@ import (
 	"strings"
 
 	"github.com/alecthomas/errors"
+	. "github.com/alecthomas/types/optional"
 
 	"github.com/alecthomas/tsk/internal/config"
 	"github.com/alecthomas/tsk/internal/golangci"
@@ -150,33 +151,76 @@ func ignoreEditorFiles(root, dir string, out io.Writer) error {
 }
 
 // writeInstructions sets tsk's section of the agent instructions and writes the
-// tsk skill, for Claude Code if root has a CLAUDE.md, else for other agents.
+// tsk skill, for Claude Code if root has a CLAUDE.md, and for other agents if
+// it has an AGENTS.md or no CLAUDE.md.
 func writeInstructions(root string, out io.Writer) error {
-	instructions := filepath.Join(root, "AGENTS.md")
-	skillDir := filepath.Join(root, ".agents", "skills", "tsk")
-	// Claude Code ignores AGENTS.md when there is a CLAUDE.md.
-	if _, err := os.Lstat(filepath.Join(root, "CLAUDE.md")); err == nil {
-		instructions = filepath.Join(root, "CLAUDE.md")
-		skillDir = filepath.Join(root, ".claude", "skills", "tsk")
+	agents := filepath.Join(root, "AGENTS.md")
+	claude := filepath.Join(root, "CLAUDE.md")
+	agentsInfo, err := statOptional(agents)
+	if err != nil {
+		return err
 	}
-	text, err := readOptional(instructions)
+	claudeInfo, err := statOptional(claude)
+	if err != nil {
+		return err
+	}
+	// Claude Code ignores AGENTS.md when there is a CLAUDE.md, and other agents
+	// ignore CLAUDE.md, so each needs its own section and skill.
+	if agentsInfo.Ok() || !claudeInfo.Ok() {
+		if err := writeSection(root, agents, out); err != nil {
+			return err
+		}
+		if err := writeSkill(root, filepath.Join(root, ".agents"), out); err != nil {
+			return err
+		}
+	}
+	claudeFile, ok := claudeInfo.Get()
+	if !ok {
+		return nil
+	}
+	// A CLAUDE.md that links to AGENTS.md got its section through AGENTS.md.
+	if agentsFile, ok := agentsInfo.Get(); !ok || !os.SameFile(agentsFile, claudeFile) {
+		if err := writeSection(root, claude, out); err != nil {
+			return err
+		}
+	}
+	return writeSkill(root, filepath.Join(root, ".claude"), out)
+}
+
+// writeSection sets tsk's section of the agent instructions file at path.
+func writeSection(root, path string, out io.Writer) error {
+	text, err := readOptional(path)
 	if err != nil {
 		return err
 	}
 	updated, err := setSection(text, agentsSection)
 	if err != nil {
-		return errors.Wrapf(err, "%s", instructions)
+		return errors.Wrapf(err, "%s", path)
 	}
-	// Writing through a CLAUDE.md that links to AGENTS.md updates AGENTS.md.
-	if err := update(root, instructions, text, updated, out); err != nil {
-		return err
-	}
-	skillFile := filepath.Join(skillDir, "SKILL.md")
-	existing, err := readOptional(skillFile)
+	return update(root, path, text, updated, out)
+}
+
+// writeSkill writes the tsk skill into an agent's config directory.
+func writeSkill(root, agentDir string, out io.Writer) error {
+	path := filepath.Join(agentDir, "skills", "tsk", "SKILL.md")
+	existing, err := readOptional(path)
 	if err != nil {
 		return err
 	}
-	return update(root, skillFile, existing, skill, out)
+	return update(root, path, existing, skill, out)
+}
+
+// statOptional returns a file's info, following links, or None if it does not
+// exist.
+func statOptional(path string) (Option[os.FileInfo], error) {
+	info, err := os.Stat(path)
+	if errors.Is(err, os.ErrNotExist) {
+		return None[os.FileInfo](), nil
+	}
+	if err != nil {
+		return None[os.FileInfo](), errors.Wrapf(err, "stat %q", path)
+	}
+	return Some(info), nil
 }
 
 // readOptional returns a file's text, or "" if it does not exist.
