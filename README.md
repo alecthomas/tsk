@@ -7,6 +7,13 @@ mirror Go's own. Your project's linters live alongside its code in
 `.tsk/`, so there is no driver, plugin, or build step to maintain. Linters
 shared between projects come from git repositories as libraries.
 
+`tsk` is built to work with coding agents. `tsk init` instructs your agents
+to turn the conventions and architectural constraints you ask for into
+linters as you work. When you ask for a rule, the agent enables an existing
+linter or writes a new one in `.tsk/`. When you correct the agent, it offers
+to do the same. The rule is then enforced on every later change, by any
+author.
+
 ## Why
 
 Code review feedback is easy to give and easy to forget. A convention that
