@@ -85,10 +85,11 @@ func TestLockCheck(t *testing.T) {
 		imports []string
 		error   string
 	}{
-		{name: "Matches", imports: []string{"github.com/acme/a@v1//x"}},
-		{name: "Unlocked", imports: []string{"github.com/acme/a@v1//x", "github.com/acme/b@v1"}, error: `"github.com/acme/b@v1" is not locked`},
+		{name: "Matches", imports: []string{"github.com/acme/a//x"}},
+		{name: "MatchesVersion", imports: []string{"github.com/acme/a@v1//x"}},
 		{name: "VersionChanged", imports: []string{"github.com/acme/a@v2//x"}, error: `"github.com/acme/a@v2//x" is locked as "github.com/acme/a@v1//x"`},
-		{name: "RepositoryChanged", imports: []string{"github.com/acme/a/x@v1"}, error: `"github.com/acme/a/x@v1" is locked as "github.com/acme/a@v1//x"`},
+		{name: "Unlocked", imports: []string{"github.com/acme/a//x", "github.com/acme/b"}, error: `"github.com/acme/b" is not locked`},
+		{name: "RepositoryChanged", imports: []string{"github.com/acme/a/x"}, error: `"github.com/acme/a/x" is locked as "github.com/acme/a@v1//x"`},
 		{name: "Removed", imports: nil, error: `"github.com/acme/a@v1//x" is locked but not imported`},
 	}
 	for _, test := range tests {

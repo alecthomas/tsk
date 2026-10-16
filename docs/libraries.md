@@ -17,7 +17,8 @@ The core decisions:
    a set of modules to pick from. Its analyzers run, except those it leaves
    off by default. Unwanted analyzers are turned off with `disable`, and
    others turned on with `enable`.
-2. **Pins are commits.** The config names a version; the lock file records the
+2. **Pins are commits.** The config names libraries, with a version only if
+   the user fixes one; the lock file records each one's version and the
    commit it resolved to. A commit identifies the exact file tree, so no
    content hash is needed.
 3. **No transitive imports.** A library may not import another library, so
@@ -28,17 +29,23 @@ The core decisions:
 ## Declaring libraries
 
 `config.toml` gains an `imports` setting listing libraries as
-`<repository>@<version>[//<dir>]`. A version is a tag, a branch, or a commit.
-No import may lie within another, as `github.com/acme/linters@v1//strict` lies
-within `github.com/acme/linters@v1`, because both would hold the same scripts.
+`<repository>[@<version>][//<dir>]`. A version is a tag, a branch, or a
+commit. No import may lie within another, as `github.com/acme/linters//strict`
+lies within `github.com/acme/linters`, because both would hold the same
+scripts.
 
-The lock file, `lock.toml` beside `config.toml`, maps each import to the full
-commit hash its version resolved to. It is written only by `tsk get` and
-should be committed.
+The lock file, `lock.toml` beside `config.toml`, maps each import to its
+version and the full commit hash that version resolved to. It is written only
+by `tsk get` and should be committed.
+
+`tsk get` never writes a version into `imports`, so a version there is one the
+user chose by hand. It fixes the import at that version: `tsk get` keeps it,
+even when updating everything. An import without one follows the lock file,
+which `tsk get` updates.
 
 Every command that loads scripts checks that the lock file covers exactly the
-listed imports at their listed versions. A mismatch is an error asking the user
-to run `tsk get`, so editing `imports` by hand is safe.
+listed imports, at their versions where given. A mismatch is an error asking
+the user to run `tsk get`, so editing `imports` by hand is safe.
 
 ## Replacing imports
 
@@ -51,9 +58,9 @@ replace = { "github.com/acme/linters//strict" = "../linters/strict" }
 
 A replaced import loads from its directory, read on every run, under the same
 rules as any library. It is never fetched or locked, so `tsk get` skips it and
-the lock check ignores it, and an unpublished library works. Its import still
-needs a version, so removing the replacement and running `tsk get` pins it. A
-replacement must name a listed import, so a misspelt one is an error.
+the lock check ignores it, and an unpublished library works. Removing the
+replacement and running `tsk get` pins it. A replacement must
+name a listed import, so a misspelt one is an error.
 
 `replace` lives in `config.toml` and is committed, because a repository may
 need it permanently: this one imports its own `linters/` and replaces it, so
@@ -63,8 +70,8 @@ mistake.
 
 ## Import paths
 
-An import names a repository, a version, and an optional directory within the
-repository, after `//`, as in `github.com/acme/linters@v1.2.0//strict`. The
+An import names a repository, an optional version, and an optional directory
+within the repository, after `//`, as in `github.com/acme/linters@v1.2.0//strict`. The
 `//` separator follows Terraform and go-getter. Git refs cannot contain `//`,
 so a branch such as `feature/x` is never mistaken for the directory. Without a
 directory, the library is the repository's root.
@@ -84,14 +91,18 @@ project configures its analyzers.
 
 ## Commands
 
-- `tsk get [<repository>[@<version>][//<dir>]...]` adds or updates the named
-  libraries in `imports`, resolves every import against its repository,
-  rewrites the lock file, and downloads missing snapshots. Without arguments
-  it updates every import to its latest version and drops removed imports. An
-  import whose version was edited by hand keeps that version, with a notice,
-  so hand edits stay safe. An import without a version resolves to the highest semver tag, or
-  the default branch when there is none. Each changed library prints the analyzers the change adds or
-  removes, because an update can enable new linters.
+- `tsk get [<repository>[@<version>][//<dir>]...]` adds the named libraries
+  to `imports` without a version if missing, replacing any version written
+  there, and pins each to the named version, or to its latest without one.
+  Other imports keep their locked versions, and imports added or edited by
+  hand are pinned to their versions. Without arguments it updates every
+  import to its version in `imports`, or its latest without one, and reports
+  each import its version holds unchanged. Either way it
+  drops removed imports from the
+  lock file and downloads missing snapshots. The latest version is the highest
+  semver tag, or the default branch when there is none. Each changed library
+  prints the analyzers the change adds or removes, because an update can
+  enable new linters.
 - `tsk sync` downloads every locked snapshot missing from the cache, for CI
   and offline preparation.
 - `lint`, `test`, `check`, `config`, and `list` download a locked snapshot

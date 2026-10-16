@@ -99,7 +99,7 @@ func TestReplace(t *testing.T) {
 	t.Chdir(work)
 	c := project.Config{Dir: filepath.Join(work, ".tsk"), Config: filepath.Join(work, ".tsk", "config.toml")}
 	assert.NoError(t, os.MkdirAll(c.Dir, 0o750))
-	assert.NoError(t, os.WriteFile(c.Config, []byte(`imports = ["git.example.com/unpublished@v1//lib"]
+	assert.NoError(t, os.WriteFile(c.Config, []byte(`imports = ["git.example.com/unpublished//lib"]
 replace = { "git.example.com/unpublished//lib" = "../local" }
 `), 0o600))
 	assert.NoError(t, os.MkdirAll(filepath.Join(work, "local"), 0o750))
@@ -122,10 +122,10 @@ replace = { "git.example.com/unpublished//lib" = "../local" }
 	t.Chdir(filepath.Join(work, "sub"))
 	assert.Equal(t, map[string]string{"one": "../local", "two": "../.tsk/two.ts"}, sources(t, c, cache))
 
-	unversioned, err := library.ParseImport("git.example.com/unpublished//lib")
+	request, err := library.ParseImport("git.example.com/unpublished@v1//lib")
 	assert.NoError(t, err)
-	err = project.Get(t.Context(), logger, c, cache, []library.Import{unversioned}, &out)
-	assert.EqualError(t, err, `"git.example.com/unpublished//lib" is replaced, so its latest version cannot be resolved; give a version`)
+	err = project.Get(t.Context(), logger, c, cache, []library.Import{request}, &out)
+	assert.EqualError(t, err, `"git.example.com/unpublished//lib" is replaced, so it cannot be pinned`)
 }
 
 func TestGet(t *testing.T) {
@@ -160,7 +160,8 @@ func TestGet(t *testing.T) {
 	}
 
 	assert.Equal(t, "add github.com/acme/linters@v1.0.0//lib ("+first+")\n  + one\n", get("github.com/acme/linters@v1.0.0//lib"))
-	assert.Equal(t, "imports = [\n  \"github.com/acme/linters@v1.0.0//lib\",\n]\n\n# Kept.\ndisable = [\"two\"]\n", readConfig())
+	const written = "imports = [\n  \"github.com/acme/linters//lib\",\n]\n\n# Kept.\ndisable = [\"two\"]\n"
+	assert.Equal(t, written, readConfig(), "only the lock file records versions")
 	p, err := project.Load(t.Context(), logger, c, cache)
 	assert.NoError(t, err)
 	described, err := p.Describe(nil)
@@ -169,34 +170,36 @@ func TestGet(t *testing.T) {
 	assert.Equal(t, "github.com/acme/linters/lib@"+first, described[0].Source)
 
 	assert.Equal(t, "update github.com/acme/linters@v1.0.0//lib ("+first+") => v1.1.0 ("+second+")\n  + two\n", get(), "without requests, everything updates")
-	assert.Contains(t, readConfig(), `"github.com/acme/linters@v1.1.0//lib"`)
+	assert.Equal(t, written, readConfig())
 	assert.Equal(t, "", get(), "an unchanged lock reports nothing")
 
-	// A version edited by hand fails to load until tsk get pins it, which
-	// keeps it rather than updating it.
+	assert.Equal(t, "update github.com/acme/linters@v1.1.0//lib ("+second+") => v1.0.0 ("+first+")\n  - two\n", get("github.com/acme/linters@v1.0.0//lib"))
+	assert.Equal(t, "update github.com/acme/linters@v1.0.0//lib ("+first+") => v1.1.0 ("+second+")\n  + two\n", get("github.com/acme/linters//lib"))
+	assert.Equal(t, written, readConfig())
+
+	// A version written by hand fails to load until tsk get pins it, and
+	// updating everything keeps it.
 	assert.NoError(t, os.WriteFile(c.Config, []byte(`imports = ["github.com/acme/linters@v1.0.0//lib"]`), 0o600))
 	_, err = project.Load(t.Context(), logger, c, cache)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), `"github.com/acme/linters@v1.0.0//lib" is locked as "github.com/acme/linters@v1.1.0//lib"`)
-	assert.Equal(t, "keep github.com/acme/linters@v1.0.0//lib, edited by hand\n"+
-		"update github.com/acme/linters@v1.1.0//lib ("+second+") => v1.0.0 ("+first+")\n  - two\n", get())
+	assert.Equal(t, "update github.com/acme/linters@v1.1.0//lib ("+second+") => v1.0.0 ("+first+")\n  - two\n", get())
+	assert.Equal(t, "keep github.com/acme/linters@v1.0.0//lib ("+first+"), its version is set in the config\n", get())
 	assert.Equal(t, `imports = ["github.com/acme/linters@v1.0.0//lib"]`, readConfig())
 
-	assert.Equal(t, "update github.com/acme/linters@v1.0.0//lib ("+first+") => v1.1.0 ("+second+")\n  + two\n", get("github.com/acme/linters//lib"))
-
 	// A newly replaced import compares with its replacement, which must exist.
-	assert.NoError(t, os.WriteFile(c.Config, []byte(`imports = ["github.com/acme/linters@v1.1.0//lib"]
+	assert.NoError(t, os.WriteFile(c.Config, []byte(`imports = ["github.com/acme/linters//lib"]
 replace = { "github.com/acme/linters//lib" = "../local" }
 `), 0o600))
 	err = project.Get(t.Context(), logger, c, cache, nil, &bytes.Buffer{})
 	assert.Error(t, err)
-	assert.Contains(t, err.Error(), `replace "github.com/acme/linters@v1.1.0//lib": `)
+	assert.Contains(t, err.Error(), `replace "github.com/acme/linters//lib": `)
 	local := filepath.Join(work, "local")
 	assert.NoError(t, os.MkdirAll(local, 0o750))
 	assert.NoError(t, os.WriteFile(filepath.Join(local, "one.ts"), []byte(analyzerScript("one")), 0o600))
 	assert.NoError(t, os.WriteFile(filepath.Join(local, "three.ts"), []byte(analyzerScript("three")), 0o600))
-	assert.Equal(t, "replace github.com/acme/linters@v1.1.0//lib ("+second+") => "+local+"\n  + three\n  - two\n", get())
-	assert.NoError(t, os.WriteFile(c.Config, []byte(`imports = ["github.com/acme/linters@v1.1.0//lib"]`), 0o600))
+	assert.Equal(t, "replace github.com/acme/linters@v1.0.0//lib ("+first+") => "+local+"\n  + three\n", get())
+	assert.NoError(t, os.WriteFile(c.Config, []byte(`imports = ["github.com/acme/linters//lib"]`), 0o600))
 	assert.Equal(t, "add github.com/acme/linters@v1.1.0//lib ("+second+")\n  + one\n  + two\n", get())
 
 	// A removed import is dropped from the lock file.
@@ -205,4 +208,12 @@ replace = { "github.com/acme/linters//lib" = "../local" }
 	lock, err := library.LoadLock(c.LockFile())
 	assert.NoError(t, err)
 	assert.Equal(t, library.Lock{}, lock)
+
+	// An import added by hand fails to load until tsk get pins its latest
+	// version.
+	assert.NoError(t, os.WriteFile(c.Config, []byte(`imports = ["github.com/acme/linters//lib"]`), 0o600))
+	_, err = project.Load(t.Context(), logger, c, cache)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), `"github.com/acme/linters//lib" is not locked`)
+	assert.Equal(t, "add github.com/acme/linters@v1.1.0//lib ("+second+")\n  + one\n  + two\n", get())
 }

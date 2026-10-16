@@ -24,7 +24,9 @@ const FileName = "config.toml"
 // File is a parsed config file. Each top-level setting's help tag documents it
 // in tsk config.
 type File struct {
-	Imports []library.Import `toml:"imports" help:"Linter libraries whose analyzers run, as repository@version[//dir]. tsk get adds and updates them."`
+	// tsk get never writes versions here, so an import's version is one the
+	// user chose by hand, and tsk get keeps it.
+	Imports []library.Import `toml:"imports" help:"Linter libraries whose analyzers run, as repository[@version][//dir]. tsk get adds them and pins their versions in lock.toml; a version given here stays fixed."`
 	// Replace maps imports, as ParseImport formats them without a version, to
 	// directories relative to the config file.
 	Replace    map[string]string `toml:"replace" help:"Imports, as repository[//dir], to load from local directories instead, relative to this file. They are not fetched or locked."`
@@ -173,7 +175,7 @@ func without(names, removed []string) []string {
 // Replacement returns the directory replacing an import, as written,
 // relative to the config file.
 func (f File) Replacement(imported library.Import) (dir string, ok bool) {
-	dir, ok = f.Replace[replaceKey(imported)]
+	dir, ok = f.Replace[unversioned(imported).String()]
 	return dir, ok
 }
 
@@ -188,20 +190,19 @@ func (f File) checkReplace() error {
 		_, hasVersion := replaced.Version.Get()
 		switch {
 		case hasVersion:
-			return errors.Errorf("replace %q: write the import without a version, as %q", key, replaceKey(replaced))
+			return errors.Errorf("replace %q: write the import without a version, as %q", key, unversioned(replaced))
 		case f.Replace[key] == "":
 			return errors.Errorf("replace %q: empty directory", key)
-		case !slices.ContainsFunc(f.Imports, func(imported library.Import) bool { return replaceKey(imported) == key }):
+		case !slices.ContainsFunc(f.Imports, func(imported library.Import) bool { return unversioned(imported).String() == key }):
 			return errors.Errorf("replace %q: not imported", key)
 		}
 	}
 	return nil
 }
 
-// replaceKey formats an import without its version.
-func replaceKey(imported library.Import) string {
+func unversioned(imported library.Import) library.Import {
 	imported.Version = None[string]()
-	return imported.String()
+	return imported
 }
 
 // Load parses a config file. A missing file is an empty config.
@@ -238,11 +239,6 @@ func Parse(name, text string) (File, error) {
 			return File{}, errors.Errorf("%s: %q must be a table named after an analyzer", name, key)
 		}
 		file.Tables[key] = table
-	}
-	for _, imported := range file.Imports {
-		if _, ok := imported.Version.Get(); !ok {
-			return File{}, errors.Errorf("%s: import %q needs a version; tsk get adds the latest", name, imported)
-		}
 	}
 	if err := library.CheckImports(file.Imports); err != nil {
 		return File{}, errors.Wrapf(err, "%s", name)

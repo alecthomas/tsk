@@ -56,7 +56,7 @@ func TestTOML(t *testing.T) {
 	}
 	settings := []string{
 		``,
-		`# Linter libraries whose analyzers run, as repository@version[//dir]. tsk get adds and updates them.`,
+		`# Linter libraries whose analyzers run, as repository[@version][//dir]. tsk get adds them and pins their versions in lock.toml; a version given here stays fixed.`,
 		`imports = []`,
 		``,
 		`# Imports, as repository[//dir], to load from local directories instead, relative to this file. They are not fetched or locked.`,
