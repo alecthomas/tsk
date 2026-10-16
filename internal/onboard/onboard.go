@@ -3,13 +3,11 @@
 package onboard
 
 import (
-	"cmp"
 	"context"
 	_ "embed"
 	"fmt"
 	"io"
 	"log/slog"
-	"maps"
 	"os"
 	"path/filepath"
 	"slices"
@@ -21,7 +19,6 @@ import (
 	"github.com/alecthomas/tsk/internal/config"
 	"github.com/alecthomas/tsk/internal/golangci"
 	"github.com/alecthomas/tsk/internal/library"
-	"github.com/alecthomas/tsk/internal/lint"
 	"github.com/alecthomas/tsk/internal/project"
 )
 
@@ -44,8 +41,8 @@ const (
 	endMarker   = "<!-- END tsk -->"
 )
 
-// Init sets up the repository holding the scripts directory, then reports how
-// many findings each linter has. c must be resolved.
+// Init sets up the repository holding the scripts directory. c must be
+// resolved.
 func Init(ctx context.Context, logger *slog.Logger, c project.Config, cache *library.Cache, out io.Writer) error {
 	root := filepath.Dir(c.Dir)
 	if err := writeConfig(ctx, logger, c, cache, root, out); err != nil {
@@ -54,10 +51,7 @@ func Init(ctx context.Context, logger *slog.Logger, c project.Config, cache *lib
 	if err := ignoreEditorFiles(root, c.Dir, out); err != nil {
 		return err
 	}
-	if err := writeInstructions(root, out); err != nil {
-		return err
-	}
-	return countFindings(ctx, logger, c, cache, root, out)
+	return writeInstructions(root, out)
 }
 
 // writeConfig writes and pins the config file, converting any golangci-lint
@@ -266,36 +260,6 @@ func setSection(text, section string) (string, error) {
 	}
 	rest := strings.TrimPrefix(text[begin+end+len(endMarker):], "\n")
 	return text[:begin] + block + rest, nil
-}
-
-// countFindings lints the repository with the enabled linters, and reports how
-// many findings each has, so noisy ones can be disabled or fixed first.
-func countFindings(ctx context.Context, logger *slog.Logger, c project.Config, cache *library.Cache, root string, out io.Writer) error {
-	p, err := project.Load(ctx, logger, c, cache)
-	if err != nil {
-		return errors.WithStack(err)
-	}
-	analyzers, err := p.Analyzers()
-	if err != nil {
-		return errors.WithStack(err)
-	}
-	counts, err := lint.Count(ctx, analyzers, lint.Config{Packages: []string{"./..."}, Test: true}, root, out)
-	if err != nil {
-		return errors.WithStack(err)
-	}
-	if len(counts) == 0 {
-		fmt.Fprintln(out, "no findings") //nolint:errcheck // Output is best effort.
-		return nil
-	}
-	names := slices.SortedFunc(maps.Keys(counts), func(a, b string) int {
-		return cmp.Or(cmp.Compare(counts[b], counts[a]), cmp.Compare(a, b))
-	})
-	fmt.Fprintln(out, "findings by linter:") //nolint:errcheck // Output is best effort.
-	for _, name := range names {
-		fmt.Fprintf(out, "%8d %s\n", counts[name], name) //nolint:errcheck // Output is best effort.
-	}
-	fmt.Fprintln(out, "run tsk to see them, and disable linters you do not want in "+relative(root, c.Config)) //nolint:errcheck // Output is best effort.
-	return nil
 }
 
 // relative returns path relative to root, or path itself if it is outside root.
