@@ -280,7 +280,7 @@ the config, so remove one meant only for your machine before you commit.
 
 ### Suppressing findings
 
-Suppress findings with a `//nolint:<linter>[,<linter>...] [<reason>]` comment,
+Suppress findings with a `//nolint:<linter>[,<linter>...] [// <reason>]` comment,
 as with golangci-lint. At the end of a line it covers that line. On its own
 line it also covers the declaration or statement below it, when that starts in
 the same column. A bare `//nolint` covers every linter, and a group's name

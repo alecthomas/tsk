@@ -35,7 +35,7 @@ func d() int {
 }
 
 func e() int {
-	return 1 //nolint:bar,foo The reason.
+	return 1 //nolint:bar,foo // The reason.
 }
 
 func f() int {
@@ -45,6 +45,9 @@ func f() int {
 }
 
 var g = 1 //nolintfoo
+var h = 1 //nolint:foo The reason.
+var i = 1 //nolint:bar, foo // Spaces are allowed.
+var j = 1 //nolint // Every analyzer.
 `
 
 // Reports a finding for analyzer foo at the start of every line, and returns
@@ -73,5 +76,6 @@ func TestReporter(t *testing.T) {
 		23, 25, 26, // e: foo is listed.
 		27, 29, 30, 31, 32, // f: the comment is not in the statement's column.
 		33, // g: not a directive.
+		34, // h: a reason must follow //.
 	}, kept)
 }

@@ -5,10 +5,10 @@ package nolint
 import (
 	"go/ast"
 	"go/token"
+	"regexp"
 	"slices"
 	"strings"
 	"sync"
-	"unicode"
 
 	"golang.org/x/tools/go/analysis"
 )
@@ -102,22 +102,25 @@ func extend(fset *token.FileSet, file *ast.File, directives []directive) {
 	}
 }
 
+// directivePattern matches //nolint[:a,b] [// reason], as golangci-lint
+// writes it, capturing the analyzer names.
+var directivePattern = regexp.MustCompile(`^//nolint(?::\s*([\w-]+(?:\s*,\s*[\w-]+)*))?\s*(?://.*)?$`)
+
 // parse reads the analyzers a //nolint comment names, separated by commas.
-// Naming none suppresses every analyzer. A reason may follow after a space.
+// Naming none suppresses every analyzer.
 func parse(text string) (analyzers []string, ok bool) {
-	rest, ok := strings.CutPrefix(text, "//nolint")
-	if !ok {
+	if !strings.HasPrefix(text, "//nolint") {
 		return nil, false
 	}
-	if end := strings.IndexFunc(rest, unicode.IsSpace); end >= 0 {
-		rest = rest[:end]
+	match := directivePattern.FindStringSubmatch(text)
+	if match == nil {
+		return nil, false
 	}
-	if rest == "" {
+	if match[1] == "" {
 		return nil, true
 	}
-	names, ok := strings.CutPrefix(rest, ":")
-	if !ok || names == "" {
-		return nil, false
+	for name := range strings.SplitSeq(match[1], ",") {
+		analyzers = append(analyzers, strings.TrimSpace(name))
 	}
-	return strings.Split(names, ","), true
+	return analyzers, true
 }

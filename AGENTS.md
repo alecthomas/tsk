@@ -97,7 +97,7 @@ This repository enforces its conventions with `tsk` linters, configured in
 them.
 
 - Run `tsk` to lint, and fix its findings before finishing a change. Keep an
-  intentional finding with a `//nolint:<linter> <reason>` comment.
+  intentional finding with a `//nolint:<linter> // <reason>` comment.
 - When the user asks you to fix a kind of issue across the codebase, check
   `tsk list` for a linter that reports it. If one exists and is not enabled,
   suggest enabling it so the issue stays fixed.

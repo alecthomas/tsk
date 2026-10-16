@@ -65,11 +65,11 @@ func empty() []int {
 }
 
 func allowed() *value {
-	return nil //nolint:optionalnil The fixture needs a kept nil.
+	return nil //nolint:optionalnil // The fixture needs a kept nil.
 }
 
 func allowedAbove() *value {
-	//nolint:optionalnil The fixture needs a kept nil.
+	//nolint:optionalnil // The fixture needs a kept nil.
 	return nil
 }
 

@@ -31,7 +31,7 @@ reference is the README at https://github.com/alecthomas/tsk.
 4. Set options in a table named after the linter, using `tsk config <linter>`
    for the names and defaults. Option names are kebab-case.
 5. Fix the existing findings, or keep intentional ones with
-   `//nolint:<linter> <reason>`. Use `--fix` where the linter offers fixes.
+   `//nolint:<linter> // <reason>`. Use `--fix` where the linter offers fixes.
 
 Narrow a linter with an `[[exclude]]` rule rather than disabling it. A rule
 names `linters` and any of `path`, `path-except`, `text`, and `source`, each a
@@ -55,7 +55,7 @@ Write one when no existing linter or configuration enforces the rule.
    comment, and include code the linter must accept.
 4. Run `tsk check`, then `tsk test --enable <name>`, until both pass.
 5. Run `tsk` and fix existing violations in the same change, or keep
-   intentional ones with `//nolint:<name> <reason>`.
+   intentional ones with `//nolint:<name> // <reason>`.
 6. Note in the repository's agent instructions that the linter enforces the
    rule.
 
