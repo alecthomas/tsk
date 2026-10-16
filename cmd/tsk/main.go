@@ -8,6 +8,7 @@ import (
 	"log/slog"
 	"os"
 	"os/exec"
+	"runtime/debug"
 	"slices"
 	"strconv"
 	"strings"
@@ -32,6 +33,8 @@ type cli struct {
 	project.Config `embed:""`
 	Library        library.Config `embed:""`
 	Log            logger.Config  `embed:""`
+
+	Version kong.VersionFlag `help:"Print the version and exit."`
 
 	Lint  lintCommand  `cmd:"" default:"withargs" help:"Lint packages with every enabled analyzer."`
 	Test  testCommand  `cmd:"" help:"Run each analyzer against the testdata beside its scripts."`
@@ -237,11 +240,20 @@ func (syncCommand) Run(ctx context.Context, c *project.Config, cache *library.Ca
 	return errors.WithStack(project.Sync(ctx, *c, cache))
 }
 
+// version is the main module's version, which Go stamps from the checkout's
+// tag at build time, or from the requested version with go install.
+func version() string {
+	if info, ok := debug.ReadBuildInfo(); ok {
+		return info.Main.Version
+	}
+	return "(devel)"
+}
+
 func main() {
 	ctx := context.Background()
 	var config cli
 	kctx := kong.Parse(&config, kong.Description("A go/analysis harness for linters written in TypeScript."),
-		kong.BindTo(ctx, (*context.Context)(nil)))
+		kong.BindTo(ctx, (*context.Context)(nil)), kong.Vars{"version": version()})
 	home := None[string]()
 	if dir, err := os.UserHomeDir(); err == nil {
 		home = Some(dir)
