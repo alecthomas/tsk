@@ -50,12 +50,18 @@ func Get(ctx context.Context, logger *slog.Logger, c Config, cache *library.Cach
 		return errors.WithStack(err)
 	}
 	var lock library.Lock
+	replaced := map[string]string{}
 	for i, imported := range imports {
 		// A replaced import loads from its directory, so it has nothing to pin.
-		if _, replaced := file.Replacement(imported); replaced {
+		if replacement, isReplaced := file.Replacement(imported); isReplaced {
 			if _, hasVersion := imported.Version.Get(); !hasVersion {
 				return errors.Errorf("%q is replaced, so its latest version cannot be resolved; give a version", imported)
 			}
+			dir, err := replacementDir(c, replacement)
+			if err != nil {
+				return errors.Wrapf(err, "replace %q", imported)
+			}
+			replaced[imported.Path()] = dir
 			continue
 		}
 		locked, err := pin(ctx, cache, previous, imported, requested(requests, imported.Path()), len(requests) == 0, out)
@@ -65,7 +71,7 @@ func Get(ctx context.Context, logger *slog.Logger, c Config, cache *library.Cach
 		imports[i].Version = Some(locked.Version)
 		lock.Imports = append(lock.Imports, locked)
 	}
-	if err := reportChanges(ctx, logger, cache, previous, lock, out); err != nil {
+	if err := reportChanges(ctx, logger, cache, previous, lock, replaced, out); err != nil {
 		return err
 	}
 	if !slices.Equal(imports, file.Imports) {
@@ -108,8 +114,10 @@ func pin(ctx context.Context, cache *library.Cache, previous library.Lock, impor
 }
 
 // reportChanges writes each library whose commit changed between the lock
-// files, with the analyzers it adds and removes.
-func reportChanges(ctx context.Context, logger *slog.Logger, cache *library.Cache, previous, current library.Lock, out io.Writer) error {
+// files, with the analyzers it adds and removes. A library that leaves the
+// lock file because it is now replaced compares with its replacement in
+// replaced, keyed by path, so it does not read as removed.
+func reportChanges(ctx context.Context, logger *slog.Logger, cache *library.Cache, previous, current library.Lock, replaced map[string]string, out io.Writer) error {
 	paths := make([]string, 0, len(current.Imports)+len(previous.Imports))
 	for _, locked := range slices.Concat(current.Imports, previous.Imports) {
 		if !slices.Contains(paths, locked.Path()) {
@@ -119,6 +127,7 @@ func reportChanges(ctx context.Context, logger *slog.Logger, cache *library.Cach
 	for _, path := range paths {
 		old, wasLocked := previous.Find(path)
 		locked, isLocked := current.Find(path)
+		dir, isReplaced := replaced[path]
 		var before, after []string
 		var err error
 		switch {
@@ -128,18 +137,24 @@ func reportChanges(ctx context.Context, logger *slog.Logger, cache *library.Cach
 			fmt.Fprintf(out, "update %s => %s\n", old, locked.Version+" ("+locked.Short()+")") //nolint:errcheck // Output is best effort.
 		case isLocked:
 			fmt.Fprintf(out, "add %s\n", locked) //nolint:errcheck // Output is best effort.
+		case isReplaced:
+			fmt.Fprintf(out, "replace %s => %s\n", old, dir) //nolint:errcheck // Output is best effort.
 		default:
 			fmt.Fprintf(out, "remove %s\n", old) //nolint:errcheck // Output is best effort.
 		}
 		if wasLocked {
-			if before, err = analyzerNames(ctx, logger, cache, old); err != nil {
+			if before, err = lockedAnalyzerNames(ctx, logger, cache, old); err != nil {
 				return err
 			}
 		}
-		if isLocked {
-			if after, err = analyzerNames(ctx, logger, cache, locked); err != nil {
-				return err
-			}
+		switch {
+		case isLocked:
+			after, err = lockedAnalyzerNames(ctx, logger, cache, locked)
+		case isReplaced:
+			after, err = analyzerNames(ctx, logger, path, dir)
+		}
+		if err != nil {
+			return err
 		}
 		for _, name := range after {
 			if !slices.Contains(before, name) {
@@ -155,15 +170,22 @@ func reportChanges(ctx context.Context, logger *slog.Logger, cache *library.Cach
 	return nil
 }
 
-// analyzerNames loads a library on its own and returns its analyzers' names.
-func analyzerNames(ctx context.Context, logger *slog.Logger, cache *library.Cache, locked library.Locked) ([]string, error) {
+// lockedAnalyzerNames returns the analyzers' names of a locked library.
+func lockedAnalyzerNames(ctx context.Context, logger *slog.Logger, cache *library.Cache, locked library.Locked) ([]string, error) {
 	dir, err := cache.Snapshot(ctx, locked)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
-	e, err := engine.Load(ctx, logger, []compile.Source{{Name: locked.Path(), FS: os.DirFS(dir), Library: true}})
+	names, err := analyzerNames(ctx, logger, locked.Path(), dir)
+	return names, errors.Wrapf(err, "load %q", locked)
+}
+
+// analyzerNames loads the library at path from dir on its own and returns
+// its analyzers' names.
+func analyzerNames(ctx context.Context, logger *slog.Logger, path, dir string) ([]string, error) {
+	e, err := engine.Load(ctx, logger, []compile.Source{{Name: path, FS: os.DirFS(dir), Library: true}})
 	if err != nil {
-		return nil, errors.Wrapf(err, "load %q", locked)
+		return nil, errors.WithStack(err)
 	}
 	return e.Names(), nil
 }

@@ -184,6 +184,21 @@ func TestGet(t *testing.T) {
 
 	assert.Equal(t, "update github.com/acme/linters@v1.0.0//lib ("+first+") => v1.1.0 ("+second+")\n  + two\n", get("github.com/acme/linters//lib"))
 
+	// A newly replaced import compares with its replacement, which must exist.
+	assert.NoError(t, os.WriteFile(c.Config, []byte(`imports = ["github.com/acme/linters@v1.1.0//lib"]
+replace = { "github.com/acme/linters//lib" = "../local" }
+`), 0o600))
+	err = project.Get(t.Context(), logger, c, cache, nil, &bytes.Buffer{})
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), `replace "github.com/acme/linters@v1.1.0//lib": `)
+	local := filepath.Join(work, "local")
+	assert.NoError(t, os.MkdirAll(local, 0o750))
+	assert.NoError(t, os.WriteFile(filepath.Join(local, "one.ts"), []byte(analyzerScript("one")), 0o600))
+	assert.NoError(t, os.WriteFile(filepath.Join(local, "three.ts"), []byte(analyzerScript("three")), 0o600))
+	assert.Equal(t, "replace github.com/acme/linters@v1.1.0//lib ("+second+") => "+local+"\n  + three\n  - two\n", get())
+	assert.NoError(t, os.WriteFile(c.Config, []byte(`imports = ["github.com/acme/linters@v1.1.0//lib"]`), 0o600))
+	assert.Equal(t, "add github.com/acme/linters@v1.1.0//lib ("+second+")\n  + one\n  + two\n", get())
+
 	// A removed import is dropped from the lock file.
 	assert.NoError(t, os.WriteFile(c.Config, nil, 0o600))
 	assert.Equal(t, "remove github.com/acme/linters@v1.1.0//lib ("+second+")\n  - one\n  - two\n", get())
