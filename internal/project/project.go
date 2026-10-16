@@ -194,11 +194,11 @@ func pinned(file config.File) []library.Import {
 	return imports
 }
 
-// replacementDir resolves a replacement relative to the config file, and
-// checks that it is a directory.
+// replacementDir resolves a replacement relative to the project root, the
+// directory holding the scripts directory, and checks that it is a directory.
 func replacementDir(c Config, dir string) (string, error) {
 	if !filepath.IsAbs(dir) {
-		dir = filepath.Join(filepath.Dir(c.Config), dir)
+		dir = filepath.Join(filepath.Dir(c.Dir), dir)
 	}
 	info, err := os.Stat(dir)
 	if err != nil {

@@ -29,7 +29,7 @@ type File struct {
 	Imports []library.Import `toml:"imports" help:"Linter libraries whose analyzers run, as repository[@version][//dir]. tsk get adds them and pins their versions in lock.toml; a version given here stays fixed."`
 	// Replace maps imports, as ParseImport formats them without a version, to
 	// directories relative to the config file.
-	Replace    map[string]string `toml:"replace" help:"Imports, as repository[//dir], to load from local directories instead, relative to this file. They are not fetched or locked."`
+	Replace    map[string]string `toml:"replace" help:"Imports, as repository[//dir], to load from local directories instead, relative to the directory holding the scripts directory. They are not fetched or locked."`
 	Disable    []string          `toml:"disable" help:"Analyzers and groups that do not run. Naming an analyzer wins over naming its group."`
 	DisableAll bool              `toml:"disable-all" help:"Turn every analyzer off except those enable names."`
 	EnableAll  bool              `toml:"enable-all" help:"Turn every analyzer on except those disable names and those off by default."`

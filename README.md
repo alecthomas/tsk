@@ -280,7 +280,7 @@ replace = { "github.com/acme/linters//strict" = "../linters/strict" }
 ```
 
 The key is the import without its version, and the directory is relative to
-`config.toml`. A replaced library loads from that directory on every run, and
+the project root, the directory holding `.tsk`. A replaced library loads from that directory on every run, and
 is never fetched or locked. Its import still needs a version, which `tsk get`
 pins once you remove the replacement. `replace` is committed with the rest of
 the config, so remove one meant only for your machine before you commit.

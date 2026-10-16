@@ -100,7 +100,7 @@ func TestReplace(t *testing.T) {
 	c := project.Config{Dir: filepath.Join(work, ".tsk"), Config: filepath.Join(work, ".tsk", "config.toml")}
 	assert.NoError(t, os.MkdirAll(c.Dir, 0o750))
 	assert.NoError(t, os.WriteFile(c.Config, []byte(`imports = ["git.example.com/unpublished//lib"]
-replace = { "git.example.com/unpublished//lib" = "../local" }
+replace = { "git.example.com/unpublished//lib" = "local" }
 `), 0o600))
 	assert.NoError(t, os.MkdirAll(filepath.Join(work, "local"), 0o750))
 	assert.NoError(t, os.WriteFile(filepath.Join(work, "local", "one.ts"), []byte(analyzerScript("one")), 0o600))
@@ -189,7 +189,7 @@ func TestGet(t *testing.T) {
 
 	// A newly replaced import compares with its replacement, which must exist.
 	assert.NoError(t, os.WriteFile(c.Config, []byte(`imports = ["github.com/acme/linters//lib"]
-replace = { "github.com/acme/linters//lib" = "../local" }
+replace = { "github.com/acme/linters//lib" = "local" }
 `), 0o600))
 	err = project.Get(t.Context(), logger, c, cache, nil, &bytes.Buffer{})
 	assert.Error(t, err)

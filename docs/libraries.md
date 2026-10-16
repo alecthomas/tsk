@@ -50,7 +50,8 @@ the user to run `tsk get`, so editing `imports` by hand is safe.
 ## Replacing imports
 
 A `replace` setting maps imports, written without a version, to local
-directories relative to `config.toml`, as Go's `replace` directive does:
+directories relative to the project root, the directory holding `.tsk`, much
+as Go's `replace` directive does:
 
 ```toml
 replace = { "github.com/acme/linters//strict" = "../linters/strict" }
