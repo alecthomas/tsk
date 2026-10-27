@@ -48,7 +48,6 @@ function check(lit: ast.BasicLit, failures: Failure[]): void {
 export default defineAnalyzer({
   name: "unsecure_url_scheme",
   doc: "Checks for usage of potentially unsecure URL schemes.",
-  url: "https://github.com/mgechev/revive/blob/v1.17.0/RULES_DESCRIPTIONS.md#unsecure-url-scheme",
   group: "revive",
   enabledByDefault: false,
   runDespiteErrors: true,

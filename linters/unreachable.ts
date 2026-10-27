@@ -11,7 +11,6 @@ export default defineAnalyzer({
 The unreachable analyzer finds statements that execution can never reach
 because they are preceded by a return statement, a call to panic, an
 infinite loop, or similar constructs.`,
-  url: "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/unreachable",
   group: "govet",
   requires: [inspect],
   runDespiteErrors: true,

@@ -86,7 +86,6 @@ function isBranchingCall(stmt: ast.ExprStmt): boolean {
 export default defineAnalyzer({
   name: "unreachable_code",
   doc: "Warns on unreachable code",
-  url: "https://github.com/mgechev/revive/blob/v1.17.0/RULES_DESCRIPTIONS.md#unreachable-code",
   group: "revive",
   runDespiteErrors: true,
   run(pass) {

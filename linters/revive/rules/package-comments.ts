@@ -83,7 +83,6 @@ function baseName(path: string): string {
 export default defineAnalyzer({
   name: "package_comments",
   doc: "Package commenting conventions.",
-  url: "https://github.com/mgechev/revive/blob/v1.17.0/RULES_DESCRIPTIONS.md#package-comments",
   group: "revive",
   runDespiteErrors: true,
   run(pass) {

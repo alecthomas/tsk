@@ -36,7 +36,6 @@ function apply(file: File): Failure[] {
 export default defineAnalyzer({
   name: "marshal_receiver",
   doc: "Checks receiver type consistency for common marshal/unmarshal methods.",
-  url: "https://github.com/mgechev/revive/blob/v1.17.0/RULES_DESCRIPTIONS.md#marshal-receiver",
   group: "revive",
   enabledByDefault: false,
   runDespiteErrors: true,

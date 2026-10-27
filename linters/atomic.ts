@@ -15,7 +15,6 @@ The atomic checker looks for assignment statements of the form:
 	x = atomic.AddUint64(&x, 1)
 
 which are not atomic.`,
-  url: "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/atomic",
   group: "govet",
   requires: [inspect],
   runDespiteErrors: true,

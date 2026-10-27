@@ -78,7 +78,6 @@ function importName(imp: ast.ImportSpec): string {
 export default defineAnalyzer({
   name: "import_shadowing",
   doc: "Spots identifiers that shadow an import",
-  url: "https://github.com/mgechev/revive/blob/v1.17.0/RULES_DESCRIPTIONS.md#import-shadowing",
   group: "revive",
   enabledByDefault: false,
   runDespiteErrors: true,

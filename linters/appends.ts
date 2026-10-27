@@ -16,7 +16,6 @@ no values to be appended to the slice.
 
 Such calls are always no-ops and often indicate an
 underlying mistake.`,
-  url: "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/appends",
   group: "govet",
   requires: [inspect],
   run(pass) {

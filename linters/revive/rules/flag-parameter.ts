@@ -49,7 +49,6 @@ function apply(file: File): Failure[] {
 export default defineAnalyzer({
   name: "flag_parameter",
   doc: "Warns on boolean parameters that create a control coupling",
-  url: "https://github.com/mgechev/revive/blob/v1.17.0/RULES_DESCRIPTIONS.md#flag-parameter",
   group: "revive",
   enabledByDefault: false,
   runDespiteErrors: true,

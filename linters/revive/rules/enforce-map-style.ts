@@ -55,7 +55,6 @@ function isMapType(v: ast.Expr | null): boolean {
 export default defineAnalyzer<Options>({
   name: "enforce_map_style",
   doc: "Enforces consistent usage of `make(map[type]type)` or `map[type]type{}` for map initialization. Does not affect `make(map[type]type, size)` constructions.",
-  url: "https://github.com/mgechev/revive/blob/v1.17.0/RULES_DESCRIPTIONS.md#enforce-map-style",
   group: "revive",
   enabledByDefault: false,
   runDespiteErrors: true,

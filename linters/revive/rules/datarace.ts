@@ -78,7 +78,6 @@ function raceVisitor(failures: Failure[], returnIDs: Set<NodeUID>, rangeIDs: Set
 export default defineAnalyzer({
   name: "datarace",
   doc: "Spots potential dataraces",
-  url: "https://github.com/mgechev/revive/blob/v1.17.0/RULES_DESCRIPTIONS.md#datarace",
   group: "revive",
   enabledByDefault: false,
   runDespiteErrors: true,

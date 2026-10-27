@@ -21,7 +21,6 @@ name but different signatures. Example:
 
 The Read method in v has a different signature than the Read method in
 io.Reader, so this assertion cannot succeed.`,
-  url: "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/ifaceassert",
   group: "govet",
   requires: [inspect],
   run(pass) {

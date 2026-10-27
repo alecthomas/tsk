@@ -841,7 +841,6 @@ const validateLHS = new Set([
 export default defineAnalyzer<Options>({
   name: "struct_tag",
   doc: "Checks common struct tags like `json`, `xml`, `yaml`",
-  url: "https://github.com/mgechev/revive/blob/v1.17.0/RULES_DESCRIPTIONS.md#struct-tag",
   group: "revive",
   enabledByDefault: false,
   runDespiteErrors: true,

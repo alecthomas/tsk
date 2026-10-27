@@ -36,7 +36,6 @@ export function create(options: DeepReadonly<Options>): Rule {
 export default defineAnalyzer<Options>({
   name: "banned_characters",
   doc: "Checks banned characters in identifiers",
-  url: "https://github.com/mgechev/revive/blob/v1.17.0/RULES_DESCRIPTIONS.md#banned-characters",
   group: "revive",
   enabledByDefault: false,
   runDespiteErrors: true,

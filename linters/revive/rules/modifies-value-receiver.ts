@@ -88,7 +88,6 @@ function receiverModifications(receiverName: string, body: ast.BlockStmt | null)
 export default defineAnalyzer({
   name: "modifies_value_receiver",
   doc: "Warns on assignments to value-passed method receivers",
-  url: "https://github.com/mgechev/revive/blob/v1.17.0/RULES_DESCRIPTIONS.md#modifies-value-receiver",
   group: "revive",
   enabledByDefault: false,
   runDespiteErrors: true,

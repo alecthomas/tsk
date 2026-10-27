@@ -23,7 +23,6 @@ determines whether the response is valid:
 
 This checker helps uncover latent nil dereference bugs by reporting a
 diagnostic for such mistakes.`,
-  url: "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/httpresponse",
   group: "govet",
   requires: [inspect],
   run(pass) {

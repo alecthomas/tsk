@@ -10,7 +10,6 @@ export default defineAnalyzer({
   doc: `check for useless comparisons between functions and nil
 
 A useless comparison is one like f == nil as opposed to f() == nil.`,
-  url: "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/nilfunc",
   group: "govet",
   requires: [inspect],
   run(pass) {

@@ -20,20 +20,24 @@ import (
 
 // Analyzer documents one analyzer.
 type Analyzer struct {
+	// These fields come from the analyzer's definition.
+
 	Name string
 	Doc  string
-	URL  string
-	// Source names where the analyzer is defined, such as a library or a
-	// script path.
-	Source string
 	// Group names the analyzer's group, or is empty.
 	Group string
 	// EnabledByDefault is false for an analyzer that runs only when enable
 	// names it, not its group.
 	EnabledByDefault bool
+	Config           Option[Config]
+
+	// tsk sets these fields: the definition cannot.
+
+	// Source names where the analyzer is loaded from, such as a library or a
+	// script path.
+	Source string
 	// Enabled is whether the project's config runs the analyzer.
 	Enabled bool
-	Config  Option[Config]
 }
 
 // Config is an analyzer's config type and its defaults, decoded from JSON.
@@ -75,9 +79,6 @@ func TOML(w io.Writer, analyzers []Analyzer, options Options) error {
 		if analyzer.Doc != "" {
 			r.line(r.dim("#"))
 			r.indented("# ", analyzer.Doc, r.dim)
-		}
-		if analyzer.URL != "" {
-			r.line(r.dim("# " + analyzer.URL))
 		}
 		object, ok := configObject(analyzer)
 		if !ok {

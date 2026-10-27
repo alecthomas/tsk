@@ -71,7 +71,6 @@ function roundHalfEven(n: number): number {
 export default defineAnalyzer<Options>({
   name: "comments_density",
   doc: "Enforces a minimum comment / code relation",
-  url: "https://github.com/mgechev/revive/blob/v1.17.0/RULES_DESCRIPTIONS.md#comments-density",
   group: "revive",
   enabledByDefault: false,
   runDespiteErrors: true,

@@ -29,7 +29,6 @@ function apply(file: File): Failure[] {
 export default defineAnalyzer({
   name: "waitgroup_by_value",
   doc: "Warns on functions taking sync.WaitGroup as a by-value parameter",
-  url: "https://github.com/mgechev/revive/blob/v1.17.0/RULES_DESCRIPTIONS.md#waitgroup-by-value",
   group: "revive",
   enabledByDefault: false,
   runDespiteErrors: true,

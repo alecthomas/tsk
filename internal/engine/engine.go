@@ -148,7 +148,7 @@ func (e *Engine) Describe() ([]docs.Analyzer, error) {
 	described := make([]docs.Analyzer, 0, len(e.metadata))
 	for _, metadata := range e.metadata {
 		analyzer := docs.Analyzer{
-			Name: metadata.Name, Doc: metadata.Doc, URL: metadata.URL, Source: metadata.Module,
+			Name: metadata.Name, Doc: metadata.Doc, Source: metadata.Module,
 			Group: metadata.Group, EnabledByDefault: metadata.EnabledByDefault,
 		}
 		if metadata.Schema >= 0 {
@@ -345,7 +345,6 @@ func (e *Engine) analyzer(metadata vm.Metadata, environment *vm.Environment, fil
 	analyzer := &analysis.Analyzer{
 		Name:             metadata.Name,
 		Doc:              metadata.Doc,
-		URL:              metadata.URL,
 		RunDespiteErrors: metadata.RunDespiteErrors,
 		ResultType:       reflect.TypeFor[json.RawMessage](),
 	}

@@ -108,7 +108,6 @@ declare module "tsk" {
     /** A Go identifier, also the name of the analyzer's table in .tsk/config.toml. */
     readonly name: string;
     readonly doc: string;
-    readonly url?: string;
     readonly requires?: readonly (Analyzer | HostAnalyzer<unknown>)[];
     /** Every fact this analyzer imports or exports. A fact belongs to one analyzer. */
     readonly facts?: readonly Fact<unknown>[];

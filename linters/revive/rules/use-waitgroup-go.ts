@@ -77,7 +77,6 @@ function isCallToWgAdd(stmt: ast.Stmt): boolean {
 export default defineAnalyzer({
   name: "use_waitgroup_go",
   doc: "Proposes to replace `wg.Add ... go {... wg.Done ...}` idiom with `wg.Go`",
-  url: "https://github.com/mgechev/revive/blob/v1.17.0/RULES_DESCRIPTIONS.md#use-waitgroup-go",
   group: "revive",
   enabledByDefault: false,
   runDespiteErrors: true,

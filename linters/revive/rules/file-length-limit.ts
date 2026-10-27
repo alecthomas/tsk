@@ -67,7 +67,6 @@ function countCommentLines(comments: readonly (ast.CommentGroup | null)[]): numb
 export default defineAnalyzer<Options>({
   name: "file_length_limit",
   doc: "Enforces a maximum number of lines per file",
-  url: "https://github.com/mgechev/revive/blob/v1.17.0/RULES_DESCRIPTIONS.md#file-length-limit",
   group: "revive",
   enabledByDefault: false,
   runDespiteErrors: true,

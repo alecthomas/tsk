@@ -67,7 +67,6 @@ function check(fields: ast.FieldList | null, style: Style, kind: string, needNam
 export default defineAnalyzer<Options>({
   name: "enforce_repeated_arg_type_style",
   doc: "Enforces consistent style for repeated argument and/or return value types.",
-  url: "https://github.com/mgechev/revive/blob/v1.17.0/RULES_DESCRIPTIONS.md#enforce-repeated-arg-type-style",
   group: "revive",
   enabledByDefault: false,
   runDespiteErrors: true,

@@ -79,7 +79,6 @@ function isNamedType(typ: types.Type | null, importPath: string, typeName: strin
 export default defineAnalyzer({
   name: "time_naming",
   doc: "Conventions around the naming of time variables.",
-  url: "https://github.com/mgechev/revive/blob/v1.17.0/RULES_DESCRIPTIONS.md#time-naming",
   group: "revive",
   runDespiteErrors: true,
   run(pass) {

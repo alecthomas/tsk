@@ -20,7 +20,6 @@ const and: BoolOp = { name: "and", tok: token.LAND, tokString: "&&", badEq: toke
 export default defineAnalyzer({
   name: "bools",
   doc: "check for common mistakes involving boolean operators",
-  url: "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/bools",
   group: "govet",
   requires: [inspect],
   run(pass) {

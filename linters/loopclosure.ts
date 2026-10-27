@@ -75,7 +75,6 @@ statements that might render the reference benign.
 statements such as if, switch, and select.)
 
 See: https://golang.org/doc/go_faq.html#closures_and_goroutines`,
-  url: "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/loopclosure",
   group: "govet",
   requires: [inspect],
   run(pass) {

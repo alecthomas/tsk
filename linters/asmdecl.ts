@@ -105,7 +105,6 @@ const abiSuff = /^(.+)<(ABI.+)>$/;
 export default defineAnalyzer({
   name: "asmdecl",
   doc: "report mismatches between assembly files and Go declarations",
-  url: "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/asmdecl",
   group: "govet",
   run(pass) {
     const sfiles = pass.otherFiles.filter((name) => name.endsWith(".s"));

@@ -175,7 +175,6 @@ function isEmptyString(lit: string): boolean {
 export default defineAnalyzer<Options>({
   name: "add_constant",
   doc: "Suggests using constant for magic numbers and string literals",
-  url: "https://github.com/mgechev/revive/blob/v1.17.0/RULES_DESCRIPTIONS.md#add-constant",
   group: "revive",
   enabledByDefault: false,
   runDespiteErrors: true,

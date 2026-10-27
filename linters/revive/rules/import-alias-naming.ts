@@ -63,7 +63,6 @@ export function create(options: DeepReadonly<Options>): Rule {
 export default defineAnalyzer<Options>({
   name: "import_alias_naming",
   doc: "Conventions around the naming of import aliases.",
-  url: "https://github.com/mgechev/revive/blob/v1.17.0/RULES_DESCRIPTIONS.md#import-alias-naming",
   group: "revive",
   enabledByDefault: false,
   runDespiteErrors: true,

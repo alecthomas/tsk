@@ -25,7 +25,6 @@ function apply(file: File): Failure[] {
 export default defineAnalyzer({
   name: "duplicated_imports",
   doc: "Looks for packages that are imported two or more times",
-  url: "https://github.com/mgechev/revive/blob/v1.17.0/RULES_DESCRIPTIONS.md#duplicated-imports",
   group: "revive",
   enabledByDefault: false,
   runDespiteErrors: true,

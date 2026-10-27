@@ -36,7 +36,6 @@ export function create(options: DeepReadonly<Options>): Rule {
 export default defineAnalyzer<Options>({
   name: "indent_error_flow",
   doc: "Prevents redundant else statements.",
-  url: "https://github.com/mgechev/revive/blob/v1.17.0/RULES_DESCRIPTIONS.md#indent-error-flow",
   group: "revive",
   runDespiteErrors: true,
   config: defaults,

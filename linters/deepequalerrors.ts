@@ -16,7 +16,6 @@ The deepequalerrors checker looks for calls of the form:
 
 where err1 and err2 are errors. Using reflect.DeepEqual to compare
 errors is discouraged.`,
-  url: "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/deepequalerrors",
   group: "govet",
   enabledByDefault: false,
   requires: [inspect],

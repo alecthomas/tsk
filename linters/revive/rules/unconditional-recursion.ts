@@ -137,7 +137,6 @@ function isExit(node: ast.Node): boolean {
 export default defineAnalyzer({
   name: "unconditional_recursion",
   doc: "Warns on function calls that will lead to (direct) infinite recursion",
-  url: "https://github.com/mgechev/revive/blob/v1.17.0/RULES_DESCRIPTIONS.md#unconditional-recursion",
   group: "revive",
   enabledByDefault: false,
   runDespiteErrors: true,

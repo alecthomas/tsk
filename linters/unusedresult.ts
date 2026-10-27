@@ -85,7 +85,6 @@ operation that must be called. This analyzer reports calls to
 functions like these when the result of the call is ignored.
 
 The set of functions may be controlled using options.`,
-  url: "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/unusedresult",
   group: "govet",
   requires: [inspect],
   config: { funcs: defaultFuncs, stringmethods: ["Error", "String"] },

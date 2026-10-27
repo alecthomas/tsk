@@ -58,7 +58,6 @@ function apply(file: File): Failure[] {
 export default defineAnalyzer({
   name: "useless_break",
   doc: "Warns on useless `break` statements in case clauses",
-  url: "https://github.com/mgechev/revive/blob/v1.17.0/RULES_DESCRIPTIONS.md#useless-break",
   group: "revive",
   enabledByDefault: false,
   runDespiteErrors: true,

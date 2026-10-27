@@ -140,7 +140,6 @@ export function create(options: DeepReadonly<Options>): Rule {
 export default defineAnalyzer<Options>({
   name: "var_naming",
   doc: "Naming rules.",
-  url: "https://github.com/mgechev/revive/blob/v1.17.0/RULES_DESCRIPTIONS.md#var-naming",
   group: "revive",
   runDespiteErrors: true,
   config: defaults,

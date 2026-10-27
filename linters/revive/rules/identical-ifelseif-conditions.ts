@@ -73,7 +73,6 @@ function apply(file: File): Failure[] {
 export default defineAnalyzer({
   name: "identical_ifelseif_conditions",
   doc: "Spots identical conditions in  `if ... else if` chains.",
-  url: "https://github.com/mgechev/revive/blob/v1.17.0/RULES_DESCRIPTIONS.md#identical-ifelseif-conditions",
   group: "revive",
   enabledByDefault: false,
   runDespiteErrors: true,

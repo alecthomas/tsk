@@ -31,7 +31,6 @@ function importPackageName(imp: ast.ImportSpec): string {
 export default defineAnalyzer({
   name: "redundant_import_alias",
   doc: "Warns on import aliases matching the imported package name",
-  url: "https://github.com/mgechev/revive/blob/v1.17.0/RULES_DESCRIPTIONS.md#redundant-import-alias",
   group: "revive",
   enabledByDefault: false,
   runDespiteErrors: true,

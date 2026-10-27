@@ -30,7 +30,6 @@ function apply(file: File): Failure[] {
 export default defineAnalyzer({
   name: "call_to_gc",
   doc: "Warns on explicit call to the garbage collector",
-  url: "https://github.com/mgechev/revive/blob/v1.17.0/RULES_DESCRIPTIONS.md#call-to-gc",
   group: "revive",
   enabledByDefault: false,
   runDespiteErrors: true,

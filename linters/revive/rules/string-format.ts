@@ -188,7 +188,6 @@ function applySubrule(rule: Subrule, call: ast.CallExpr, scope: Scope, failures:
 export default defineAnalyzer<Options>({
   name: "string_format",
   doc: "Warns on specific string literals that fail one or more user-configured regular expressions",
-  url: "https://github.com/mgechev/revive/blob/v1.17.0/RULES_DESCRIPTIONS.md#string-format",
   group: "revive",
   enabledByDefault: false,
   runDespiteErrors: true,

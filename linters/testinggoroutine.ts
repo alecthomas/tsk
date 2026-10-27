@@ -34,7 +34,6 @@ started by the test. For example:
 	        t.Fatal("oops") // error: (*T).Fatal called from non-test goroutine
 	    }()
 	}`,
-  url: "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/testinggoroutine",
   group: "govet",
   requires: [inspect],
   run(pass) {

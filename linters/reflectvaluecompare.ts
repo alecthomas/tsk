@@ -24,7 +24,6 @@ Likely what is intended is:
 	v1.Interface() == v2.Interface()
 	v1.Interface() != v2.Interface()
 	reflect.DeepEqual(v1.Interface(), v2.Interface())`,
-  url: "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/reflectvaluecompare",
   group: "govet",
   enabledByDefault: false,
   requires: [inspect],

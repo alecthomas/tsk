@@ -36,7 +36,6 @@ function isOne(expr: ast.Expr): boolean {
 export default defineAnalyzer({
   name: "increment_decrement",
   doc: "Use `i++` and `i--` instead of `i += 1` and `i -= 1`.",
-  url: "https://github.com/mgechev/revive/blob/v1.17.0/RULES_DESCRIPTIONS.md#increment-decrement",
   group: "revive",
   runDespiteErrors: true,
   run(pass) {

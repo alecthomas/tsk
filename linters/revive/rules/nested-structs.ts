@@ -50,7 +50,6 @@ function checkFields(fields: ast.FieldList | null, failures: Failure[]): void {
 export default defineAnalyzer({
   name: "nested_structs",
   doc: "Warns on structs within structs",
-  url: "https://github.com/mgechev/revive/blob/v1.17.0/RULES_DESCRIPTIONS.md#nested-structs",
   group: "revive",
   enabledByDefault: false,
   runDespiteErrors: true,

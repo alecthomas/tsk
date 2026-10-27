@@ -20,7 +20,6 @@ invalid code point, the conversion cannot be statically rejected.
 For conversions that intend on using the code point, consider replacing them
 with string(rune(x)). Otherwise, strconv.Itoa and its equivalents return the
 string representation of the value in the desired base.`,
-  url: "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/stringintconv",
   group: "govet",
   requires: [inspect],
   run(pass) {

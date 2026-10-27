@@ -124,7 +124,7 @@ except that two libraries defining one name is an error.
 Calling `defineAnalyzer` registers an analyzer; no particular export is
 needed. The definition mirrors `analysis.Analyzer`:
 
-- `name`, `doc`, `url`
+- `name`, `doc`
 - `config`: default values; see [Config](#config).
 - `requires`: script analyzer handles, or host analyzers exported by
   `tsk/passes`, currently `inspect`, `buildssa`, and `ctrlflow`.

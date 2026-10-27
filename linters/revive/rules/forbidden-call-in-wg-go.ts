@@ -56,7 +56,6 @@ function isForbiddenCall(n: ast.Node): boolean {
 export default defineAnalyzer({
   name: "forbidden_call_in_wg_go",
   doc: "Warns on forbidden calls inside calls to wg.Go",
-  url: "https://github.com/mgechev/revive/blob/v1.17.0/RULES_DESCRIPTIONS.md#forbidden-call-in-wg-go",
   group: "revive",
   enabledByDefault: false,
   runDespiteErrors: true,

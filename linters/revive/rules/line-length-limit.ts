@@ -57,7 +57,6 @@ export function create(options: DeepReadonly<Options>): Rule {
 export default defineAnalyzer<Options>({
   name: "line_length_limit",
   doc: "Specifies the maximum number of characters in a line, with optional per-line exclusions",
-  url: "https://github.com/mgechev/revive/blob/v1.17.0/RULES_DESCRIPTIONS.md#line-length-limit",
   group: "revive",
   enabledByDefault: false,
   runDespiteErrors: true,

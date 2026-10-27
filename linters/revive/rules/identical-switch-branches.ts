@@ -74,7 +74,6 @@ function doesFallthrough(stmts: readonly (ast.Stmt | null)[]): boolean {
 export default defineAnalyzer<Options>({
   name: "identical_switch_branches",
   doc: "Spots `switch` with identical branches.",
-  url: "https://github.com/mgechev/revive/blob/v1.17.0/RULES_DESCRIPTIONS.md#identical-switch-branches",
   group: "revive",
   enabledByDefault: false,
   runDespiteErrors: true,

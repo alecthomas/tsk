@@ -154,7 +154,6 @@ function isEmptySliceLiteral(expr: ast.Expr): boolean {
 export default defineAnalyzer({
   name: "use_slices_concat",
   doc: "Proposes to replace appends to an empty slice with a call to `slices.Concat`.",
-  url: "https://github.com/mgechev/revive/blob/v1.17.0/RULES_DESCRIPTIONS.md#use-slices-concat",
   group: "revive",
   enabledByDefault: false,
   runDespiteErrors: true,

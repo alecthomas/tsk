@@ -91,7 +91,6 @@ export function create(options: DeepReadonly<Options>): Rule {
 export default defineAnalyzer<Options>({
   name: "unchecked_type_assertion",
   doc: "Disallows type assertions without checking the result.",
-  url: "https://github.com/mgechev/revive/blob/v1.17.0/RULES_DESCRIPTIONS.md#unchecked-type-assertion",
   group: "revive",
   enabledByDefault: false,
   runDespiteErrors: true,

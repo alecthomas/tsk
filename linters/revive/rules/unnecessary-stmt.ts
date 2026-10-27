@@ -60,7 +60,6 @@ function apply(file: File): Failure[] {
 export default defineAnalyzer({
   name: "unnecessary_stmt",
   doc: "Suggests removing or simplifying unnecessary statements",
-  url: "https://github.com/mgechev/revive/blob/v1.17.0/RULES_DESCRIPTIONS.md#unnecessary-stmt",
   group: "revive",
   enabledByDefault: false,
   runDespiteErrors: true,

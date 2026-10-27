@@ -63,7 +63,6 @@ function swapped(n: ast.BinaryExpr, expr: string): string {
 export default defineAnalyzer({
   name: "optimize_operands_order",
   doc: "Checks inefficient conditional expressions",
-  url: "https://github.com/mgechev/revive/blob/v1.17.0/RULES_DESCRIPTIONS.md#optimize-operands-order",
   group: "revive",
   enabledByDefault: false,
   runDespiteErrors: true,

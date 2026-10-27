@@ -34,7 +34,6 @@ function apply(file: File): Failure[] {
 export default defineAnalyzer({
   name: "context_keys_type",
   doc: "Disallows the usage of basic types in `context.WithValue`.",
-  url: "https://github.com/mgechev/revive/blob/v1.17.0/RULES_DESCRIPTIONS.md#context-keys-type",
   group: "revive",
   runDespiteErrors: true,
   run(pass) {

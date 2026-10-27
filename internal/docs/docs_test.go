@@ -43,7 +43,7 @@ func defaults() map[string]any {
 
 func analyzers() []docs.Analyzer {
 	return []docs.Analyzer{
-		{Name: "rules", Doc: "check rules\n\nRules apply to every package.", URL: "https://example.com", Source: "github.com/acme/linters@0123456789ab", Enabled: true,
+		{Name: "rules", Doc: "check rules\n\nRules apply to every package.", Source: "github.com/acme/linters@0123456789ab", Enabled: true,
 			Config: Some(docs.Config{Shape: shape(), Defaults: defaults()})},
 		{Name: "plain", Doc: "no options", Source: ".tsk/plain.ts", Group: "acme"},
 	}
@@ -96,7 +96,6 @@ func TestTOML(t *testing.T) {
 		`# check rules`,
 		`#`,
 		`# Rules apply to every package.`,
-		`# https://example.com`,
 		`[rules]`,
 		`# Rules allowing reads.`,
 		`# One per line.`,
@@ -165,8 +164,7 @@ func TestListJSON(t *testing.T) {
     "name": "rules",
     "enabled": true,
     "source": "github.com/acme/linters@0123456789ab",
-    "doc": "check rules\n\nRules apply to every package.",
-    "url": "https://example.com"
+    "doc": "check rules\n\nRules apply to every package."
   },
   {
     "name": "plain",

@@ -182,7 +182,6 @@ export function create(options: DeepReadonly<Options>): Rule {
 export default defineAnalyzer<Options>({
   name: "package_naming",
   doc: "Checks that package names follow Go conventions and best practices",
-  url: "https://github.com/mgechev/revive/blob/v1.17.0/RULES_DESCRIPTIONS.md#package-naming",
   group: "revive",
   enabledByDefault: false,
   runDespiteErrors: true,

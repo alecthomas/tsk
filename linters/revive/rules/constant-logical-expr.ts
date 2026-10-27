@@ -40,7 +40,6 @@ function apply(file: File): Failure[] {
 export default defineAnalyzer({
   name: "constant_logical_expr",
   doc: "Warns on constant logical expressions",
-  url: "https://github.com/mgechev/revive/blob/v1.17.0/RULES_DESCRIPTIONS.md#constant-logical-expr",
   group: "revive",
   enabledByDefault: false,
   runDespiteErrors: true,

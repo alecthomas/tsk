@@ -14,7 +14,6 @@ This checker reports call expression of the form
 	signal.Notify(c <-chan os.Signal, sig ...os.Signal),
 
 where c is an unbuffered channel, which can be at risk of missing the signal.`,
-  url: "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/sigchanyzer",
   group: "govet",
   requires: [inspect],
   run(pass) {

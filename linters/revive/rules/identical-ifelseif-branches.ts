@@ -95,7 +95,6 @@ function apply(file: File): Failure[] {
 export default defineAnalyzer({
   name: "identical_ifelseif_branches",
   doc: "Spots `if ... else if` chains with identical branches.",
-  url: "https://github.com/mgechev/revive/blob/v1.17.0/RULES_DESCRIPTIONS.md#identical-ifelseif-branches",
   group: "revive",
   enabledByDefault: false,
   runDespiteErrors: true,

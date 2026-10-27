@@ -33,7 +33,6 @@ function apply(file: File): Failure[] {
 export default defineAnalyzer({
   name: "range",
   doc: "Prevents redundant variables when iterating over a collection.",
-  url: "https://github.com/mgechev/revive/blob/v1.17.0/RULES_DESCRIPTIONS.md#range",
   group: "revive",
   runDespiteErrors: true,
   run(pass) {

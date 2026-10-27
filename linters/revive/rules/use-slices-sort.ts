@@ -53,7 +53,6 @@ function apply(file: File): Failure[] {
 export default defineAnalyzer({
   name: "use_slices_sort",
   doc: "Proposes to replace calls to `sort.Ints`, `sort.Strings` and the like with their equivalents from `slices` package.",
-  url: "https://github.com/mgechev/revive/blob/v1.17.0/RULES_DESCRIPTIONS.md#use-slices-sort",
   group: "revive",
   enabledByDefault: false,
   runDespiteErrors: true,

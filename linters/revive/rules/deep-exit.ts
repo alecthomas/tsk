@@ -78,7 +78,6 @@ function isLower(r: string): boolean {
 export default defineAnalyzer({
   name: "deep_exit",
   doc: "Looks for program exits in funcs other than `main()` or `init()`",
-  url: "https://github.com/mgechev/revive/blob/v1.17.0/RULES_DESCRIPTIONS.md#deep-exit",
   group: "revive",
   enabledByDefault: false,
   runDespiteErrors: true,

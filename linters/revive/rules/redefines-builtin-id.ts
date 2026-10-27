@@ -165,7 +165,6 @@ function apply(file: File): Failure[] {
 export default defineAnalyzer({
   name: "redefines_builtin_id",
   doc: "Warns on redefinitions of builtin identifiers",
-  url: "https://github.com/mgechev/revive/blob/v1.17.0/RULES_DESCRIPTIONS.md#redefines-builtin-id",
   group: "revive",
   runDespiteErrors: true,
   run(pass) {

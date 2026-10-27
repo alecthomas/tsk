@@ -33,7 +33,6 @@ Another example is about non-pointer receiver:
 	func (t T) f() {  // t is a copy
 		t.x = i  // unused write to field x
 	}`,
-  url: "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/unusedwrite",
   group: "govet",
   enabledByDefault: false,
   requires: [buildssa],

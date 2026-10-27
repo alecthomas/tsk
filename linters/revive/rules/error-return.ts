@@ -31,7 +31,6 @@ function apply(file: File): Failure[] {
 export default defineAnalyzer({
   name: "error_return",
   doc: "The error return parameter should be last.",
-  url: "https://github.com/mgechev/revive/blob/v1.17.0/RULES_DESCRIPTIONS.md#error-return",
   group: "revive",
   runDespiteErrors: true,
   run(pass) {

@@ -32,7 +32,6 @@ function apply(file: File): Failure[] {
 export default defineAnalyzer({
   name: "multiline_if_init",
   doc: "Flags `if` statements whose init clause spans multiple lines",
-  url: "https://github.com/mgechev/revive/blob/v1.17.0/RULES_DESCRIPTIONS.md#multiline-if-init",
   group: "revive",
   enabledByDefault: false,
   runDespiteErrors: true,

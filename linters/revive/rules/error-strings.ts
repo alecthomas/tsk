@@ -115,7 +115,6 @@ function lintErrorString(s: string): number | undefined {
 export default defineAnalyzer<Options>({
   name: "error_strings",
   doc: "Conventions around error strings.",
-  url: "https://github.com/mgechev/revive/blob/v1.17.0/RULES_DESCRIPTIONS.md#error-strings",
   group: "revive",
   runDespiteErrors: true,
   config: defaults,

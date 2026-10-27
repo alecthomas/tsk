@@ -34,7 +34,6 @@ Be aware that the most compact order is not always the most efficient.
 In rare cases it may cause two variables each updated by its own goroutine
 to occupy the same CPU cache line, inducing a form of memory contention
 known as "false sharing" that slows down both goroutines.`,
-  url: "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/fieldalignment",
   group: "govet",
   enabledByDefault: false,
   requires: [inspect],

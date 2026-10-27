@@ -52,7 +52,6 @@ function commentLines(file: File): Set<number> {
 export default defineAnalyzer({
   name: "empty_lines",
   doc: "Warns when there are heading or trailing newlines in a block",
-  url: "https://github.com/mgechev/revive/blob/v1.17.0/RULES_DESCRIPTIONS.md#empty-lines",
   group: "revive",
   enabledByDefault: false,
   runDespiteErrors: true,

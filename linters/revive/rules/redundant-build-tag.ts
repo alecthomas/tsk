@@ -107,7 +107,6 @@ function cmpInt(x: string, y: string): number {
 export default defineAnalyzer({
   name: "redundant_build_tag",
   doc: "Warns about redundant `// +build` comment lines",
-  url: "https://github.com/mgechev/revive/blob/v1.17.0/RULES_DESCRIPTIONS.md#redundant-build-tag",
   group: "revive",
   enabledByDefault: false,
   runDespiteErrors: true,

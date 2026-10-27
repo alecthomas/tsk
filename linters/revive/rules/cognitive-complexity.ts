@@ -167,7 +167,6 @@ function isBoolOp(op: token.Token): boolean {
 export default defineAnalyzer<Options>({
   name: "cognitive_complexity",
   doc: "Sets restriction for maximum Cognitive complexity.",
-  url: "https://github.com/mgechev/revive/blob/v1.17.0/RULES_DESCRIPTIONS.md#cognitive-complexity",
   group: "revive",
   enabledByDefault: false,
   runDespiteErrors: true,

@@ -73,7 +73,6 @@ function isRootDir(dirPath: string): boolean {
 export default defineAnalyzer<Options>({
   name: "package_directory_mismatch",
   doc: "Checks that package name matches containing directory name",
-  url: "https://github.com/mgechev/revive/blob/v1.17.0/RULES_DESCRIPTIONS.md#package-directory-mismatch",
   group: "revive",
   enabledByDefault: false,
   runDespiteErrors: true,

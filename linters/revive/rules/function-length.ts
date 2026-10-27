@@ -102,7 +102,6 @@ function countFuncLitStmts(expr: ast.Expr): number {
 export default defineAnalyzer<Options>({
   name: "function_length",
   doc: "Warns on functions exceeding the statements or lines max",
-  url: "https://github.com/mgechev/revive/blob/v1.17.0/RULES_DESCRIPTIONS.md#function-length",
   group: "revive",
   enabledByDefault: false,
   runDespiteErrors: true,

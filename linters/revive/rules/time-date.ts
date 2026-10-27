@@ -239,7 +239,6 @@ function parseDecimalInteger(bl: ast.BasicLit): [bigint, string | null] {
 export default defineAnalyzer({
   name: "time_date",
   doc: "Reports bad usage of `time.Date`.",
-  url: "https://github.com/mgechev/revive/blob/v1.17.0/RULES_DESCRIPTIONS.md#time-date",
   group: "revive",
   enabledByDefault: false,
   runDespiteErrors: true,

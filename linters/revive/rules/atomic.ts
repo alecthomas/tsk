@@ -65,7 +65,6 @@ function apply(file: File): Failure[] {
 export default defineAnalyzer({
   name: "revive_atomic",
   doc: "Check for common mistaken usages of the `sync/atomic` package",
-  url: "https://github.com/mgechev/revive/blob/v1.17.0/RULES_DESCRIPTIONS.md#atomic",
   group: "revive",
   enabledByDefault: false,
   runDespiteErrors: true,

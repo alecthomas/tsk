@@ -102,7 +102,6 @@ function containsComments(start: token.Pos, end: token.Pos, f: ast.File): boolea
 export default defineAnalyzer({
   name: "if_return",
   doc: "Redundant if when returning an error.",
-  url: "https://github.com/mgechev/revive/blob/v1.17.0/RULES_DESCRIPTIONS.md#if-return",
   group: "revive",
   enabledByDefault: false,
   runDespiteErrors: true,

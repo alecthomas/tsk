@@ -48,7 +48,6 @@ function apply(file: File): Failure[] {
 export default defineAnalyzer({
   name: "bare_return",
   doc: "Warns on bare returns",
-  url: "https://github.com/mgechev/revive/blob/v1.17.0/RULES_DESCRIPTIONS.md#bare-return",
   group: "revive",
   enabledByDefault: false,
   runDespiteErrors: true,

@@ -23,7 +23,6 @@ const funcNames = [
 export default defineAnalyzer({
   name: "atomicalign",
   doc: "check for non-64-bits-aligned arguments to sync/atomic functions",
-  url: "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/atomicalign",
   group: "govet",
   enabledByDefault: false,
   requires: [inspect],

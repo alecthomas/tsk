@@ -28,7 +28,6 @@ export function create(options: DeepReadonly<Options>): Rule {
 export default defineAnalyzer<Options>({
   name: "dot_imports",
   doc: "Forbids `.` imports.",
-  url: "https://github.com/mgechev/revive/blob/v1.17.0/RULES_DESCRIPTIONS.md#dot-imports",
   group: "revive",
   runDespiteErrors: true,
   config: defaults,

@@ -72,7 +72,6 @@ function isRangeOverMapKey(file: File, stmt: ast.RangeStmt): boolean {
 export default defineAnalyzer({
   name: "inefficient_map_lookup",
   doc: "Spots iterative searches for a key in a map",
-  url: "https://github.com/mgechev/revive/blob/v1.17.0/RULES_DESCRIPTIONS.md#inefficient-map-lookup",
   group: "revive",
   enabledByDefault: false,
   runDespiteErrors: true,

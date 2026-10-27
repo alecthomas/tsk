@@ -47,7 +47,6 @@ function booleanLit(n: ast.Expr | null): string | undefined {
 export default defineAnalyzer({
   name: "bool_literal_in_expr",
   doc: "Suggests removing Boolean literals from logic expressions",
-  url: "https://github.com/mgechev/revive/blob/v1.17.0/RULES_DESCRIPTIONS.md#bool-literal-in-expr",
   group: "revive",
   enabledByDefault: false,
   runDespiteErrors: true,

@@ -61,7 +61,6 @@ function allBranchesEndWithJumpStmt(clauses: ast.CaseClause[]): boolean {
 export default defineAnalyzer<Options>({
   name: "enforce_switch_style",
   doc: "Enforces consistent usage of `default` on `switch` statements.",
-  url: "https://github.com/mgechev/revive/blob/v1.17.0/RULES_DESCRIPTIONS.md#enforce-switch-style",
   group: "revive",
   enabledByDefault: false,
   runDespiteErrors: true,

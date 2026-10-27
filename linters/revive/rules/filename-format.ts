@@ -48,7 +48,6 @@ function nonASCIIMessage(s: string): string {
 export default defineAnalyzer<Options>({
   name: "filename_format",
   doc: "Enforces the formatting of filenames",
-  url: "https://github.com/mgechev/revive/blob/v1.17.0/RULES_DESCRIPTIONS.md#filename-format",
   group: "revive",
   enabledByDefault: false,
   runDespiteErrors: true,

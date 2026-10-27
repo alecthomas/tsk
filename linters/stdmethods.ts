@@ -51,7 +51,6 @@ Checked method names include:
 	Peek ReadByte ReadFrom ReadRune Scan Seek
 	UnmarshalJSON UnreadByte UnreadRune WriteByte
 	WriteTo`,
-  url: "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/stdmethods",
   group: "govet",
   requires: [inspect],
   run(pass) {

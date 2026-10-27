@@ -72,7 +72,6 @@ function apply(file: File): Failure[] {
 export default defineAnalyzer({
   name: "empty_block",
   doc: "Warns on empty code blocks",
-  url: "https://github.com/mgechev/revive/blob/v1.17.0/RULES_DESCRIPTIONS.md#empty-block",
   group: "revive",
   runDespiteErrors: true,
   run(pass) {

@@ -56,7 +56,6 @@ and:
 	if p == nil {
 		panic(p)
 	}`,
-  url: "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/nilness",
   group: "govet",
   enabledByDefault: false,
   requires: [buildssa],

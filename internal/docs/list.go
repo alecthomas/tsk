@@ -35,7 +35,6 @@ type listed struct {
 	Group   string `json:"group,omitzero"`
 	Source  string `json:"source"`
 	Doc     string `json:"doc"`
-	URL     string `json:"url,omitzero"`
 }
 
 // ListJSON writes the analyzers as a JSON array, with each one's full
@@ -43,7 +42,7 @@ type listed struct {
 func ListJSON(w io.Writer, analyzers []Analyzer) error {
 	entries := make([]listed, 0, len(analyzers))
 	for _, analyzer := range analyzers {
-		entries = append(entries, listed{Name: analyzer.Name, Enabled: analyzer.Enabled, Group: analyzer.Group, Source: analyzer.Source, Doc: analyzer.Doc, URL: analyzer.URL})
+		entries = append(entries, listed{Name: analyzer.Name, Enabled: analyzer.Enabled, Group: analyzer.Group, Source: analyzer.Source, Doc: analyzer.Doc})
 	}
 	encoder := json.NewEncoder(w)
 	encoder.SetIndent("", "  ")

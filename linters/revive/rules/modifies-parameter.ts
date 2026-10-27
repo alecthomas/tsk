@@ -87,7 +87,6 @@ function apply(file: File): Failure[] {
 export default defineAnalyzer({
   name: "modifies_parameter",
   doc: "Warns on assignments to function parameters",
-  url: "https://github.com/mgechev/revive/blob/v1.17.0/RULES_DESCRIPTIONS.md#modifies-parameter",
   group: "revive",
   enabledByDefault: false,
   runDespiteErrors: true,

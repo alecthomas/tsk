@@ -62,7 +62,6 @@ function complexity(fn: ast.FuncDecl): number {
 export default defineAnalyzer<Options>({
   name: "cyclomatic",
   doc: "Sets restriction for maximum Cyclomatic complexity.",
-  url: "https://github.com/mgechev/revive/blob/v1.17.0/RULES_DESCRIPTIONS.md#cyclomatic",
   group: "revive",
   enabledByDefault: false,
   runDespiteErrors: true,

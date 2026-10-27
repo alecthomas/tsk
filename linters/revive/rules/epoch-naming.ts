@@ -75,7 +75,6 @@ function isTime(typ: types.Type | null): boolean {
 export default defineAnalyzer({
   name: "epoch_naming",
   doc: "Enforces naming conventions for epoch time variables",
-  url: "https://github.com/mgechev/revive/blob/v1.17.0/RULES_DESCRIPTIONS.md#epoch-naming",
   group: "revive",
   enabledByDefault: false,
   runDespiteErrors: true,

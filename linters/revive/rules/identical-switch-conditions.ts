@@ -47,7 +47,6 @@ function apply(file: File): Failure[] {
 export default defineAnalyzer({
   name: "identical_switch_conditions",
   doc: "Spots identical conditions in case clauses of `switch` statements.",
-  url: "https://github.com/mgechev/revive/blob/v1.17.0/RULES_DESCRIPTIONS.md#identical-switch-conditions",
   group: "revive",
   enabledByDefault: false,
   runDespiteErrors: true,

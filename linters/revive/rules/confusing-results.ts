@@ -39,7 +39,6 @@ function apply(file: File): Failure[] {
 export default defineAnalyzer({
   name: "confusing_results",
   doc: "Suggests to name potentially confusing function results",
-  url: "https://github.com/mgechev/revive/blob/v1.17.0/RULES_DESCRIPTIONS.md#confusing-results",
   group: "revive",
   enabledByDefault: false,
   runDespiteErrors: true,

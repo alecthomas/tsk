@@ -46,7 +46,6 @@ function isTime(t: types.Type | null): boolean {
 export default defineAnalyzer({
   name: "time_equal",
   doc: "Suggests to use `time.Time.Equal` instead of `==` and `!=` for equality check time.",
-  url: "https://github.com/mgechev/revive/blob/v1.17.0/RULES_DESCRIPTIONS.md#time-equal",
   group: "revive",
   enabledByDefault: false,
   runDespiteErrors: true,

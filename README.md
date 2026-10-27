@@ -141,7 +141,7 @@ These libraries are known to work with `tsk`. Add one with `tsk get
 | `tsk init` | Sets up a repository, as [Install](#install) describes. |
 | `tsk editor` | Writes the script declarations to `.tsk/types/` and a `tsconfig.json` to `.tsk/`, for editor completion and type checking. |
 | `tsk config [linters...]` | Prints a `.tsk/config.toml` documenting each linter and option, set to its default. |
-| `tsk list` | Lists every linter, whether it is enabled, its group, where it is defined, and its summary. `--json` prints a JSON array instead, with each linter's full documentation and URL. |
+| `tsk list` | Lists every linter, whether it is enabled, its group, where it is defined, and its summary. `--json` prints a JSON array instead, with each linter's full documentation. |
 | `tsk get [libraries...]` | Adds or updates [libraries](#using-libraries) and pins them in `.tsk/lock.toml`. |
 | `tsk sync` | Downloads every pinned library missing from the cache. |
 
@@ -316,7 +316,6 @@ Calling `defineAnalyzer` registers a linter. Its definition mirrors
 |---|---|
 | `name` | A Go identifier. It names the linter in `.tsk/config.toml`, `//nolint` comments, and output. |
 | `doc` | The documentation. The first line is a summary. |
-| `url` | Optional link to more documentation. |
 | `group` | Optional group, a Go identifier distinct from every linter's name, that config and `//nolint` comments can name for all its linters. |
 | `enabledByDefault` | `false` runs the linter only when `enable` names it; its group and `enable-all` do not turn it on. |
 | `config` | Default option values. See [Options](#options). |

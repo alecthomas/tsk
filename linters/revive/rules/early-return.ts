@@ -50,7 +50,6 @@ export function create(options: DeepReadonly<Options>): Rule {
 export default defineAnalyzer<Options>({
   name: "early_return",
   doc: "Spots if-then-else statements where the predicate may be inverted to reduce nesting",
-  url: "https://github.com/mgechev/revive/blob/v1.17.0/RULES_DESCRIPTIONS.md#early-return",
   group: "revive",
   enabledByDefault: false,
   runDespiteErrors: true,

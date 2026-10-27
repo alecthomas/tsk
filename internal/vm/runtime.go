@@ -496,7 +496,6 @@ type Requirement struct {
 type Metadata struct {
 	Name             string
 	Doc              string
-	URL              string
 	Requires         []Requirement
 	Facts            []string
 	RunDespiteErrors bool
@@ -533,9 +532,6 @@ func (r *Runtime) Metadata(name string) (Metadata, error) {
 	metadata := Metadata{Name: name, Schema: found.schema, Module: found.module}
 	var err error
 	if metadata.Doc, err = r.stringProperty(object, "doc", true); err != nil {
-		return Metadata{}, errors.Errorf("analyzer %q: %v", name, err)
-	}
-	if metadata.URL, err = r.stringProperty(object, "url", false); err != nil {
 		return Metadata{}, errors.Errorf("analyzer %q: %v", name, err)
 	}
 	if _, ok := sobek.AssertFunction(object.Get("run")); !ok {

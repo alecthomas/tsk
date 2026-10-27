@@ -43,7 +43,6 @@ function apply(file: File): Failure[] {
 export default defineAnalyzer({
   name: "identical_branches",
   doc: "Spots if-then-else statements with identical `then` and `else` branches",
-  url: "https://github.com/mgechev/revive/blob/v1.17.0/RULES_DESCRIPTIONS.md#identical-branches",
   group: "revive",
   enabledByDefault: false,
   runDespiteErrors: true,

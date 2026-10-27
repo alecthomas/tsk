@@ -74,7 +74,6 @@ function apply(file: File): Failure[] {
 export default defineAnalyzer({
   name: "unnecessary_format",
   doc: "Identifies calls to formatting functions where the format string does not contain any formatting verbs",
-  url: "https://github.com/mgechev/revive/blob/v1.17.0/RULES_DESCRIPTIONS.md#unnecessary-format",
   group: "revive",
   enabledByDefault: false,
   runDespiteErrors: true,

@@ -46,7 +46,6 @@ For example:
 		}
 		return err
 	}`,
-  url: "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/shadow",
   group: "govet",
   enabledByDefault: false,
   requires: [inspect],

@@ -52,7 +52,6 @@ function isHTTPHandler(params: ast.FieldList | null): boolean {
 export default defineAnalyzer({
   name: "get_return",
   doc: "Warns on getters that do not yield any result",
-  url: "https://github.com/mgechev/revive/blob/v1.17.0/RULES_DESCRIPTIONS.md#get-return",
   group: "revive",
   enabledByDefault: false,
   runDespiteErrors: true,

@@ -134,7 +134,6 @@ function singleBooleanLiteral(exprs: readonly (ast.Expr | null)[]): string | und
 export default defineAnalyzer({
   name: "unnecessary_if",
   doc: "Identifies `if-else` statements that can be replaced by simpler statements",
-  url: "https://github.com/mgechev/revive/blob/v1.17.0/RULES_DESCRIPTIONS.md#unnecessary-if",
   group: "revive",
   enabledByDefault: false,
   runDespiteErrors: true,

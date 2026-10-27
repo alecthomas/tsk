@@ -100,7 +100,6 @@ function isZeroValue(value: string, typ: ast.Expr): boolean {
 export default defineAnalyzer({
   name: "var_declaration",
   doc: "Reduces redundancies around variable declaration.",
-  url: "https://github.com/mgechev/revive/blob/v1.17.0/RULES_DESCRIPTIONS.md#var-declaration",
   group: "revive",
   runDespiteErrors: true,
   run(pass) {

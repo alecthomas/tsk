@@ -20,7 +20,6 @@ export default defineAnalyzer({
   doc: `check that struct field tags conform to reflect.StructTag.Get
 
 Also report certain struct tags (json, xml) used with unexported fields.`,
-  url: "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/structtag",
   group: "govet",
   requires: [inspect],
   runDespiteErrors: true,

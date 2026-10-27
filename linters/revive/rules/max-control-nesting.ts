@@ -80,7 +80,6 @@ class NestingVisitor implements Visitor {
 export default defineAnalyzer<Options>({
   name: "max_control_nesting",
   doc: "Sets restriction for maximum nesting of control structures.",
-  url: "https://github.com/mgechev/revive/blob/v1.17.0/RULES_DESCRIPTIONS.md#max-control-nesting",
   group: "revive",
   enabledByDefault: false,
   runDespiteErrors: true,

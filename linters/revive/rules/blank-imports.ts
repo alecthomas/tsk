@@ -51,7 +51,6 @@ function isBlank(id: ast.Ident | null): boolean {
 export default defineAnalyzer({
   name: "blank_imports",
   doc: "Disallows blank imports",
-  url: "https://github.com/mgechev/revive/blob/v1.17.0/RULES_DESCRIPTIONS.md#blank-imports",
   group: "revive",
   runDespiteErrors: true,
   run(pass) {

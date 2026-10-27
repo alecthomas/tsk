@@ -22,7 +22,6 @@ For example:
 The correct code is:
 
 	defer func() { recordLatency(time.Since(start)) }()`,
-  url: "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/defers",
   group: "govet",
   requires: [inspect],
   run(pass) {

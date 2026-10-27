@@ -43,7 +43,6 @@ function apply(file: File): Failure[] {
 export default defineAnalyzer({
   name: "error_naming",
   doc: "Naming of error variables.",
-  url: "https://github.com/mgechev/revive/blob/v1.17.0/RULES_DESCRIPTIONS.md#error-naming",
   group: "revive",
   runDespiteErrors: true,
   run(pass) {

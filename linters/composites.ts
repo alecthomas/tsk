@@ -52,7 +52,6 @@ As an example,
 should be replaced by:
 
 	err = &net.DNSConfigError{Err: err}`,
-  url: "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/composite",
   group: "govet",
   requires: [inspect],
   runDespiteErrors: true,

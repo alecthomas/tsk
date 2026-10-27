@@ -48,7 +48,6 @@ function isIntExpression(file: File, es: readonly (ast.Expr | null)[]): boolean 
 export default defineAnalyzer({
   name: "string_of_int",
   doc: "Warns on suspicious casts from int to string",
-  url: "https://github.com/mgechev/revive/blob/v1.17.0/RULES_DESCRIPTIONS.md#string-of-int",
   group: "revive",
   enabledByDefault: false,
   runDespiteErrors: true,

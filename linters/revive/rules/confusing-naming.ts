@@ -102,7 +102,6 @@ function checkStructFields(fields: ast.FieldList, structName: string): Failure[]
 export default defineAnalyzer({
   name: "confusing_naming",
   doc: "Warns on methods with names that differ only by capitalization",
-  url: "https://github.com/mgechev/revive/blob/v1.17.0/RULES_DESCRIPTIONS.md#confusing-naming",
   group: "revive",
   enabledByDefault: false,
   runDespiteErrors: true,

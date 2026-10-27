@@ -48,7 +48,6 @@ function apply(file: File): Failure[] {
 export default defineAnalyzer({
   name: "use_fmt_print",
   doc: "Proposes to replace calls to built-in `print` and `println` with their equivalents from `fmt`.",
-  url: "https://github.com/mgechev/revive/blob/v1.17.0/RULES_DESCRIPTIONS.md#use-fmt-print",
   group: "revive",
   enabledByDefault: false,
   runDespiteErrors: true,

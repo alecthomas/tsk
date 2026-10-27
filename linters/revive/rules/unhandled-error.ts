@@ -129,7 +129,6 @@ function isSafeFprintfToBuffer(file: File, call: ast.CallExpr): boolean {
 export default defineAnalyzer<Options>({
   name: "unhandled_error",
   doc: "Warns on unhandled errors returned by function calls",
-  url: "https://github.com/mgechev/revive/blob/v1.17.0/RULES_DESCRIPTIONS.md#unhandled-error",
   group: "revive",
   enabledByDefault: false,
   runDespiteErrors: true,

@@ -81,7 +81,6 @@ export function create(options: DeepReadonly<Options>): Rule {
 export default defineAnalyzer<Options>({
   name: "unused_parameter",
   doc: "Suggests to rename or remove unused function parameters",
-  url: "https://github.com/mgechev/revive/blob/v1.17.0/RULES_DESCRIPTIONS.md#unused-parameter",
   group: "revive",
   runDespiteErrors: true,
   config: defaults,

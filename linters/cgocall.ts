@@ -19,7 +19,6 @@ whose types are almost always invalid according to the cgo pointer
 sharing rules.
 Specifically, it warns about attempts to pass a Go chan, map, func,
 or slice to C, either directly, or via a pointer, array, or struct.`,
-  url: "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/cgocall",
   group: "govet",
   runDespiteErrors: true,
   run(pass) {
