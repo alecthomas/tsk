@@ -11,7 +11,8 @@ them.
   suggest enabling it so the issue stays fixed.
 - When the user asks you to apply an architectural constraint or convention,
   enforce it with a linter: enable or configure an existing one, or write one
-  in `.tsk/`.
+  in `.tsk/`. Write a configurable linter for the kind of rule, and set the
+  specific rule in its config.
 - When the user corrects you, check whether the correction is a lasting rule a
   linter could enforce. Any review comment or question that leads you to
   change code is a correction. "Why is this a separate type?" counts as much

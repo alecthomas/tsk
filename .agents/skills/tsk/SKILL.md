@@ -41,6 +41,14 @@ regular expression. `skip-tests` drops a linter's findings in `_test.go` files.
 
 Write one when no existing linter or configuration enforces the rule.
 
+Write a linter for the kind of rule, not for one instance of it. Make the
+specifics of the rule options, and set the requested rule in
+`.tsk/config.toml`. For example, a rule against `env:"..."` struct tags other
+than `env:"-"` belongs in a general struct tag linter, with options naming the
+tags and values to allow or deny. If an existing `.tsk/` linter covers the same
+kind of rule, add an option to it instead of writing another. Generalise only
+what varies between rules of that kind; do not add options nothing needs.
+
 1. Put the linter in `.tsk/<name>.ts`. It default-exports
    `defineAnalyzer({ name, doc, requires, run(pass) })` from `"tsk"`, named
    as the file is. `run` mirrors a Go `analysis.Analyzer`:
@@ -52,7 +60,8 @@ Write one when no existing linter or configuration enforces the rule.
    nodes.
 3. Add test data under `.tsk/testdata/<name>/`, as a module or a GOPATH tree
    under `src/`. Mark each expected finding with a ``// want `regexp` ``
-   comment, and include code the linter must accept.
+   comment, and include code the linter must accept. Test the options with
+   cases in `.tsk/testdata/<name>/tsk.test.toml`, each setting `config`.
 4. Run `tsk check`, then `tsk test --enable <name>`, until both pass.
 5. Run `tsk` and fix existing violations in the same change, or keep
    intentional ones with `//nolint:<name> // <reason>`.
