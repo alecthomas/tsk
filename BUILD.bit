@@ -76,7 +76,7 @@ lint-release = exec.test {
 gen = exec {
   command = "tsk-gen --output internal/bindings"
   inputs = ["internal/bindgen/*.go", "cmd/tsk-gen/*.go", "internal/naming/*.go", "go.mod", "go.sum"]
-  output = ["internal/bindings/registry_gen.go", "internal/bindings/dts/*.d.ts"]
+  outputs = ["internal/bindings/registry_gen.go", "internal/bindings/dts/*.d.ts"]
 }
 
 # Tag HEAD with the next version and push the tag, which triggers a release.
