@@ -15,7 +15,8 @@ These are five cold runs at `v0.18.0` on a 10-core Mac with 32 GB, Go
 1.27.1. A run makes 5,742 analyzer passes over 363 packages, 36 of them in
 the module. The breakdowns below come from one profiled run, which the
 profiling slowed to 7.0 s. They predate [Early release](#early-release),
-which cut cold wall time to 4.54 s and peak memory to about 3.7 GB.
+which cut peak memory to about 3.9 GB but did not measurably change wall
+time.
 
 ## Timeline
 
@@ -117,9 +118,13 @@ test cases pass. Five cold runs each, alternating:
 | Max RSS | 5.65 GB | 3.77 GB | −33% |
 | Peak footprint | 5.94 GB | 3.73 GB | −37% |
 
-Early release was faster in every round. In a profiled run, live heap at
-the peak fell from 2.74 GB to 1.07 GB, peak heap in use from 6.2 GB to
-3.4 GB, and `madvise` from 10.2 s to 5.4 s of CPU. tsk uses the patch from
+Early release was faster in every round of that set, but the wall-time
+gain did not reproduce: three builds alternated in one session, baseline,
+early release and parallel transpile, all took 4.9–5.3 s (see
+[Results](#results)). The memory saving did reproduce. In a profiled run,
+live heap at the peak fell from 2.74 GB to 1.07 GB, peak heap in use from
+6.2 GB to 3.4 GB, and `madvise` from 10.2 s to 5.4 s of CPU. tsk uses the
+patch from
 the `tsk` branch of
 [alecthomas/golang-x-tools](https://github.com/alecthomas/golang-x-tools),
 through a `replace` in `go.mod`.
@@ -154,7 +159,8 @@ Changes kept:
 | `pass.dependency`, so exhaustive and sumtype only export facts on dependencies | Cold wall 4.60 s to 2.99 s, removing a 1.1 s single-core tail |
 | Cache lookup and module listing overlapped with compiling scripts | Cold wall 3.15 s to 2.80 s, warm 0.47 s to 0.31 s |
 | testifylint on the shared inspector instead of `ast.inspect` | 760,000 fewer script callbacks, no measurable change to a full run |
-| Intermediate results released once their last dependent finishes ([Early release](#early-release)) | Cold wall 4.91 s to 4.54 s, peak memory 5.94 GB to 3.73 GB |
+| Intermediate results released once their last dependent finishes ([Early release](#early-release)) | Peak memory about 5.9 GB to 3.9 GB; wall time unchanged |
+| Scripts transpiled in parallel after the serial type-check | Compiling 403 ms to 253 ms; package loading starts about 110 ms sooner. Whole runs were within variation |
 
 Tried and reverted, each without a measurable gain in wall time:
 
@@ -169,3 +175,52 @@ The array cache needed hits to check that the slice's memory was unchanged:
 Go code reuses some slices in place, such as `ast.PreorderStack`'s stack,
 which gave lostcancel stale arrays. Splitting revive into a linter per
 rule also made no difference to a full run, and was kept.
+
+Compiling type-checks every script as one program on one checker, about
+190 ms, because schema insertion relies on its type identities. Only the
+per-file transpiling, about 165 ms over 265 files, runs in parallel.
+
+## Results
+
+Every measurement since profiling restarted on 2026-10-27, on the machine
+described at the top. Baseline is `v0.18.0`; each later build includes the
+changes kept before it.
+
+Cold runs, five each, alternating with the row compared against and idle
+30 s before each. Medians, with ranges:
+
+| Date | Build | Wall | CPU | Max RSS | Peak footprint | Notes |
+|---|---|---|---|---|---|---|
+| 10-27 | Baseline | 5.02 s (4.62–5.89) | 36.5 s (33.1–43.3) | 6.02 GB | 5.99 GB | On battery |
+| 10-27 | Array cache | 4.84 s (4.78–9.29) | 33.7 s (33.3–48.0) | 5.96 GB | 5.94 GB | Reverted |
+| 10-27 | Array cache, GOGC=400 | 4.83 s (4.18–5.88) | 29.0 s (25.5–34.0) | 7.18 GB | 9.36 GB | Reverted |
+| 10-28 | Baseline | 4.91 s (4.62–6.11) | 35.2 s (33.2–37.6) | 5.65 GB | 5.94 GB | |
+| 10-28 | Early release, patched checker | 4.54 s (4.47–4.58) | 33.6 s (33.6–34.5) | 3.77 GB | 3.73 GB | Kept |
+| 10-28 | Early release, x/tools fork | 4.66 s (4.48–4.93) | 33.8 s (33.7–34.2) | 3.92 GB | 3.86 GB | Not alternated |
+| 10-28 | Early release, x/tools fork | 5.08 s (4.52–6.53) | 35.6 s (34.1–43.5) | 3.89 GB | 3.86 GB | Machine slower in early rounds |
+| 10-28 | Parallel transpile | 4.68 s (4.43–5.29) | 35.5 s (34.6–42.1) | 3.81 GB | 3.79 GB | |
+| 10-28 | Baseline | 4.98 s (4.94–5.86) | 35.3 s (34.7–40.0) | 5.86 GB | 5.83 GB | Three-way set, rounds 1–3 of 5 |
+| 10-28 | Early release, x/tools fork | 5.02 s (4.92–5.15) | 35.2 s (35.2–36.5) | 3.95 GB | 3.95 GB | Three-way set, rounds 1–3 of 5 |
+| 10-28 | Parallel transpile | 5.13 s (4.94–5.34) | 35.3 s (35.2–38.0) | 4.01 GB | 3.95 GB | Three-way set, rounds 1–3 of 5 |
+
+In the three-way set, rounds 4 and 5 took 8.5–12.4 s and 47–51 s of CPU for
+every build, with no sleep logged, so they are left out.
+
+Single profiled runs, slowed by profiling:
+
+| Build | Wall | CPU | Max RSS | `madvise` | Live heap at peak | Peak heap in use |
+|---|---|---|---|---|---|---|
+| Baseline | 6.98 s | 41.8 s | 6.49 GB | 10.8 s (29%) | 2.74 GB | 6.19 GB |
+| Baseline | 6.62 s | 38.6 s | 6.31 GB | 10.2 s (29%) | | |
+| 6 GB pre-grow | 5.69 s | 35.6 s | 6.05 GB | 10.6 s (33%) | | |
+| Early release, patched checker | 6.52 s | 38.0 s | 3.71 GB | 5.4 s (16%) | 1.07 GB | 3.40 GB |
+| Early release, x/tools fork | 5.85 s | 38.7 s | 3.85 GB | 5.0 s (15%) | 1.43 GB | 3.89 GB |
+
+Other measurements:
+
+| Measurement | Before | After |
+|---|---|---|
+| `BenchmarkAnalysis/Linters` allocation per run, baseline vs array cache | 12.24–12.44 GB, 201–204 M objects | 12.47 GB, 204 M objects |
+| Compiling scripts, serial vs parallel transpile, five runs | 403 ms (374–409) | 253 ms (241–264) |
+| Cache lookup done, when package loading starts, two runs | 459, 475 ms | 368, 351 ms |
+| Growing the heap 4 GB in 8 KB objects, 1 vs 10 threads, standalone | 0.29 s wall, 0.28 s CPU | 0.36 s wall, 3.29 s CPU |

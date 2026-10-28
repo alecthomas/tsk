@@ -6,12 +6,14 @@ import (
 	"context"
 	"io/fs"
 	"path"
+	"runtime"
 	"slices"
 	"strconv"
 	"strings"
 
 	"github.com/alecthomas/errors"
 	ts "github.com/microsoft/TypeScript/tsc/shim/typescript"
+	"golang.org/x/sync/errgroup"
 
 	"github.com/alecthomas/tsk/internal/bindings"
 	"github.com/alecthomas/tsk/internal/config"
@@ -80,17 +82,35 @@ func Compile(ctx context.Context, sources []Source) (*Program, error) {
 	if err != nil {
 		return nil, errors.Wrap(err, "type-check scripts")
 	}
-	for _, name := range scripts {
+	// insertSchemas queries the program's one checker, which is not safe for
+	// concurrent use, so only transpiling, each file on its own, is parallel.
+	withSchemas := make([]string, len(scripts))
+	for i, name := range scripts {
 		source, err := insertSchemas(program, compiled, name, files[name])
 		if err != nil {
 			return nil, err
 		}
-		code, diagnostics := ts.Transpile(ctx, name, source)
-		if len(diagnostics) > 0 {
-			return nil, errors.Errorf("transpile %q: %s", name, strings.Join(diagnostics, "; "))
-		}
+		withSchemas[i] = source
+	}
+	codes := make([]string, len(scripts))
+	var group errgroup.Group
+	group.SetLimit(runtime.GOMAXPROCS(0))
+	for i, name := range scripts {
+		group.Go(func() error {
+			code, diagnostics := ts.Transpile(ctx, name, withSchemas[i])
+			if len(diagnostics) > 0 {
+				return errors.Errorf("transpile %q: %s", name, strings.Join(diagnostics, "; "))
+			}
+			codes[i] = code
+			return nil
+		})
+	}
+	if err := group.Wait(); err != nil {
+		return nil, errors.WithStack(err)
+	}
+	for i, name := range scripts {
 		module := strings.TrimPrefix(name, "/")
-		compiled.Modules[module] = code
+		compiled.Modules[module] = codes[i]
 		compiled.Entries = append(compiled.Entries, module)
 	}
 	return compiled, nil
