@@ -84,7 +84,7 @@ func TestConfigResolve(t *testing.T) {
 	cwd, err := os.Getwd()
 	assert.NoError(t, err)
 	type resolved struct {
-		Cache   string
+		Cache    string
 		Results  Option[string]
 		Testdata string
 	}

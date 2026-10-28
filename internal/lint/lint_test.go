@@ -28,10 +28,10 @@ func funcsAnalyzer() *analysis.Analyzer {
 				for _, decl := range file.Decls {
 					if fn, ok := decl.(*ast.FuncDecl); ok {
 						pass.Report(analysis.Diagnostic{
-						Pos:     fn.Name.Pos(),
-						Message: "function " + fn.Name.Name,
-						Related: []analysis.RelatedInformation{{Pos: fn.Type.Func, Message: "declared here"}},
-					})
+							Pos:     fn.Name.Pos(),
+							Message: "function " + fn.Name.Name,
+							Related: []analysis.RelatedInformation{{Pos: fn.Type.Func, Message: "declared here"}},
+						})
 					}
 				}
 			}

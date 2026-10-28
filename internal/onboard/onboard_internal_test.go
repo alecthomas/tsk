@@ -89,7 +89,7 @@ func TestWriteInstructions(t *testing.T) {
 			setup:   func(*testing.T, string) {},
 			written: []string{"AGENTS.md", ".agents/skills/tsk/SKILL.md"},
 			expected: map[string]string{
-				"AGENTS.md":                  section,
+				"AGENTS.md":                   section,
 				".agents/skills/tsk/SKILL.md": skill,
 			},
 		},
