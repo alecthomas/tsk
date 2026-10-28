@@ -7,6 +7,11 @@ go 1.27.1
 // module claims a path under it so it can re-export the compiler.
 replace github.com/microsoft/TypeScript/tsc/shim/typescript => ./internal/typescript
 
+// The fork's checker releases each intermediate result, such as SSA, once its
+// last dependent pass finishes, instead of when the whole run does. Keep it on
+// the x/tools version required below, rebasing its tsk branch to upgrade.
+replace golang.org/x/tools => github.com/alecthomas/golang-x-tools v0.51.1-0.20261028012018-f8e33e88094d
+
 require (
 	github.com/alecthomas/assert/v2 v2.11.0
 	github.com/alecthomas/errors v0.9.1

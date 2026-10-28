@@ -25,9 +25,11 @@ statements = 50
 [godoclint]
 enable = ["no-unused-link"]
 
-# Allow the one local replacement, of the TypeScript shim.
+# Allow the local replacement of the TypeScript shim, and the x/tools fork
+# whose checker frees intermediate results early.
 [gomoddirectives]
 replace-local = true
+replace-allow-list = ["golang.org/x/tools"]
 
 # TODO comments need not end in a period.
 [godot]

@@ -1,301 +1,171 @@
 # Lint performance
 
-tsk is about twice as slow as golangci-lint on a cold run of this repository
-with the same 59 linters enabled. Warm runs, served from the result cache,
-take the same time.
+A cold lint of this repository takes about 5 s wall and 36 s CPU, and peaks
+at about 6 GB of memory. Allocation and heap growth cost more CPU than
+running the linters' scripts. Analysis keeps every core busy, so that CPU
+is wall time.
 
-| | Cold | Warm |
+| | Median | Range |
 |---|---|---|
-| golangci-lint v2.14.0 | 2.0–2.2 s | 0.47 s |
-| tsk | 4.6–4.8 s | 0.47 s |
+| Wall | 5.02 s | 4.62–5.89 s |
+| CPU | 36.5 s | 33.1–43.3 s |
+| Max RSS | 6.02 GB | 5.74–6.26 GB |
 
-## Where a cold run goes
+These are five cold runs at `v0.18.0` on a 10-core Mac with 32 GB, Go
+1.27.1. A run makes 5,742 analyzer passes over 363 packages, 36 of them in
+the module. The breakdowns below come from one profiled run, which the
+profiling slowed to 7.0 s. They predate [Early release](#early-release),
+which cut cold wall time to 4.54 s and peak memory to about 3.7 GB.
 
-| Phase | Time |
-|---|---|
-| Compile and load scripts | 0.27 s |
-| Cache lookup | 0.17 s |
-| Load packages | 0.96 s |
-| Analysis | about 3.2 s |
+## Timeline
 
-Summed analyzer durations come to 17.9 s across all cores. They are wall
-time per run, so they include waiting for a CPU and garbage collection.
-
-| Analyzer | Time | Share |
+| Time | Cores busy | Phase |
 |---|---|---|
-| dupl | 3.4 s | 19% |
-| exhaustive | 3.2 s | 18% |
-| unparam | 1.6 s | 9% |
-| wastedassign | 1.6 s | 9% |
-| testifylint | 1.2 s | 6.5% |
-| protogetter | 1.1 s | 6% |
+| 0–0.7 s | about 1.3 | Compiling scripts (0.44 s), looking up cached findings (0.53 s) |
+| 0.7–1.5 s | 4–9 | Loading and type-checking packages |
+| 1.5–6.1 s | 10 | Analysis |
+| 6.1–6.5 s | falling | Tail |
 
-Every other analyzer is under 3.5%.
+Stop-the-world pauses total 24 ms.
 
-## Findings
+## CPU
 
-- exhaustive declares `scope: "all"` to collect enum facts from
-  dependencies, so it runs on 324 dependency packages as well as the
-  module's 31. Most of that time goes to the TypeScript-Go shim's large
-  packages, such as `checker` (0.42 s) and `ast` (0.42 s). On a dependency
-  only its facts are used, but it also checks every switch.
-- dupl's cost grows with package size. Its worst package is `internal/vm`
-  (0.63 s).
-- `internal/vm` is the slowest package for 38 of the 61 script analyzers.
-  Run alone, testifylint, dupl and protogetter each take 0.2–0.26 s on it.
-  In a full run they take 2.5–3 times longer because of contention. Why the
-  package is expensive is not yet known.
+| Cost | CPU | Share |
+|---|---|---|
+| Heap growth: `madvise` | 10.8 s | 29% |
+| GC marking | 6.2 s | 16% |
+| Zeroing fresh memory | 3.7 s | 10% |
+| Running scripts | 12.5 s | 33% |
+| …of which calls into Go through the bridge | 5.6 s | 15% |
+| SSA, type-checking and parsing | 2.4 s | 6% |
+
+Go marks newly mapped memory as released, so on macOS every new span calls
+`madvise(MADV_FREE_REUSE)` in `sysUsed`. The kernel serialises those calls.
+Growing the heap by 4 GB in 8 KB objects in a standalone program:
+
+| Threads | Wall | CPU |
+|---|---|---|
+| 1 | 0.29 s | 0.28 s |
+| 2 | 0.38 s | 0.74 s |
+| 4 | 0.30 s | 1.18 s |
+| 10 | 0.36 s | 3.29 s |
+
+Wall time does not change with threads; CPU grows with them. In tsk, ten
+threads grow the heap to about 6 GB while analysing, and the contention is
+worth about 1.1 s of the 4.6 s of analysis. Allocating in 1 MB or larger
+blocks makes growth nearly free.
+
+## Memory
+
+Peak RSS is about twice the live heap, 2.7 GB at the last collection, as
+expected with GOGC=100.
+
+| Live at peak | Size | Why |
+|---|---|---|
+| SSA from `buildssa` | 0.87 GB | The x/tools checker keeps every result until all passes finish |
+| Syntax and types from loading | 0.73 GB | Needed throughout |
+| Held by script runs | 0.66 GB | Not yet attributed |
+| Inspectors | 0.35 GB | Built for all 363 packages and kept to the end |
+
+printf, inline, exhaustive and sumtype run on every dependency for their
+facts, and each requires `inspect`, so every dependency gets an inspector.
+
+## Allocation
+
+A run allocates 11.3 GB:
+
+| Source | Allocated | Share |
+|---|---|---|
+| Script runs | 6.9 GB | 61% |
+| …calls into Go through the bridge | 2.8 GB | |
+| ……object wrappers | 1.2 GB | |
+| ……arrays for slices | 0.9 GB | |
+| …sobek arrays | 1.4 GB | |
+| …arrow functions | 0.5 GB | |
+| …array iterators for `for…of` | 0.3 GB | |
+| SSA | 2.1 GB | 19% |
+| …dependency members, recreated for each package | 1.0 GB | |
+| Package loading | 1.2 GB | 11% |
+| Inspectors | 0.5 GB | 4% |
+
+Arrays are created mostly by scripts: in the in-process benchmark, array
+literals are 51% of array allocation, the bridge 25%, and `split` 14%.
+Every sobek array allocates a property map and a name slice just to hold
+`length`, and every `for…of` over an array allocates an iterator object
+with its own map. Together these are about 16% of allocation in that
+benchmark.
+
+## Candidate fixes
+
+- Allocate less in the bridge, mostly wrappers. Each pass wraps values in a
+  scope of its own; an earlier count found 77% of new wrappers were for
+  values an earlier pass had wrapped.
+- In a sobek fork, keep `length` out of the property map, and iterate
+  plain arrays in `for…of` without an iterator object.
+
+## Early release
+
+A patched copy of the x/tools checker counts each action's dependents. When
+the last one finishes, it drops the action's result unless the action is a
+root, and each pass drops its `ResultOf` map once it has run. All 424 linter
+test cases pass. Five cold runs each, alternating:
+
+| | Before | Early release | Change |
+|---|---|---|---|
+| Wall | 4.91 s (4.62–6.11) | 4.54 s (4.47–4.58) | −7.5% |
+| CPU | 35.2 s (33.2–37.6) | 33.6 s (33.6–34.5) | −4% |
+| Max RSS | 5.65 GB | 3.77 GB | −33% |
+| Peak footprint | 5.94 GB | 3.73 GB | −37% |
+
+Early release was faster in every round. In a profiled run, live heap at
+the peak fell from 2.74 GB to 1.07 GB, peak heap in use from 6.2 GB to
+3.4 GB, and `madvise` from 10.2 s to 5.4 s of CPU. tsk uses the patch from
+the `tsk` branch of
+[alecthomas/golang-x-tools](https://github.com/alecthomas/golang-x-tools),
+through a `replace` in `go.mod`.
 
 ## Measuring
 
-Run a cold lint with debug logging into a fresh cache, then total the
-`Analyzer finished` durations by analyzer or package:
+- Compare whole runs, not analyzer durations, which vary by up to 2×
+  between identical runs.
+- Run cold into a fresh cache, alternate between versions, and idle 30 s
+  before each run, because the machine slows under sustained load:
 
-```sh
-TSK_CACHE=$(mktemp -d) tsk --log-level=debug ./... 2> debug.log
-```
+  ```sh
+  TSK_CACHE=$(mktemp -d) /usr/bin/time -l tsk ./...
+  ```
 
-## Iterations
+- Prevent sleep with `caffeinate -i`, and keep the lid open. A run that
+  spans a sleep shows a huge wall time with normal CPU.
+- `BenchmarkAnalysis/Linters` with `-benchmem` gives allocation per run with
+  little noise. Its timings drift under sustained load.
+- The profiles came from a temporary hook in `main`, not committed, writing
+  a CPU profile, an execution trace, a heap profile at each new peak and
+  `runtime.MemStats` every 100 ms. Running cores per 100 ms came from the
+  trace, read with `golang.org/x/exp/trace`.
 
-Per-analyzer durations vary by up to 2× between identical cold runs, so
-compare wall and CPU time of whole runs, repeated, instead.
+## History
 
-### 1. exhaustive on dependencies
+Changes kept:
 
-Run alone, exhaustive takes 2.6–3.3 s wall and 9–10 s CPU. godot, which
-runs only on the module, takes 1.07 s wall and 2.3 s CPU.
-
-- Loading packages takes 1.11 s instead of 0.55 s, because analyzers with
-  `scope: "all"` need syntax and types for every dependency.
-- Analysis takes about 1.5 s more.
-- Checking switches is 88% of exhaustive's own time. Collecting enum facts
-  is the rest. On a dependency, the facts are all that is used, because its
-  findings are discarded.
-
-sumtype is the only other `scope: "all"` analyzer. It reads `//sumtype`
-comments on declarations, so it also needs dependency syntax.
-
-Options:
-
-- Tell analyzers whether a package is a dependency, so exhaustive collects
-  only facts there. This keeps upstream's behaviour and saves most of the
-  analysis time, but not the loading.
-- Derive dependency enums from type information and drop `scope: "all"`.
-  This saves loading too, but only when sumtype is also disabled. It would
-  ignore `//exhaustive:ignore` on declarations in dependencies.
-
-### 2. CPU profile
-
-Profiles came from a temporary `pprof` hook in `main`, which is not
-committed.
-
-dupl alone spends almost nothing in the bridge: wrapping and arrays got one
-10 ms sample. Its script time goes to closures, array methods, iterators,
-and object literals in the interpreter. Garbage collection and heap growth
-cost more than the script itself.
-
-A full cold run has 19.6 s of CPU samples:
-
-| Bucket | Time | Share |
-|---|---|---|
-| Heap growth (`madvise`) | 6.1 s | 31% |
-| Script execution | 6.2 s | 32% |
-| …of which calls into Go | 2.6 s | 13% |
-| GC marking | 3.9 s | 20% |
-| Type-checking | 0.75 s | 4% |
-
-`madvise` is the runtime taking memory back from the OS as the heap grows,
-which is expensive on macOS. With GC, allocation drives about half of all
-CPU. The run allocates 8.5 GB:
-
-| Source | Allocated |
+| Change | Effect |
 |---|---|
-| sobek arrays, including bridge-built ones | 1.5 GB |
-| sobek property writes, mostly array setup | 1.4 GB |
-| `ast.inspect` with a script callback, used by 27 linters | 1.0 GB |
-| `go/types` recording types | 0.5 GB |
-| Bridge wrapper cache | 0.5 GB |
-| wastedassign's own SSA programs | 0.5 GB |
+| Fact runs served first by the runtime pool | Cold wall 4.30 s to 3.98 s, by starting exhaustive's dependency chain at once |
+| `pass.dependency`, so exhaustive and sumtype only export facts on dependencies | Cold wall 4.60 s to 2.99 s, removing a 1.1 s single-core tail |
+| Cache lookup and module listing overlapped with compiling scripts | Cold wall 3.15 s to 2.80 s, warm 0.47 s to 0.31 s |
+| testifylint on the shared inspector instead of `ast.inspect` | 760,000 fewer script callbacks, no measurable change to a full run |
+| Intermediate results released once their last dependent finishes ([Early release](#early-release)) | Cold wall 4.91 s to 4.54 s, peak memory 5.94 GB to 3.73 GB |
 
-- `ast.inspect` wraps every node and calls into the script for each one.
-  The inspector's filtered traversal selects nodes in Go and is cheaper.
-- wastedassign builds a naive-form SSA program per package, creating an SSA
-  package for every transitive import each time.
+Tried and reverted, each without a measurable gain in wall time:
 
-GOGC=400 cuts CPU by about 23% (22.5 s to 17 s) but wall time only by
-about 7% (4.3 s to 3.95 s).
-
-### 3. ast.inspect callbacks
-
-Baseline: median 4.25 s wall and 22.2 s CPU over five cold runs.
-
-- A bridge fast path for visitor callbacks, which skipped
-  `reflect.MakeFunc`, made no measurable difference (4.31 s, 22.4 s). It
-  was reverted. Reflection is not where callback time goes.
-- Scripts receive 2.34 million callbacks per cold run. One walk of the
-  whole module is about 130,000. testifylint made 34% of them, about six
-  walks, because its port reimplemented upstream's inspector calls
-  (`Preorder`, `Nodes`, `WithStack`) on `ast.inspect`. They now use the
-  shared inspector, which filters in Go. Its findings on upstream's
-  generated testdata are unchanged: 5,182 across 25 checkers.
-- That removed 760,000 callbacks but changed the full run by nothing
-  measurable (4.30 s, 22.2 s). Run alone, testifylint's CPU fell from about
-  2.65 s to 2.2 s. Callbacks cost about 0.5 µs each, so the remaining 1.58
-  million are worth about 0.8 s of CPU, or 4%. Converting the other
-  linters is not worth it for speed.
-
-The run averages about 5 of the machine's 10 cores (22 s of CPU in 4.3 s),
-so wall time is bounded by something serialised, not by total CPU. The
-next step is a timeline of a cold run to find it.
-
-### 4. Timeline
-
-A timeline came from timestamped debug logs (a temporary change to the
-logger), counting runs in progress per 100 ms.
-
-- Startup is serial: 0.26 s compiling scripts, 0.15 s looking up cached
-  findings, then 0.8 s loading packages. Analysis starts about 1.3 s in.
-- Analysis took 2.84 s. All ten cores were busy for the first 1.5 s. One
-  was busy for the remaining 1.35 s.
-- That tail was exhaustive working along the TypeScript shim's dependency
-  chain, from `ast` through `checker` to `ls`, then tsk's own packages.
-  Each run waits for its dependencies' facts, so the chain is serial.
-- The chain started late. exhaustive's runs on low-level dependencies, such
-  as `unicode`, waited about 1 s for a runtime, because the pool woke
-  waiting runs in arrival order. Nothing waits on most of those runs, such
-  as any analyzer on a module package.
-
-The pool now serves runs of analyzers with facts first.
-
-| | Wall | CPU |
-|---|---|---|
-| Before | 4.30 s | 22.2 s |
-| Fact runs first | 3.98 s | 21.5 s |
-
-Analysis now takes 2.68 s, and the chain starts at once. But exhaustive's
-run on `ast` takes 0.98 s while all cores are busy, against 0.41 s alone.
-The chain itself is now the bound: about 1.1 s of single-core tail.
-Shortening it means cheaper exhaustive runs on dependencies, such as
-skipping switch checks whose findings are discarded (see iteration 1).
-
-### 5. Facts only on dependencies
-
-Scripts now see `pass.dependency`, set for a package outside the modules
-being linted, where findings are discarded. exhaustive and sumtype export
-their facts there and skip their checks.
-
-From this iteration on, the machine slows under sustained load: back-to-back
-runs after the first take up to twice as long. Comparisons alternate between
-versions and idle 30 s before each run.
-
-| | Wall | CPU |
-|---|---|---|
-| Before | 4.60 s | 22.7 s |
-| Facts only on dependencies | 2.99 s | 19.2 s |
-
-Analysis takes 1.65 s instead of 2.68 s, with all ten cores busy to the
-end; the single-core tail is gone. Startup is still serial: 0.26 s
-compiling scripts, 0.14 s looking up cached findings, and 0.77 s loading
-packages, about 40% of the run. Analysis is CPU-bound again, so the
-allocation costs from iteration 2 matter once more.
-
-exhaustive's findings on the TypeScript module (833) are the same before
-and after, apart from the order of names within some groups of
-same-valued members. That order varies between identical runs of either
-version: like upstream, exhaustive orders members by `token.Pos`, and file
-positions depend on the order in which files are parsed.
-
-### 6. Parallel startup
-
-Startup ran one step after another, measured from process start:
-
-| Time | Step |
+| Change | Result |
 |---|---|
-| 0–0.03 s | Process start, `go env GOROOT`, config |
-| 0.03–0.40 s | Compiling and evaluating scripts |
-| 0.40–0.42 s | `go list -m` for the main modules |
-| 0.42–0.61 s | Looking up cached findings: `go env -json`, a metadata `go list`, hashing files |
-| 0.61–1.48 s | Loading packages with syntax |
+| Bridge fast path for visitor callbacks, skipping `reflect.MakeFunc` | No change |
+| One array per slice per pass, with `--freeze-arrays` to catch scripts modifying one | 31% of conversions hit, skipping 64% of element wrapping, yet allocation stayed 12.2–12.5 GB per run and wall and CPU were within variation |
+| GOGC=400 by default | CPU −14%, wall unchanged, peak footprint +58% (5.9 to 9.4 GB) |
+| Growing the heap by 6 GB at startup, to skip `madvise` for later spans | The scavenger released all 6 GB within 0.7 s, so `madvise` stayed at 10.6 s of CPU |
 
-Only the full load needs the scripts, to know whether any analyzer needs
-facts. The cache lookup needed them only for the fingerprint in each key.
-Keys are now a package's content key, computed without the scripts, hashed
-with the fingerprint.
-
-- Listing the main modules overlaps compiling the scripts.
-- The cache lookup starts before the project loads, so its `go` commands
-  and hashing overlap compiling the scripts too.
-
-The lookup finishes 15 ms after the scripts instead of 0.2 s after them,
-and the first analyzer run starts at 1.15 s instead of 1.48 s.
-
-Starting the full load alongside the lookup, and cancelling it when every
-package hit, was tried first. It hid the lookup on cold runs but made warm
-runs 70 ms slower, so it was dropped.
-
-| | Cold wall | Cold CPU | Warm wall |
-|---|---|---|---|
-| Before | 3.15 s | 18.0 s | 0.47 s |
-| Parallel startup | 2.80 s | 17.5 s | 0.31 s |
-
-Cold runs alternate between binaries and idle 30 s before each. The full
-load, about 0.84 s, is now the only startup step on the critical path.
-
-### 7. Wrapping per pass
-
-The ported vet analyzers took the library from 59 to 104 linters. A cold
-run of this repository now takes 4.4–5.1 s wall and 28–29 s CPU, from three
-runs into fresh caches.
-
-Each analyzer pass wraps Go values in a scope of its own, discarded when
-the pass ends. Splitting revive's 23 default rules into one analyzer each
-cost 37% more CPU, which pointed at wrapping repeated across passes.
-Temporary counters in the bridge's `object`, and a CPU and allocation
-profile, measured how much a cold run spends on it. All three runs gave the
-same counts:
-
-| Wrapper requests | Count |
-|---|---|
-| All | 10.2 million |
-| Hits in the pass's scope | 6.76 million (66%) |
-| New wrappers for values with identity | 2.63 million |
-| …of values an earlier pass had wrapped | 2.02 million (77%) |
-| Values without identity, always new | 0.82 million |
-
-| | CPU | Allocated |
-|---|---|---|
-| Creating and caching wrappers (`object`) | 1.5 s (6%) | 0.69 GB (10%) |
-| …of which recording them in the scope's maps | 0.56 s | 0.34 GB |
-| All wrapping, including arrays and primitives | 2.0 s (8%) | 1.1 GB (17%) |
-| Heap growth (`madvise`) | 8.7 s (35%) | |
-| GC marking | 3.6 s (14%) | |
-
-The figures exclude the counters' own 0.3 s and 45 MB.
-
-- Wrappers are about a tenth of allocation, so in proportion they drive
-  about 1.2 s of the GC and heap-growth time, for about 2.7 s in all.
-- Sharing wrappers across passes would at best avoid the 77% of new
-  wrappers that repeat an earlier pass's, roughly 2 s of CPU. Wrappers
-  belong to one runtime, so only passes on the same runtime could share
-  them, and the real saving would be smaller.
-- Heap growth is still the largest single cost, as in iteration 2.
-
-### 8. Revive's rules as separate linters
-
-Revive's rules became 104 linters in a group, of which revive's 23 default
-rules run by default. Cold runs of this repository, alternating with the
-previous commit's binary and linters and idle 30 s before each, show no
-difference:
-
-| | Wall | CPU | Peak memory |
-|---|---|---|---|
-| One revive linter | 6.1–6.3 s | 31.0–31.4 s | 3.9–4.1 GB |
-| A linter per rule | 6.0–6.1 s | 31.2–31.6 s | 4.0–4.1 GB |
-
-Run alone, the 23 default rules as separate linters had cost about 1 s more
-CPU than one linter running them, mostly from wrapping per pass. Within a
-full run that is lost in run-to-run variation. Recognising generated files
-from the syntax tree, rather than by reading each file, also removed revive's
-source reads. The machine was slower than in iteration 7, so compare only
-within this table.
-
+The array cache needed hits to check that the slice's memory was unchanged:
+Go code reuses some slices in place, such as `ast.PreorderStack`'s stack,
+which gave lostcancel stale arrays. Splitting revive into a linter per
+rule also made no difference to a full run, and was kept.
