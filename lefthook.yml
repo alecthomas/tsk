@@ -2,7 +2,7 @@ pre-commit:
   commands:
     fmt:
       priority: 1
-      run: bit fmt
+      run: bit fmt && git add .github/workflows/ci.yml
       stage_fixed: true
 
 commit-msg:
