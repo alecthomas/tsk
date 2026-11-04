@@ -46,3 +46,15 @@ jobs:
           key: ${{ runner.os }}-${{ github.job }}-${{ github.run_id }}-${{ github.run_attempt }}
 {% endraw %}
 {% endfor %}
+  # The ruleset requires only this check, so it stays valid when the jobs
+  # change. always() matters: GitHub counts a skipped required check as passing.
+  ci:
+    name: "ci"
+    if: always()
+    needs: [{% for job in jobs %}{{ job.id | tojson }}{% if not loop.last %}, {% endif %}{% endfor %}]
+    runs-on: ubuntu-latest
+    steps:
+{% raw %}
+      - if: contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled') || contains(needs.*.result, 'skipped')
+        run: exit 1
+{% endraw %}
