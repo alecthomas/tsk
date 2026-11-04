@@ -9,21 +9,52 @@ on:
 permissions:
   contents: read
 
+# Master saves a fresh cache from an empty start so entries never accumulate,
+# and every other ref only restores the newest master cache.
+env:
+  CACHE_PATHS: |
+    ~/.cache/bit
+    ~/.cache/go-build
+    ~/go/pkg/mod
+    ~/.cache/tsk
+
 jobs:
   test:
     name: Test
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # ratchet:actions/checkout@v7
+      - if: github.ref != 'refs/heads/master'
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # ratchet:actions/cache/restore@v6
+        with:
+          path: ${{ env.CACHE_PATHS }}
+          key: ${{ runner.os }}-${{ github.job }}-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: ${{ runner.os }}-${{ github.job }}-
       - uses: cashapp/activate-hermit@cea9af7913204a965fd488637a8d1811bba2e616 # ratchet:cashapp/activate-hermit@v1
       - name: Run tests
         run: bit test
+      - if: github.ref == 'refs/heads/master'
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # ratchet:actions/cache/save@v6
+        with:
+          path: ${{ env.CACHE_PATHS }}
+          key: ${{ runner.os }}-${{ github.job }}-${{ github.run_id }}-${{ github.run_attempt }}
 
   lint:
     name: Lint
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # ratchet:actions/checkout@v7
+      - if: github.ref != 'refs/heads/master'
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # ratchet:actions/cache/restore@v6
+        with:
+          path: ${{ env.CACHE_PATHS }}
+          key: ${{ runner.os }}-${{ github.job }}-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: ${{ runner.os }}-${{ github.job }}-
       - uses: cashapp/activate-hermit@cea9af7913204a965fd488637a8d1811bba2e616 # ratchet:cashapp/activate-hermit@v1
       - name: Run lint checks
         run: bit lint
+      - if: github.ref == 'refs/heads/master'
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # ratchet:actions/cache/save@v6
+        with:
+          path: ${{ env.CACHE_PATHS }}
+          key: ${{ runner.os }}-${{ github.job }}-${{ github.run_id }}-${{ github.run_attempt }}
