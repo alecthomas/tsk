@@ -73,3 +73,13 @@ jobs:
         with:
           path: ${{ env.CACHE_PATHS }}
           key: ${{ runner.os }}-${{ github.job }}-${{ github.run_id }}-${{ github.run_attempt }}
+  # The ruleset requires only this check, so it stays valid when the jobs
+  # change. always() matters: GitHub counts a skipped required check as passing.
+  ci:
+    name: "ci"
+    if: always()
+    needs: ["default", "test-go-package-run", "test-linters-analyzers"]
+    runs-on: ubuntu-latest
+    steps:
+      - if: contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled') || contains(needs.*.result, 'skipped')
+        run: exit 1
