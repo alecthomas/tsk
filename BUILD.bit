@@ -13,7 +13,7 @@ build-go[go-module] = go.build {
   dir = go-module
 }
 
-test-go[go-module](package = "./...", run = ".") = go.test {
+large test-go[go-module](package = "./...", run = ".") = go.test {
   package = package
   dir = go-module
   flags = ["-timeout=30s", "-run=#{run}"]
@@ -55,9 +55,22 @@ lint-ts = exec.test {
   inputs = ["biome.json", "linters/*.ts", "internal/hostapi/*.ts", "internal/hostapi/*.js"]
 }
 
+# Regenerate the CI workflow from the ci target. Ratchet pins any action the
+# template leaves unpinned.
+sync-ci = exec {
+  command = <<-EOL
+    bit --ci ./.github/ci.yml.tmpl ci > .github/workflows/ci.yml
+    ratchet pin .github/workflows/ci.yml
+  EOL
+  inputs = [".github/ci.yml.tmpl", "BUILD.bit", "bin/.bit-*.pkg", "bin/.ratchet-0.12.0.pkg"]
+  outputs = ".github/workflows/ci.yml"
+}
+
+# Pinning after the sync keeps the two from rewriting ci.yml at once.
 fmt-action-pins = exec {
   command = "ratchet pin .github/workflows/*.yml"
   inputs = [".github/workflows/*.yml", "bin/.ratchet-0.12.0.pkg"]
+  depends_on = [sync-ci]
 }
 lint-actions = exec.test {
   command = "actionlint"
@@ -107,7 +120,7 @@ explicit bump = exec {
 
 # Test this repository's linter library the way any library tests itself.
 # analyzers is a space-separated list of analyzers to test instead of all.
-test-linters(analyzers = "") = exec.test {
+large test-linters(analyzers = "") = exec.test {
   command = "#{root}/#{tsk-bin.path} test --dir linters --json #{analyzers}"
   results = <<-EOF
     if .event then {suite: .analyzer, event: .event} + (if .duration then {duration: .duration} else {} end)
@@ -131,7 +144,10 @@ target test = [test-go, test-linters]
 target lint = [lint-tsk, fmt-check-go, lint-ts, lint-actions, lint-action-pins, lint-release]
 
 # Format everything
-target fmt = [fix-go, fmt-go, fmt-ts, fmt-action-pins]
+target fmt = [fix-go, fmt-go, fmt-ts, sync-ci, fmt-action-pins]
+
+# What CI runs. Each large block gets its own job.
+target ci = [test, lint]
 
 # Build tsk
 target build = [tsk-bin]
