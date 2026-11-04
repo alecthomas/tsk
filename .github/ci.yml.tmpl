@@ -12,8 +12,9 @@ on:
 permissions:
   contents: read
 
-# Master saves a fresh cache from an empty start so entries never accumulate,
-# and every other ref only restores the newest master cache.
+# Only master saves. It restores only caches from the current ISO week, so
+# entries that tools never trim are dropped by a cold build once a week. Other
+# refs restore the newest master cache from any week.
 env:
   CACHE_PATHS: |
     ~/.cache/bit
@@ -29,12 +30,13 @@ jobs:
     steps:
 {% raw %}
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # ratchet:actions/checkout@v7
-      - if: github.ref != 'refs/heads/master'
-        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # ratchet:actions/cache/restore@v6
+      - id: week
+        run: echo "week=$(date -u +%G-W%V)" >> "$GITHUB_OUTPUT"
+      - uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # ratchet:actions/cache/restore@v6
         with:
           path: ${{ env.CACHE_PATHS }}
-          key: ${{ runner.os }}-${{ github.job }}-${{ github.run_id }}-${{ github.run_attempt }}
-          restore-keys: ${{ runner.os }}-${{ github.job }}-
+          key: ${{ runner.os }}-${{ github.job }}-${{ steps.week.outputs.week }}-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: ${{ runner.os }}-${{ github.job }}-${{ github.ref == 'refs/heads/master' && steps.week.outputs.week || '' }}
       - uses: cashapp/activate-hermit@cea9af7913204a965fd488637a8d1811bba2e616 # ratchet:cashapp/activate-hermit@v1
 {% endraw %}
       - run: {{ job.command | tojson }}
@@ -43,7 +45,7 @@ jobs:
         uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # ratchet:actions/cache/save@v6
         with:
           path: ${{ env.CACHE_PATHS }}
-          key: ${{ runner.os }}-${{ github.job }}-${{ github.run_id }}-${{ github.run_attempt }}
+          key: ${{ runner.os }}-${{ github.job }}-${{ steps.week.outputs.week }}-${{ github.run_id }}-${{ github.run_attempt }}
 {% endraw %}
 {% endfor %}
   # The ruleset requires only this check, so it stays valid when the jobs
