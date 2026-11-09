@@ -30,8 +30,9 @@ sync.Map, sync.Cond, and sync.Pool need no lock.
 
 A value is under construction in the function that allocates it, in the
 callers of functions that return it newly allocated, and in functions whose
-every caller passes it newly allocated. Package-level variables are under
-construction in init functions. Writes in test files do not count.
+every caller passes it newly allocated, but not in goroutines that share it.
+Package-level variables are under construction in init functions. Writes in
+test files do not count.
 
 Functions need no annotations. A function that accesses a guarded value
 without taking its lock passes the requirement on to its callers. It is
@@ -200,11 +201,23 @@ function propagates(path: string): boolean {
   return /^(p\d|f\d|g:)/.test(path);
 }
 
+// deref dereferences a path. A variable that only ever holds one value has that
+// value's path with an address step "&", which a dereference cancels.
+function deref(path: string): string {
+  return path.endsWith("/&") ? path.slice(0, -2) : `${path}/*`;
+}
+
 // isFresh reports whether a path is a newly allocated value or within one,
 // rather than reached through a pointer.
 function isFresh(path: string): boolean {
   const steps = path.split("/");
   return steps[0].startsWith("a:") && !steps.includes("*");
+}
+
+// owner returns the path of the value a requirement is about: the value
+// written, or the mutex field, without the dereference of a pointer mutex.
+function owner(requirement: Requirement): string {
+  return requirement.kind === "lock" ? requirement.path.replace(/\/\*$/, "") : requirement.path;
 }
 
 function isAllocation(path: string): boolean {
@@ -223,7 +236,10 @@ function substitute(path: string, args: (string | null)[], frees: (string | null
   } else if (root.startsWith("f")) {
     replacement = frees[Number(root.slice(1))];
   }
-  return replacement == null ? null : replacement + rest;
+  if (replacement == null) {
+    return null;
+  }
+  return rest.startsWith("/*") ? deref(replacement) + rest.slice(2) : replacement + rest;
 }
 
 function satisfies(state: State, lock: string, mode: Mode): boolean {
@@ -729,8 +745,10 @@ class FunctionChecker {
   }
 
   private require(requirement: Requirement, state: State, goroutine: boolean): void {
-    // Values under construction are not yet shared, so they need no lock.
-    if (isFresh(requirement.path) || (requirement.kind === "lock" && satisfies(state, requirement.path, requirement.mode))) {
+    // Values under construction are not yet shared, so they need no lock. A new
+    // goroutine shares them with its creator.
+    const constructing = !goroutine && isFresh(owner(requirement));
+    if (constructing || (requirement.kind === "lock" && satisfies(state, requirement.path, requirement.mode))) {
       return;
     }
     if (goroutine || !propagates(requirement.path)) {
@@ -819,12 +837,16 @@ class FunctionChecker {
         return `f${this.fn.freeVars.indexOf(value)}`;
       case "Global":
         return globalPath(value.object()!);
-      case "Alloc":
-        return `a:${value.name()}`;
+      case "Alloc": {
+        // A variable captured by a closure is allocated, and accessed through
+        // its address, even when it holds one pointer throughout.
+        const held = heldPointer(value);
+        return held === null ? `a:${value.name()}` : `${this.path(held)}/&`;
+      }
       case "FieldAddr":
         return `${this.path(value.x)}/f${value.field}`;
       case "UnOp":
-        return value.op === token.MUL ? `${this.path(value.x)}/*` : `v:${value.name()}`;
+        return value.op === token.MUL ? deref(this.path(value.x)) : `v:${value.name()}`;
       case "Phi":
         if (value.edges.every((edge) => isAllocation(this.path(edge)))) {
           return `a:${value.name()}`;
@@ -884,6 +906,38 @@ function staticCallee(call: ssa.CallCommon): ssa.Function | null {
 function lockOp(call: ssa.CallCommon): { acquire: Mode | null } | null {
   const object = call.isInvoke() ? null : (call.staticCallee()?.object() ?? null);
   return object?.$type === "Func" ? (lockOps.get(object.fullName()) ?? null) : null;
+}
+
+// heldPointer returns the only pointer a variable ever holds, or null if it is
+// stored to more than once, by a closure, or through an escaped address.
+function heldPointer(variable: ssa.Alloc): ssa.Value | null {
+  const type = types.unalias(variable.type());
+  if (type?.$type !== "Pointer" || types.unalias(type.elem())?.$type !== "Pointer") {
+    return null;
+  }
+  const stores = (variable.referrers() ?? []).filter((ref) => ref?.$type === "Store" && ref.addr === variable) as ssa.Store[];
+  const others = (variable.referrers() ?? []).filter((ref) => !stores.includes(ref as ssa.Store));
+  if (stores.length !== 1 || stores[0].val === variable || !others.every((ref) => ref !== null && onlyLoads(variable, ref))) {
+    return null;
+  }
+  return stores[0].val;
+}
+
+// onlyLoads reports whether an instruction only reads through an address,
+// including by capturing it in a closure that only reads through it.
+function onlyLoads(addr: ssa.Value, instr: ssa.Instruction): boolean {
+  switch (instr.$type) {
+    case "DebugRef":
+      return true;
+    case "UnOp":
+      return instr.op === token.MUL;
+    case "MakeClosure": {
+      const free = (instr.fn as ssa.Function).freeVars[instr.bindings.indexOf(addr)];
+      return free !== undefined && (free?.referrers() ?? []).every((ref) => ref !== null && onlyLoads(free!, ref));
+    }
+    default:
+      return false;
+  }
 }
 
 // accessMode returns how an address is used: written, read, or neither.
