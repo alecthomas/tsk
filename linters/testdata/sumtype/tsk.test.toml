@@ -13,3 +13,9 @@ name = "include-shared-interfaces"
 packages = ["shared"]
 [case.config]
 include-shared-interfaces = true
+
+[[case]]
+name = "configured-types"
+packages = ["configured", "configureduser"]
+[case.config]
+types = ["configured.Node", "configured.Both"]

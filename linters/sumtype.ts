@@ -10,6 +10,8 @@ interface Config {
   defaultSignifiesExhaustive: boolean;
   /** A case for an interface covers every variant that implements it. */
   includeSharedInterfaces: boolean;
+  /** Sealed interfaces, such as "example.com/pkg.Node", to treat as sum types. */
+  types: string[];
 }
 
 // SumType names a sum type's concrete variants in its package scope.
@@ -29,18 +31,25 @@ export default defineAnalyzer<Config>({
 A sum type is a sealed interface, one with at least one unexported method,
 declared with a //sumtype:decl comment. Its variants are the concrete types in
 its package that implement it. A type switch on a sum type must have a case
-for every variant, or a default clause that does more than panic.`,
+for every variant, or a default clause that does more than panic.
+
+The types option names further sum types by full package path, for sealed
+interfaces in packages that cannot carry the comment, such as dependencies.`,
   requires: [inspect],
   facts: [sumType],
-  config: { defaultSignifiesExhaustive: true, includeSharedInterfaces: false },
+  config: { defaultSignifiesExhaustive: true, includeSharedInterfaces: false, types: [] },
   // Sum types declared in other modules are known only through their facts.
   scope: "all",
   run(pass) {
+    const configured = configuredTypes(pass);
     const root = pass.resultOf(inspect).root();
     // Declarations are exported first, so switches can import this package's
     // facts as well as those of its dependencies.
     for (const cursor of root.preorder(ast.GenDecl)) {
       declare(pass, cursor.node() as ast.GenDecl);
+    }
+    for (const name of configured) {
+      declareConfigured(pass, name);
     }
     // Findings in dependencies are discarded, so only their facts matter.
     if (pass.dependency) {
@@ -75,20 +84,68 @@ function defineSumType(pass: Pass<Config>, spec: ast.TypeSpec): void {
   if (object?.$type !== "TypeName") {
     return;
   }
+  const problem = sumTypeProblem(pass, object);
+  if (problem !== null) {
+    pass.report({ pos: spec.pos(), message: problem });
+    return;
+  }
+  exportSumType(pass, object);
+}
+
+// configuredTypes returns the names in the types option declared in this
+// package, without their package path.
+function configuredTypes(pass: Pass<Config>): string[] {
+  const names: string[] = [];
+  for (const qualified of pass.config.types) {
+    const dot = qualified.lastIndexOf(".");
+    const name = qualified.slice(dot + 1);
+    if (dot <= 0 || !token.isIdentifier(name)) {
+      throw new Error(`types: invalid type "${qualified}", want a full package path and type name such as "example.com/pkg.Type"`);
+    }
+    if (qualified.slice(0, dot) === pass.pkg.path()) {
+      names.push(name);
+    }
+  }
+  return names;
+}
+
+// declareConfigured throws rather than reports, because findings in
+// dependencies, where configured types usually live, are discarded.
+function declareConfigured(pass: Pass<Config>, name: string): void {
+  const object = pass.pkg.scope()!.lookup(name);
+  const qualified = `${pass.pkg.path()}.${name}`;
+  if (object?.$type !== "TypeName") {
+    throw new Error(`types: type "${qualified}" is not declared`);
+  }
+  // The type also carries a //sumtype:decl comment.
+  if (pass.importObjectFact(object, sumType) !== undefined) {
+    return;
+  }
+  const problem = sumTypeProblem(pass, object);
+  if (problem !== null) {
+    throw new Error(`types: ${qualified}: ${problem}`);
+  }
+  exportSumType(pass, object);
+}
+
+// sumTypeProblem explains why object cannot be a sum type, or returns null.
+function sumTypeProblem(pass: Pass<Config>, object: types.TypeName): string | null {
   const name = object.name();
   if (object.parent() !== pass.pkg.scope()) {
-    pass.report({ pos: spec.pos(), message: `sum type '${name}' must be declared at package level` });
-    return;
+    return `sum type '${name}' must be declared at package level`;
   }
   const iface = object.type()?.underlying();
   if (iface?.$type !== "Interface") {
-    pass.report({ pos: spec.pos(), message: `type '${name}' is not an interface` });
-    return;
+    return `type '${name}' is not an interface`;
   }
   if (!isSealed(iface)) {
-    pass.report({ pos: spec.pos(), message: `interface '${name}' is not sealed (sealing requires at least one unexported method)` });
-    return;
+    return `interface '${name}' is not sealed (sealing requires at least one unexported method)`;
   }
+  return null;
+}
+
+function exportSumType(pass: Pass<Config>, object: types.TypeName): void {
+  const iface = object.type()!.underlying() as types.Interface;
   pass.exportObjectFact(object, sumType, { variants: variants(pass.pkg, iface) });
 }
 
