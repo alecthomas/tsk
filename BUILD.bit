@@ -93,7 +93,8 @@ gen = exec {
 }
 
 # Tag HEAD with the next version and push the tag, which triggers a release.
-# Resolving to HEAD reruns it only once there are new commits.
+# Resolving to the next version reruns it only once a commit warrants a
+# release, so commits svu ignores, such as chore, do not.
 explicit bump = exec {
   command = <<-EOL
     set -eu
@@ -115,7 +116,7 @@ explicit bump = exec {
     git push origin "$next" || { git tag --delete "$next"; exit 1; }
     echo "::success::Released $next"
   EOL
-  resolve = "git rev-parse HEAD"
+  resolve = "svu next"
 }
 
 # Test this repository's linter library the way any library tests itself.
